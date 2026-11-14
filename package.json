@@ -1,0 +1,9 @@
+{
+  "name": "@recipes/root",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "test": "node --experimental-strip-types --test packages/*/src/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}
