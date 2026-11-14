@@ -1,0 +1,347 @@
+/**
+ * Turning an ingredient line into grams.
+ *
+ * This is the one piece of the project where a bug is silent. A broken parser
+ * does not throw -- it returns a plausible number, the comparison sorts on it,
+ * and the app confidently recommends the wrong recipe. So every path either
+ * produces a number it can justify or returns `grams: null`, and null means
+ * "exclude this ingredient from the comparison", never "zero".
+ *
+ * Three real strings from the 14 Nov spike, which between them cover most of
+ * what the corpus throws at this:
+ *
+ *   King Arthur      2/3 cup (142g) light brown sugar, packed
+ *   Love and Lemons  ¾ cup unsalted butter (1½ sticks, melted and cooled slightly)
+ *   Food.com         1/3  cup    butter, softened
+ *
+ * Note what each one needs. The first already states grams, so no density is
+ * involved and nothing can go wrong. The second has a unicode fraction, a
+ * parenthetical that restates the volume rather than giving a weight, and the
+ * mixing method hiding in the ingredient line. The third has irregular
+ * whitespace.
+ *
+ * Densities are King Arthur's published weights, because they are the
+ * reference most American baking sites measure against.
+ */
+
+export type GramsSource = "stated" | "converted";
+export type Confidence = "high" | "medium" | "low";
+
+export interface ParsedIngredient {
+  raw: string;
+  canonicalName: string | null;
+  grams: number | null;
+  gramsSource: GramsSource | null;
+  /** What to show a person, so the UI never re-parses `raw`. */
+  displayQty: string | null;
+  displayUnit: string | null;
+  /** "melted", "softened", "packed" -- matters for texture, see methodHint. */
+  note: string | null;
+  confidence: Confidence;
+}
+
+// ---------------------------------------------------------------- fractions --
+
+const VULGAR: Record<string, string> = {
+  "¼": "1/4", "½": "1/2", "¾": "3/4",
+  "⅐": "1/7", "⅑": "1/9", "⅒": "1/10",
+  "⅓": "1/3", "⅔": "2/3",
+  "⅕": "1/5", "⅖": "2/5", "⅗": "3/5", "⅘": "4/5",
+  "⅙": "1/6", "⅚": "5/6",
+  "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8",
+};
+
+/**
+ * `¾` is one character, not three. A parser that only understands "3/4"
+ * does not crash on it -- it silently fails to find a quantity, which is
+ * exactly the kind of quiet wrongness this module exists to avoid.
+ *
+ * A digit immediately followed by a vulgar fraction is a mixed number:
+ * "1½" means one and a half, so it becomes "1 1/2" rather than "11/2".
+ */
+export function normalizeFractions(input: string): string {
+  let out = "";
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]!;
+    const frac = VULGAR[ch];
+    if (!frac) { out += ch; continue; }
+    if (/\d$/.test(out)) out += " ";
+    out += frac;
+  }
+  return out;
+}
+
+// -------------------------------------------------------------------- units --
+
+/** Volume units, expressed in cups. */
+const VOLUME_IN_CUPS: Record<string, number> = {
+  cup: 1, cups: 1, c: 1,
+  tablespoon: 1 / 16, tablespoons: 1 / 16, tbsp: 1 / 16, tbs: 1 / 16, tb: 1 / 16, T: 1 / 16,
+  teaspoon: 1 / 48, teaspoons: 1 / 48, tsp: 1 / 48, ts: 1 / 48,
+  "fluid ounce": 1 / 8, "fluid ounces": 1 / 8, "fl oz": 1 / 8,
+  pint: 2, pints: 2, quart: 4, quarts: 4,
+  milliliter: 1 / 236.588, milliliters: 1 / 236.588, ml: 1 / 236.588,
+  liter: 4.22675, liters: 4.22675, l: 4.22675,
+};
+
+/** Weight units, expressed in grams. Nothing here needs a density. */
+const WEIGHT_IN_GRAMS: Record<string, number> = {
+  gram: 1, grams: 1, g: 1,
+  kilogram: 1000, kilograms: 1000, kg: 1000,
+  ounce: 28.3495, ounces: 28.3495, oz: 28.3495,
+  pound: 453.592, pounds: 453.592, lb: 453.592, lbs: 453.592,
+};
+
+/** Grams per cup. King Arthur's published weights. */
+const GRAMS_PER_CUP: Record<string, number> = {
+  flour: 120, "bread flour": 120, "cake flour": 113, "whole wheat flour": 113,
+  sugar: 198, "brown sugar": 213, "powdered sugar": 113,
+  butter: 227, shortening: 191, oil: 198,
+  milk: 227, buttermilk: 227, water: 227, cream: 227, "sour cream": 227, yogurt: 227,
+  "cocoa powder": 84, "chocolate chips": 170, oats: 89, cornstarch: 113,
+  honey: 340, molasses: 340, "maple syrup": 312, "peanut butter": 270,
+  nuts: 113, raisins: 150,
+};
+
+/**
+ * Things measured in spoons rather than cups. Converting these through
+ * grams-per-cup works arithmetically but the densities differ enough at
+ * teaspoon scale to be worth stating directly.
+ */
+const GRAMS_PER_TSP: Record<string, number> = {
+  "baking soda": 6, "baking powder": 4,
+  salt: 6, "kosher salt": 5,
+  "vanilla extract": 4, cinnamon: 2.6, yeast: 3,
+};
+
+/** Items counted rather than measured. Grams per one. */
+const GRAMS_EACH: Record<string, number> = {
+  egg: 50, "egg yolk": 18, "egg white": 32,
+};
+
+// ------------------------------------------------------------- ingredients --
+
+/**
+ * Ordered most specific first, because "brown sugar" must win over "sugar"
+ * and "egg yolk" over "egg". A plain object would not guarantee that.
+ */
+const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\bbrown sugar\b/, "brown sugar"],
+  [/\b(confectioner'?s'?|powdered|icing) sugar\b/, "powdered sugar"],
+  [/\b(granulated|white|caster)? ?sugar\b/, "sugar"],
+  [/\bbread flour\b/, "bread flour"],
+  [/\bcake flour\b/, "cake flour"],
+  [/\bwhole ?wheat flour\b/, "whole wheat flour"],
+  [/\b(all[- ]purpose|plain)? ?flour\b/, "flour"],
+  [/\begg yolks?\b/, "egg yolk"],
+  [/\begg whites?\b/, "egg white"],
+  [/\beggs?\b/, "egg"],
+  [/\bbaking soda\b|\bbicarbonate of soda\b/, "baking soda"],
+  [/\bbaking powder\b/, "baking powder"],
+  [/\bkosher salt\b/, "kosher salt"],
+  [/\bsalt\b/, "salt"],
+  [/\bvanilla\b/, "vanilla extract"],
+  [/\bchocolate (chips?|chunks?|morsels?)\b/, "chocolate chips"],
+  [/\bcocoa\b/, "cocoa powder"],
+  [/\b(vegetable |canola |rapeseed )?shortening\b/, "shortening"],
+  [/\bpeanut butter\b/, "peanut butter"],
+  [/\bbutter\b/, "butter"],
+  [/\b(vegetable|canola|olive|sunflower) oil\b|\boil\b/, "oil"],
+  [/\bbuttermilk\b/, "buttermilk"],
+  [/\bsour cream\b/, "sour cream"],
+  [/\b(heavy |double |whipping )?cream\b/, "cream"],
+  [/\byogh?urt\b/, "yogurt"],
+  [/\bmilk\b/, "milk"],
+  [/\b(rolled |old[- ]fashioned )?oats\b/, "oats"],
+  [/\bcorn ?starch\b/, "cornstarch"],
+  [/\bhoney\b/, "honey"],
+  [/\bmolasses\b/, "molasses"],
+  [/\bmaple syrup\b/, "maple syrup"],
+  [/\bcinnamon\b/, "cinnamon"],
+  [/\byeast\b/, "yeast"],
+  [/\b(walnuts?|pecans?|almonds?|nuts)\b/, "nuts"],
+  [/\braisins?\b/, "raisins"],
+  [/\bwater\b/, "water"],
+];
+
+const NOTES = [
+  "melted and cooled", "melted", "softened", "room temperature",
+  "packed", "chilled", "cold", "browned", "sifted", "beaten",
+] as const;
+
+// ------------------------------------------------------------------ parsing --
+
+/** "1 1/2" -> 1.5, "3/4" -> 0.75, "2" -> 2, "1.5" -> 1.5 */
+function parseQuantity(text: string): { value: number; display: string } | null {
+  const mixed = text.match(/^(\d+)\s+(\d+)\/(\d+)/);
+  if (mixed) {
+    const [, w, n, d] = mixed;
+    return { value: Number(w) + Number(n) / Number(d), display: `${w} ${n}/${d}` };
+  }
+  const frac = text.match(/^(\d+)\/(\d+)/);
+  if (frac) {
+    const [, n, d] = frac;
+    return { value: Number(n) / Number(d), display: `${n}/${d}` };
+  }
+  const dec = text.match(/^(\d+(?:\.\d+)?)/);
+  if (dec) return { value: Number(dec[1]), display: dec[1]! };
+  return null;
+}
+
+/** Longest unit name first, so "fluid ounce" is not read as "ounce". */
+const UNIT_NAMES = [...Object.keys(VOLUME_IN_CUPS), ...Object.keys(WEIGHT_IN_GRAMS)]
+  .sort((a, b) => b.length - a.length);
+
+function parseUnit(text: string): { unit: string; rest: string } | null {
+  for (const name of UNIT_NAMES) {
+    const re = new RegExp(`^${name.replace(/ /g, "\\s+")}s?\\.?\\b`, "i");
+    const m = text.match(re);
+    if (m) return { unit: name, rest: text.slice(m[0].length).trim() };
+  }
+  return null;
+}
+
+function canonicalFor(text: string): string | null {
+  for (const [re, name] of CANONICAL) if (re.test(text)) return name;
+  return null;
+}
+
+function noteFor(text: string): string | null {
+  for (const n of NOTES) if (text.includes(n)) return n;
+  return null;
+}
+
+/**
+ * A gram weight the source already gave us, e.g. "2/3 cup (142g)".
+ *
+ * Deliberately strict about the shape: it must be digits followed by a gram
+ * unit inside parentheses. "(1½ sticks, melted and cooled slightly)" restates
+ * the volume and must not match, or butter comes out at 1 gram.
+ */
+function statedGrams(text: string): number | null {
+  const m = text.match(/\(\s*(\d+(?:\.\d+)?)\s*(?:g|gr|gram|grams)\b/i);
+  return m ? Number(m[1]) : null;
+}
+
+export function parseIngredient(raw: string): ParsedIngredient {
+  const base: ParsedIngredient = {
+    raw,
+    canonicalName: null, grams: null, gramsSource: null,
+    displayQty: null, displayUnit: null, note: null, confidence: "low",
+  };
+
+  const text = normalizeFractions(raw).replace(/\s+/g, " ").trim();
+  const lower = text.toLowerCase();
+
+  const canonicalName = canonicalFor(lower);
+  const note = noteFor(lower);
+
+  // 1. The source stated a weight. Nothing to get wrong, so trust it over
+  //    anything we could compute ourselves.
+  const stated = statedGrams(text);
+
+  // 2. Quantity and unit off the front of the line.
+  const qty = parseQuantity(text);
+  const afterQty = qty ? text.slice(text.indexOf(qty.display) + qty.display.length).trim() : text;
+  const unitMatch = parseUnit(afterQty);
+
+  if (stated !== null) {
+    return {
+      ...base, canonicalName, note,
+      grams: stated, gramsSource: "stated",
+      displayQty: qty?.display ?? null,
+      displayUnit: unitMatch?.unit ?? null,
+      confidence: "high",
+    };
+  }
+
+  if (!qty) return { ...base, canonicalName, note };
+
+  // 3. A weight unit needs no density either.
+  if (unitMatch && unitMatch.unit in WEIGHT_IN_GRAMS) {
+    return {
+      ...base, canonicalName, note,
+      grams: round(qty.value * WEIGHT_IN_GRAMS[unitMatch.unit]!),
+      gramsSource: "stated",
+      displayQty: qty.display, displayUnit: unitMatch.unit,
+      confidence: "high",
+    };
+  }
+
+  // 4. "1 stick butter" -- a unit that only means anything for butter.
+  if (/^sticks?\b/i.test(afterQty) && canonicalName === "butter") {
+    return {
+      ...base, canonicalName, note,
+      grams: round(qty.value * 113.4), gramsSource: "converted",
+      displayQty: qty.display, displayUnit: "stick",
+      confidence: "high",
+    };
+  }
+
+  // 5. A volume, which needs a density -- so it needs to know what this is.
+  if (unitMatch && unitMatch.unit in VOLUME_IN_CUPS && canonicalName) {
+    const cups = qty.value * VOLUME_IN_CUPS[unitMatch.unit]!;
+    const perTsp = GRAMS_PER_TSP[canonicalName];
+    const perCup = GRAMS_PER_CUP[canonicalName];
+
+    if (perTsp !== undefined) {
+      return {
+        ...base, canonicalName, note,
+        grams: round(cups * 48 * perTsp), gramsSource: "converted",
+        displayQty: qty.display, displayUnit: unitMatch.unit,
+        // Kosher salt is two different densities depending on the brand, and
+        // recipes almost never say which.
+        confidence: canonicalName === "kosher salt" ? "medium" : "high",
+      };
+    }
+    if (perCup !== undefined) {
+      return {
+        ...base, canonicalName, note,
+        grams: round(cups * perCup), gramsSource: "converted",
+        displayQty: qty.display, displayUnit: unitMatch.unit,
+        confidence: "high",
+      };
+    }
+    // A quantity and a unit but no density: show it, do not invent a weight.
+    return {
+      ...base, canonicalName, note,
+      displayQty: qty.display, displayUnit: unitMatch.unit, confidence: "low",
+    };
+  }
+
+  // 6. Counted, not measured: "2 large eggs".
+  if (!unitMatch && canonicalName && canonicalName in GRAMS_EACH) {
+    return {
+      ...base, canonicalName, note,
+      grams: round(qty.value * GRAMS_EACH[canonicalName]!),
+      gramsSource: "converted",
+      displayQty: qty.display, displayUnit: null,
+      confidence: "medium",
+    };
+  }
+
+  return {
+    ...base, canonicalName, note,
+    displayQty: qty.display, displayUnit: unitMatch?.unit ?? null,
+    confidence: "low",
+  };
+}
+
+function round(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+/**
+ * Which mixing method an ingredient line implies, if any.
+ *
+ * Melted butter skips the aeration that creaming produces and lets water reach
+ * the flour, developing more gluten -- which is most of the difference between
+ * a chewy cookie and a cakey one. Love and Lemons writes it straight into the
+ * ingredient line, so it can be had without parsing instructions at all.
+ */
+export function methodHint(parsed: ParsedIngredient): "melted" | "creamed" | null {
+  if (parsed.canonicalName !== "butter" || !parsed.note) return null;
+  if (parsed.note.startsWith("melted")) return "melted";
+  if (parsed.note === "softened" || parsed.note === "room temperature") return "creamed";
+  return null;
+}
