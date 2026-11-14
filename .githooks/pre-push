@@ -2,17 +2,24 @@
 # Cheapest check first: a leaked key costs more than a failed build.
 set -e
 
-if git diff --cached --quiet 2>/dev/null; then :; fi
+# Match the *shape* of a credential, not words that happen to appear near one.
+# `service_role` on its own is a Postgres role name -- it shows up in every
+# grant and in supabase/config.toml -- so matching it only cried wolf. What a
+# real leak looks like:
+#   sk_live_… / pk_live_…   Stripe- and Clerk-style live keys
+#   sb_secret_…             Supabase secret key
+#   eyJ….….                 a JWT, which is what a legacy service_role key is
+#   -----BEGIN … PRIVATE KEY
+SECRET_RE='(sk_live_[A-Za-z0-9]|pk_live_[A-Za-z0-9]|sb_secret_[A-Za-z0-9]|eyJ[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.|-----BEGIN [A-Z ]*PRIVATE KEY)'
 
 echo "pre-push: scanning for secrets..."
-if git grep -nIE '(sk_live_|pk_live_|service_role|sb_secret_|-----BEGIN [A-Z ]*PRIVATE KEY)' \
-     -- ':!*.example' ':!.githooks/*' ':!PLAN.md' 2>/dev/null; then
-  echo "pre-push: REFUSED — the lines above look like credentials." >&2
+if git grep -nIE "$SECRET_RE" -- ':!*.example' ':!.githooks/*' 2>/dev/null; then
+  echo "pre-push: REFUSED -- the lines above have the shape of a credential." >&2
   exit 1
 fi
 
 if git ls-files --error-unmatch .env .env.local >/dev/null 2>&1; then
-  echo "pre-push: REFUSED — an .env file is tracked by git." >&2
+  echo "pre-push: REFUSED -- an .env file is tracked by git." >&2
   exit 1
 fi
 
