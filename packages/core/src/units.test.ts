@@ -144,6 +144,20 @@ test("a line with no quantity at all does not invent one", () => {
   assert.equal(r.displayQty, null);
 });
 
+test("filler words between quantity and unit do not break the parse", () => {
+  // Real line from King Arthur. "heaping" sits where the unit parser looks,
+  // so without skipping it the chocolate resolves to no weight at all.
+  const r = parseIngredient("1 heaping cup dark chocolate chips");
+  assert.equal(r.canonicalName, "chocolate chips");
+  assert.equal(r.grams, 170);
+});
+
+test("a packed cup is still packed, and still a cup", () => {
+  const r = parseIngredient("1 firmly packed cup brown sugar");
+  assert.equal(r.grams, 213);
+  assert.equal(r.note, "packed");
+});
+
 // ------------------------------------------------------------ method hints --
 
 test("melted butter implies the melted method", () => {

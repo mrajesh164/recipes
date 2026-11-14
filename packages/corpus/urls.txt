@@ -1,0 +1,11 @@
+# One recipe URL per line. Lines starting with # are ignored.
+#
+# Sites confirmed to return structured data to an automated request
+# (probed 14 Nov). Roughly half the big recipe sites answer 403 instead and
+# cannot go here -- those get read in a browser and hand-entered.
+https://www.kingarthurbaking.com/recipes/chocolate-chip-cookies-recipe
+https://www.loveandlemons.com/chocolate-chip-cookies/
+
+# Known bad, kept as a live check that the title guard works: this URL
+# returned "Apricot Banana Bread" during the spike.
+https://www.food.com/recipe/chocolate-chip-cookies-27313

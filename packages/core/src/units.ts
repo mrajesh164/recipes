@@ -111,7 +111,7 @@ const GRAMS_PER_CUP: Record<string, number> = {
 const GRAMS_PER_TSP: Record<string, number> = {
   "baking soda": 6, "baking powder": 4,
   salt: 6, "kosher salt": 5,
-  "vanilla extract": 4, cinnamon: 2.6, yeast: 3,
+  "vanilla extract": 4, cinnamon: 2.6, yeast: 3, vinegar: 5,
 };
 
 /** Items counted rather than measured. Grams per one. */
@@ -141,6 +141,7 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bkosher salt\b/, "kosher salt"],
   [/\bsalt\b/, "salt"],
   [/\bvanilla\b/, "vanilla extract"],
+  [/\bvinegar\b/, "vinegar"],
   [/\bchocolate (chips?|chunks?|morsels?)\b/, "chocolate chips"],
   [/\bcocoa\b/, "cocoa powder"],
   [/\b(vegetable |canola |rapeseed )?shortening\b/, "shortening"],
@@ -201,6 +202,26 @@ function parseUnit(text: string): { unit: string; rest: string } | null {
   return null;
 }
 
+/**
+ * Words that sit between the quantity and the unit and mean nothing to a
+ * converter: "1 heaping cup", "2 scant tablespoons", "1 firmly packed cup".
+ * Leaving them in means the unit parser looks at "heaping" and gives up, so
+ * the ingredient silently resolves to no weight at all.
+ *
+ * They are only skipped for unit-finding. noteFor() still reads the whole
+ * line, so "packed" is still recorded as a note.
+ */
+const FILLER = /^(heaping|heaped|scant|rounded|level|generous|firmly|lightly|loosely|tightly|packed|large|small|medium|big)\s+/i;
+
+function stripFiller(text: string): string {
+  let out = text.trim();
+  for (;;) {
+    const next = out.replace(FILLER, "");
+    if (next === out) return out;
+    out = next;
+  }
+}
+
 function canonicalFor(text: string): string | null {
   for (const [re, name] of CANONICAL) if (re.test(text)) return name;
   return null;
@@ -243,7 +264,7 @@ export function parseIngredient(raw: string): ParsedIngredient {
   // 2. Quantity and unit off the front of the line.
   const qty = parseQuantity(text);
   const afterQty = qty ? text.slice(text.indexOf(qty.display) + qty.display.length).trim() : text;
-  const unitMatch = parseUnit(afterQty);
+  const unitMatch = parseUnit(stripFiller(afterQty));
 
   if (stated !== null) {
     return {
@@ -269,7 +290,7 @@ export function parseIngredient(raw: string): ParsedIngredient {
   }
 
   // 4. "1 stick butter" -- a unit that only means anything for butter.
-  if (/^sticks?\b/i.test(afterQty) && canonicalName === "butter") {
+  if (/^sticks?\b/i.test(stripFiller(afterQty)) && canonicalName === "butter") {
     return {
       ...base, canonicalName, note,
       grams: round(qty.value * 113.4), gramsSource: "converted",
