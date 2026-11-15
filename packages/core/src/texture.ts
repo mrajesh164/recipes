@@ -29,10 +29,26 @@ export interface Signal {
   strength: number;
 }
 
+/**
+ * The ratios the scoring ran on, handed back so the interface can plot where
+ * one recipe sits among the others. Null when there was no flour to divide by.
+ *
+ * Everything is per gram of flour, which is the only way thirteen recipes at
+ * different yields become comparable at all -- a recipe making 24 cookies and
+ * one making 60 are not comparable by absolute grams of butter.
+ */
+export interface Ratios {
+  fatPerFlour: number;
+  sugarPerFlour: number;
+  /** Brown as a fraction of all sugar, 0-1. */
+  brownShare: number;
+}
+
 export interface TextureScores {
   chewy: number;
   cakey: number;
   crispy: number;
+  ratios: Ratios | null;
   signals: Signal[];
   /**
    * "low" when the ingredient list was too incomplete to say much. A low
@@ -87,7 +103,7 @@ export function scoreTexture(input: TextureInput): TextureScores {
 
   // Without flour there is no ratio to compute and nothing honest to say.
   if (flour === 0) {
-    return { chewy: 0, cakey: 0, crispy: 0, signals: [], confidence: "low" };
+    return { chewy: 0, cakey: 0, crispy: 0, ratios: null, signals: [], confidence: "low" };
   }
 
   const brownShare = sugar > 0 ? brown / sugar : 0;
@@ -196,7 +212,10 @@ export function scoreTexture(input: TextureInput): TextureScores {
       ? "high"
       : "low";
 
-  return { chewy, cakey, crispy, signals, confidence };
+  return {
+    chewy, cakey, crispy, signals, confidence,
+    ratios: { fatPerFlour: fatRatio, sugarPerFlour: sugarRatio, brownShare },
+  };
 }
 
 /**

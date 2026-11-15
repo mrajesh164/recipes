@@ -57,6 +57,7 @@ for (const r of recipes) {
         bake_temp_f: r.bakeTempF,
         bake_minutes: r.bakeMinutes,
         chills_dough: r.chillsDough,
+        image_url: r.imageUrl,
         hand_entered: false,
         raw_jsonld: r.rawJsonLd,
       },

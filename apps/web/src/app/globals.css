@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
+/**
+ * Soft and chalky, after Sally's Baking.
+ *
+ * The thing to notice about that reference is how little saturation it uses.
+ * The ground is a warm off-white rather than white, the pink is dusty rather
+ * than hot, the accents are muted sage and clay, and near-black type does most
+ * of the structural work. It reads cheerful without any one element shouting.
+ *
+ * That restraint is load-bearing here: thirteen photographs of cookies are
+ * about to be on this page, and photos win every fight with interface colour.
+ * The palette's job is to frame them, not to compete.
+ *
+ * No dark mode. A warm chalky cream is the whole character, and the honest
+ * dark translation of it is a different design rather than an inverted one --
+ * not something to invent at speed. Better to do one thing properly.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Grounds */
+  --cream: #faf6f0;
+  --cream-deep: #f2ebe1;
+  --paper: #fffdfa;
+
+  /* Ink */
+  --ink: #1f1b17;
+  --ink-soft: #5d554c;
+  --ink-faint: #8a8074;
+
+  /* Accents, all chalky */
+  --pink: #e8b4b8;
+  --pink-deep: #c9838a;
+  --sage: #9aab96;
+  --sage-deep: #6f8269;
+  --clay: #c87f55;
+  --clay-deep: #a35f38;
+  --butter: #e8c97a;
+
+  --line: #e5dcd0;
+  --line-soft: #efe7db;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-pink: var(--pink);
+  --color-pink-deep: var(--pink-deep);
+  --color-sage: var(--sage);
+  --color-sage-deep: var(--sage-deep);
+  --color-clay: var(--clay);
+  --color-clay-deep: var(--clay-deep);
+  --color-butter: var(--butter);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/**
+ * The scalloped edge from the reference, as a repeating radial gradient rather
+ * than an image. Sits at the top of the page.
+ */
+.scallop {
+  height: 14px;
+  background-image: radial-gradient(
+    circle at 10px 14px,
+    var(--pink) 9px,
+    transparent 9.5px
+  );
+  background-size: 20px 14px;
+  background-repeat: repeat-x;
+}
+
+/** The dotted multicolour rule, also from the reference. */
+.dotted-rule {
+  height: 5px;
+  background-image: radial-gradient(circle, var(--pink-deep) 2px, transparent 2.5px),
+    radial-gradient(circle, var(--sage-deep) 2px, transparent 2.5px),
+    radial-gradient(circle, var(--clay) 2px, transparent 2.5px),
+    radial-gradient(circle, var(--butter) 2px, transparent 2.5px);
+  background-size: 40px 5px;
+  background-position: 0 0, 10px 0, 20px 0, 30px 0;
+  background-repeat: repeat-x;
+}
+
+/* Respect a preference for less movement. Nothing here is essential motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

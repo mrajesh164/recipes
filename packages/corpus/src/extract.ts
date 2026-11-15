@@ -36,6 +36,7 @@ export interface ExtractedRecipe {
   bakeTempF: number | null;
   bakeMinutes: number | null;
   chillsDough: boolean;
+  imageUrl: string | null;
   ingredients: ParsedIngredient[];
   instructionsText: string;
   rawJsonLd: unknown;
@@ -190,6 +191,27 @@ export function detectMethod(ings: ParsedIngredient[], instructions: string): Me
   return "other";
 }
 
+/**
+ * schema.org allows `image` to be a URL string, an ImageObject, or an array of
+ * either -- and sites use all three. Google requires the property for recipe
+ * rich results, so in practice every page that publishes a Recipe publishes a
+ * photograph too.
+ */
+export function imageUrlFrom(v: unknown): string | null {
+  if (typeof v === "string") return v || null;
+  if (Array.isArray(v)) {
+    for (const item of v) { const u = imageUrlFrom(item); if (u) return u; }
+    return null;
+  }
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    for (const k of ["url", "contentUrl"]) {
+      if (typeof o[k] === "string" && o[k]) return o[k] as string;
+    }
+  }
+  return null;
+}
+
 function hostnameOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
 }
@@ -227,6 +249,7 @@ export function extractRecipe(html: string, sourceUrl: string): ExtractedRecipe 
     bakeTempF: bakeTempF(instructionsText),
     bakeMinutes: bakeMinutes(instructionsText),
     chillsDough: chillsDough(instructionsText),
+    imageUrl: imageUrlFrom(node.image),
     ingredients,
     instructionsText,
     rawJsonLd: node,

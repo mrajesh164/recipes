@@ -1,42 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { rankFor, type Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
+import { RangePlot } from "./RangePlot";
 
 /**
- * The core task, start to finish: pick a texture, get one recipe.
+ * Pick a texture, get one recipe, then browse the rest if you want to.
  *
- * Client-side because the whole corpus arrives with the page and ranking it is
- * a sort over a few dozen rows. Choosing a texture is then instant, with no
- * navigation and no second request -- which matters for a tool someone opens
- * with floury hands.
+ * The one recommendation comes first and the wall of cookies comes after,
+ * deliberately in that order. Landing on thirteen recipes with conflicting
+ * numbers is the overwhelm this project exists to remove; landing on an answer
+ * and then choosing to look further is not the same thing.
  *
- * One recommendation is shown by default, with the runner-up behind a toggle.
- * Five recipes side by side is the overwhelm this project exists to remove.
+ * Ranking happens in the browser because the whole corpus arrives with the
+ * page, so changing texture is instant with no second request.
  */
 
 const TEXTURES: { key: Texture; label: string; blurb: string }[] = [
-  { key: "chewy", label: "Chewy", blurb: "soft and dense in the middle" },
-  { key: "cakey", label: "Cakey", blurb: "taller, lighter, more crumb" },
-  { key: "crispy", label: "Crispy", blurb: "thin, snappy, spread out" },
+  { key: "chewy", label: "Chewy", blurb: "soft, dense middle" },
+  { key: "cakey", label: "Cakey", blurb: "taller, lighter crumb" },
+  { key: "crispy", label: "Crispy", blurb: "thin and snappy" },
 ];
 
 export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   const [want, setWant] = useState<Texture | null>(null);
-  const [showRunnerUp, setShowRunnerUp] = useState(false);
 
   const ranked = want ? rankFor(recipes, want) : [];
   const best = ranked[0];
-  const runnerUp = ranked[1];
+  const rest = want ? ranked.slice(1) : recipes;
 
   return (
     <div>
-      <fieldset>
-        <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          How do you want them to come out?
-        </legend>
-        <div className="mt-3 flex flex-wrap gap-3">
+      <fieldset className="border-0 p-0">
+        <legend className="font-semibold">How do you want them to come out?</legend>
+        <div className="mt-4 flex flex-wrap gap-3">
           {TEXTURES.map((t) => {
             const active = want === t.key;
             return (
@@ -44,24 +43,17 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
                 key={t.key}
                 type="button"
                 aria-pressed={active}
-                onClick={() => {
-                  setWant(t.key);
-                  setShowRunnerUp(false);
-                }}
+                onClick={() => setWant(t.key)}
                 className={[
-                  "rounded-lg border px-4 py-3 text-left transition-colors",
+                  // Generous hit area: this gets tapped with floury hands.
+                  "min-w-[9.5rem] rounded-2xl border-2 px-5 py-3 text-left transition-colors",
                   active
-                    ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-                    : "border-neutral-300 hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-500",
+                    ? "border-clay-deep bg-clay-deep text-paper"
+                    : "border-line bg-paper hover:border-pink-deep",
                 ].join(" ")}
               >
-                <span className="block font-medium">{t.label}</span>
-                <span
-                  className={[
-                    "block text-xs",
-                    active ? "opacity-80" : "text-neutral-500",
-                  ].join(" ")}
-                >
+                <span className="block text-lg font-bold tracking-tight">{t.label}</span>
+                <span className={active ? "block text-xs opacity-85" : "block text-xs text-ink-faint"}>
                   {t.blurb}
                 </span>
               </button>
@@ -70,135 +62,206 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         </div>
       </fieldset>
 
-      {want === null && (
-        <p className="mt-8 text-sm text-neutral-500">
-          Pick one and I&apos;ll tell you which of the {recipes.length} recipes to use.
+      {!want && (
+        <p className="mt-6 text-sm text-ink-soft">
+          Pick one and I&apos;ll tell you which of these {recipes.length} to make.
         </p>
       )}
 
-      {want !== null && !best && (
-        <p className="mt-8 text-sm text-neutral-500">
-          Nothing in the corpus yet. Seed some recipes first.
-        </p>
-      )}
+      {best && want && <Recommendation recipe={best} want={want} all={recipes} />}
 
-      {best && <Recommendation recipe={best} want={want!} primary />}
-
-      {runnerUp && (
-        <div className="mt-8">
-          <button
-            type="button"
-            onClick={() => setShowRunnerUp((v) => !v)}
-            className="text-sm underline underline-offset-4 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          >
-            {showRunnerUp ? "Hide the second option" : "Show me a second option"}
-          </button>
-          {showRunnerUp && <Recommendation recipe={runnerUp} want={want!} />}
-        </div>
+      {rest.length > 0 && (
+        <section className="mt-16">
+          <div className="dotted-rule" aria-hidden />
+          <h2 className="mt-6 text-xl font-bold tracking-tight">
+            {want ? "The rest of them" : "All of them"}
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Every one is a real published recipe. Nothing here is averaged together.
+          </p>
+          <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {rest.map((r) => (
+              <li key={r.id}>
+                <Card recipe={r} />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );
 }
 
+/* ------------------------------------------------------------ the answer -- */
+
 function Recommendation({
   recipe,
   want,
-  primary = false,
+  all,
 }: {
   recipe: ScoredRecipe;
   want: Texture;
-  primary?: boolean;
+  all: ScoredRecipe[];
 }) {
-  // Top three only. The rest are real but weak, and showing nine signals is
-  // the same overwhelm in a different shape.
-  const signals = recipe.scores.signals.slice(0, 3);
+  const withRatios = all.filter((r) => r.scores.ratios !== null);
+  const mine = recipe.scores.ratios;
+
+  const grams = (n: number) => `${Math.round(n * 100)} g`;
+  const pct = (n: number) => `${Math.round(n * 100)}%`;
 
   return (
-    <article
-      className={[
-        "mt-6 rounded-xl border p-5",
-        primary
-          ? "border-neutral-900 dark:border-neutral-100"
-          : "border-neutral-300 dark:border-neutral-700",
-      ].join(" ")}
-    >
-      {primary && (
-        <p className="text-xs uppercase tracking-wider text-neutral-500">
-          Make this one
-        </p>
-      )}
+    <article className="mt-8 overflow-hidden rounded-3xl border-2 border-clay-deep bg-paper">
+      <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr]">
+        {recipe.image_url && (
+          <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[22rem]">
+            <Image
+              src={recipe.image_url}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 40vw"
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
 
-      <h2 className="mt-1 text-xl font-semibold">
-        <a
-          href={recipe.source_url}
-          target="_blank"
-          rel="noreferrer"
-          className="underline underline-offset-4 decoration-neutral-300 hover:decoration-neutral-900 dark:decoration-neutral-600 dark:hover:decoration-neutral-100"
-        >
-          {recipe.title}
-        </a>
-      </h2>
+        <div className="p-6 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay-deep">
+            Make this one
+          </p>
 
-      <p className="mt-1 text-sm text-neutral-500">
-        {recipe.source_name}
-        {recipe.rating !== null && ` · ${recipe.rating}★`}
-        {recipe.rating_count !== null && ` from ${recipe.rating_count}`}
-        {recipe.yield_count !== null && ` · makes ${recipe.yield_count}`}
-      </p>
-
-      <h3 className="mt-5 text-xs uppercase tracking-wider text-neutral-500">
-        Why this one
-      </h3>
-      <ul className="mt-2 space-y-1.5">
-        {signals.map((s) => (
-          <li key={s.label} className="flex flex-wrap items-baseline gap-x-2 text-sm">
-            <span className="font-medium">{s.label}</span>
-            <span className="text-neutral-500">{s.value}</span>
-            <span
-              className={[
-                "rounded px-1.5 py-0.5 text-xs",
-                s.leans === want
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                  : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
-              ].join(" ")}
+          <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
+            <a
+              href={recipe.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-pink decoration-2 underline-offset-4 hover:decoration-clay-deep"
             >
-              leans {s.leans}
-            </span>
-          </li>
-        ))}
-      </ul>
+              {recipe.title}
+            </a>
+          </h2>
 
-      {/* Said plainly rather than hidden. The scoring is a heuristic and the
-          sources genuinely disagree about some of these levers. */}
-      {recipe.scores.confidence === "low" && (
-        <p className="mt-4 text-xs text-neutral-500">
-          Not much of this recipe&apos;s ingredient list could be read, so this is a
-          weaker guess than usual.
-        </p>
-      )}
+          <p className="mt-2 text-sm text-ink-soft">
+            {recipe.source_name}
+            {recipe.rating !== null && ` · ${recipe.rating}★`}
+            {recipe.rating_count !== null && ` (${recipe.rating_count})`}
+            {recipe.yield_count !== null && ` · makes ${recipe.yield_count}`}
+          </p>
 
-      <details className="mt-5">
-        <summary className="cursor-pointer text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">
-          Ingredients, in grams
-        </summary>
-        <table className="mt-3 w-full border-collapse text-sm">
-          <tbody>
-            {recipe.ingredients.map((i) => (
-              <tr
-                key={i.position}
-                className="border-b border-neutral-200 last:border-0 dark:border-neutral-800"
+          {mine && (
+            <div className="mt-6">
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
+                Why this one, out of {withRatios.length}
+              </h3>
+              <div className="mt-1 divide-y divide-line-soft">
+                <RangePlot
+                  label="Butter per 100 g flour"
+                  hint="more = chewier"
+                  values={withRatios.map((r) => r.scores.ratios!.fatPerFlour)}
+                  picked={mine.fatPerFlour}
+                  format={grams}
+                />
+                <RangePlot
+                  label="Brown sugar"
+                  hint="more = chewier, softer"
+                  values={withRatios.map((r) => r.scores.ratios!.brownShare)}
+                  picked={mine.brownShare}
+                  format={pct}
+                />
+                <RangePlot
+                  label="Sugar per 100 g flour"
+                  hint="more = crispier"
+                  values={withRatios.map((r) => r.scores.ratios!.sugarPerFlour)}
+                  picked={mine.sugarPerFlour}
+                  format={grams}
+                />
+              </div>
+            </div>
+          )}
+
+          <ul className="mt-5 flex flex-wrap gap-2">
+            {recipe.scores.signals.slice(0, 3).map((s) => (
+              <li
+                key={s.label}
+                className={[
+                  "rounded-full px-3 py-1 text-xs font-medium",
+                  s.leans === want
+                    ? "bg-sage-deep text-paper"
+                    : "bg-cream-deep text-ink-soft",
+                ].join(" ")}
               >
-                <td className="py-1.5 pr-3">{i.raw_text}</td>
-                <td className="py-1.5 text-right tabular-nums text-neutral-600 dark:text-neutral-400">
-                  {/* null is not zero. An ingredient we could not convert has
-                      no weight, and must not read as weighing nothing. */}
-                  {i.grams === null ? "—" : `${i.grams} g`}
-                </td>
-              </tr>
+                {s.label} · {s.value}
+              </li>
             ))}
-          </tbody>
-        </table>
-      </details>
+          </ul>
+
+          {recipe.scores.confidence === "low" && (
+            <p className="mt-4 text-xs text-ink-faint">
+              Not much of this recipe&apos;s ingredient list could be read, so this is a
+              weaker guess than usual.
+            </p>
+          )}
+
+          <details className="mt-6">
+            <summary className="cursor-pointer text-sm font-medium text-clay-deep">
+              Ingredients, in grams
+            </summary>
+            <table className="mt-3 w-full border-collapse text-sm">
+              <tbody>
+                {recipe.ingredients.map((i) => (
+                  <tr key={i.position} className="border-b border-line-soft last:border-0">
+                    <td className="py-1.5 pr-3">{i.raw_text}</td>
+                    <td className="py-1.5 text-right tabular-nums text-ink-soft">
+                      {/* null is not zero. An unconvertible ingredient has no
+                          weight; it must not read as weighing nothing. */}
+                      {i.grams === null ? "—" : `${i.grams} g`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        </div>
+      </div>
     </article>
+  );
+}
+
+/* -------------------------------------------------------------- the wall -- */
+
+function Card({ recipe }: { recipe: ScoredRecipe }) {
+  return (
+    <a
+      href={recipe.source_url}
+      target="_blank"
+      rel="noreferrer"
+      className="group block h-full overflow-hidden rounded-2xl border border-line bg-paper transition-colors hover:border-pink-deep"
+    >
+      {recipe.image_url && (
+        <div className="relative aspect-[4/3]">
+          <Image
+            src={recipe.image_url}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
+          />
+        </div>
+      )}
+      <div className="p-4">
+        <h3 className="font-bold leading-snug tracking-tight group-hover:text-clay-deep">
+          {recipe.title}
+        </h3>
+        <p className="mt-1 text-xs text-ink-faint">
+          {recipe.source_name}
+          {recipe.rating !== null && ` · ${recipe.rating}★`}
+        </p>
+        {recipe.method && recipe.method !== "other" && (
+          <p className="mt-2 inline-block rounded-full bg-cream-deep px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
+            {recipe.method} butter
+          </p>
+        )}
+      </div>
+    </a>
   );
 }

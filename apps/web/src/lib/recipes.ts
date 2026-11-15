@@ -25,6 +25,7 @@ export interface Recipe {
   bake_minutes: number | null;
   chills_dough: boolean;
   hand_entered: boolean;
+  image_url: string | null;
   ingredients: Ingredient[];
 }
 
