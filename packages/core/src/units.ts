@@ -112,6 +112,7 @@ const GRAMS_PER_TSP: Record<string, number> = {
   "baking soda": 6, "baking powder": 4,
   salt: 6, "kosher salt": 5,
   "vanilla extract": 4, cinnamon: 2.6, yeast: 3, vinegar: 5,
+  "espresso powder": 2,
 };
 
 /** Items counted rather than measured. Grams per one. */
@@ -142,6 +143,7 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bsalt\b/, "salt"],
   [/\bvanilla\b/, "vanilla extract"],
   [/\bvinegar\b/, "vinegar"],
+  [/\bespresso powder\b|\binstant (coffee|espresso)\b/, "espresso powder"],
   [/\bchocolate (chips?|chunks?|morsels?)\b/, "chocolate chips"],
   [/\bcocoa\b/, "cocoa powder"],
   [/\b(vegetable |canola |rapeseed )?shortening\b/, "shortening"],

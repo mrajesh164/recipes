@@ -43,7 +43,7 @@ const outcomes: Outcome[] = results.map((r) => {
   if (r.status === 403) return { url: r.url, ok: false, reason: "403 blocked (bot protection)" };
   if (!r.html) return { url: r.url, ok: false, reason: `http ${r.status}` };
 
-  const recipe = extractRecipe(r.html, r.url);
+  const recipe = extractRecipe(r.html, r.finalUrl);
   if (!recipe) return { url: r.url, ok: false, reason: "no schema.org Recipe on the page" };
 
   // The page answered, but with what? A Food.com cookie URL returned

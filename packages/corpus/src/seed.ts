@@ -98,4 +98,20 @@ for (const r of recipes) {
   );
 }
 
+// Anything in the table that is no longer in the corpus is stale. Upserting
+// alone never removes, so a URL that gets dropped from urls.txt -- or one that
+// turns out to be a duplicate under a different key -- would linger and could
+// still be recommended.
+const keep = recipes.map((r) => r.sourceUrl);
+const { data: removed, error: delErr } = await db
+  .from("recipes")
+  .delete()
+  .not("source_url", "in", `(${keep.map((u) => `"${u}"`).join(",")})`)
+  .select("title");
+
+if (delErr) console.error(`  ! cleanup failed: ${delErr.message}`);
+else if (removed?.length) {
+  for (const r of removed) console.log(`  -- removed stale: ${r.title}`);
+}
+
 console.log(`\ndone: ${recipes.length} recipes, ${ingredientRows} ingredients`);

@@ -8,7 +8,17 @@ const UA =
   "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 export interface FetchResult {
+  /** The URL as requested. */
   url: string;
+  /**
+   * Where the request actually ended up. fetch() follows redirects, and a
+   * hand-written URL often lands somewhere canonical:
+   * /recipes/chocolate-chip-cookies-recipe redirects to
+   * /recipes/classic-chocolate-chip-cookies-recipe. Storing the requested URL
+   * as the identity means the same recipe can enter the corpus twice under
+   * two keys, which is how a duplicate first appeared.
+   */
+  finalUrl: string;
   status: number;
   html: string | null;
   error: string | null;
@@ -28,10 +38,10 @@ export async function fetchPage(url: string, timeoutMs = 25_000): Promise<FetchR
     });
     // A 403 here is bot protection, not a bug, and not something a different
     // header will fix -- that was tested. Record it and move on.
-    if (!res.ok) return { url, status: res.status, html: null, error: null };
-    return { url, status: res.status, html: await res.text(), error: null };
+    if (!res.ok) return { url, finalUrl: res.url || url, status: res.status, html: null, error: null };
+    return { url, finalUrl: res.url || url, status: res.status, html: await res.text(), error: null };
   } catch (e) {
-    return { url, status: 0, html: null, error: e instanceof Error ? e.message : String(e) };
+    return { url, finalUrl: url, status: 0, html: null, error: e instanceof Error ? e.message : String(e) };
   } finally {
     clearTimeout(timer);
   }

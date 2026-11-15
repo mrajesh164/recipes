@@ -1,11 +1,25 @@
-# One recipe URL per line. Lines starting with # are ignored.
+# Chocolate chip cookie recipes, harvested from sitemaps by harvest.ts.
+# Regenerate with:
+#   node --experimental-strip-types packages/corpus/src/harvest.ts > /tmp/urls
 #
-# Sites confirmed to return structured data to an automated request
-# (probed 14 Nov). Roughly half the big recipe sites answer 403 instead and
-# cannot go here -- those get read in a browser and hand-entered.
-https://www.kingarthurbaking.com/recipes/chocolate-chip-cookies-recipe
+# Only sites that answer an automated request and advertise a sitemap in
+# robots.txt are listed. Roughly half the big recipe sites return 403 to any
+# automated request, and no header gets past it -- those are simply not here.
+#
+# Food.com is deliberately absent: its chocolate chip cookie URL serves
+# "Apricot Banana Bread". The title guard in extract.ts catches that, and
+# there is a test for it, but there is no reason to keep fetching it.
+https://www.kingarthurbaking.com/recipes/chewy-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/chocolate-chip-cookies
+https://www.kingarthurbaking.com/recipes/classic-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/crunchy-whole-grain-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/easy-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/famous-department-store-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/joys-brown-butter-chocolate-chip-cookies-with-pecans-recipe
+https://www.kingarthurbaking.com/recipes/just-4-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/rye-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/soft-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/supersized-super-soft-chocolate-chip-cookies-recipe
+https://www.kingarthurbaking.com/recipes/vanilla-chocolate-chip-cookies-recipe
+https://www.loveandlemons.com/brown-butter-chocolate-chip-cookies/
 https://www.loveandlemons.com/chocolate-chip-cookies/
-
-# Known bad, kept as a live check that the title guard works: this URL
-# returned "Apricot Banana Bread" during the spike.
-https://www.food.com/recipe/chocolate-chip-cookies-27313
