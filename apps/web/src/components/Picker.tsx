@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { rankFor, type Texture } from "@recipes/core";
+import {
+  interpret, matchScore, dominantTexture,
+  type Texture, type Interpretation, type Rankable,
+} from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RangePlot } from "./RangePlot";
 
@@ -18,63 +21,90 @@ import { RangePlot } from "./RangePlot";
  * page, so changing texture is instant with no second request.
  */
 
-const TEXTURES: { key: Texture; label: string; blurb: string }[] = [
-  { key: "chewy", label: "Chewy", blurb: "soft, dense middle" },
-  { key: "cakey", label: "Cakey", blurb: "taller, lighter crumb" },
-  { key: "crispy", label: "Crispy", blurb: "thin and snappy" },
+/** Clicking one fills the box, so the vocabulary is discoverable. */
+const EXAMPLES = [
+  "chewy",
+  "crispy edges, soft middle",
+  "cakey and tall",
+  "quick, no mixer",
 ];
 
-export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
-  const [want, setWant] = useState<Texture | null>(null);
+function asRankable(r: ScoredRecipe): Rankable {
+  return {
+    scores: {
+      chewy: r.scores.chewy, cakey: r.scores.cakey, crispy: r.scores.crispy,
+      confidence: r.scores.confidence,
+    },
+    method: r.method,
+    chills_dough: r.chills_dough,
+    bake_minutes: r.bake_minutes,
+    rating: r.rating,
+    ingredientCount: r.ingredients.length,
+  };
+}
 
-  const ranked = want ? rankFor(recipes, want) : [];
+export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
+  const [query, setQuery] = useState("");
+
+  const interpretation = interpret(query);
+  const asked = query.trim().length > 0 && !interpretation.empty;
+
+  const ranked = asked
+    ? [...recipes].sort(
+        (a, b) =>
+          matchScore(asRankable(b), interpretation) -
+          matchScore(asRankable(a), interpretation),
+      )
+    : [];
+
   const best = ranked[0];
-  const rest = want ? ranked.slice(1) : recipes;
+  const rest = asked ? ranked.slice(1) : recipes;
+  const want = dominantTexture(interpretation);
 
   return (
     <div>
-      <fieldset className="border-0 p-0">
-        <legend className="font-semibold">How do you want them to come out?</legend>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {TEXTURES.map((t) => {
-            const active = want === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setWant(t.key)}
-                className={[
-                  // Generous hit area: this gets tapped with floury hands.
-                  "min-w-[9.5rem] rounded-2xl border-2 px-5 py-3 text-left transition-colors",
-                  active
-                    ? "border-clay-deep bg-clay-deep text-paper"
-                    : "border-line bg-paper hover:border-pink-deep",
-                ].join(" ")}
-              >
-                <span className="block text-lg font-bold tracking-tight">{t.label}</span>
-                <span className={active ? "block text-xs opacity-85" : "block text-xs text-ink-faint"}>
-                  {t.blurb}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
+      <label htmlFor="q" className="block font-semibold">
+        What are you after?
+      </label>
+      <p className="mt-1 text-sm text-ink-soft">
+        Describe the cookie you want. Texture, or how much effort you feel like.
+      </p>
 
-      {!want && (
-        <p className="mt-6 text-sm text-ink-soft">
-          Pick one and I&apos;ll tell you which of these {recipes.length} to make.
-        </p>
-      )}
+      <input
+        id="q"
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="chewy, thick, crispy edges, quick…"
+        autoComplete="off"
+        className="mt-3 w-full rounded-2xl border-2 border-line bg-paper px-5 py-4 text-lg
+                   placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
+      />
 
-      {best && want && <Recommendation recipe={best} want={want} all={recipes} />}
+      <ul className="mt-3 flex flex-wrap gap-2">
+        {EXAMPLES.map((e) => (
+          <li key={e}>
+            <button
+              type="button"
+              onClick={() => setQuery(e)}
+              className="rounded-full border border-line bg-paper px-3 py-2 text-xs text-ink-soft
+                         hover:border-pink-deep hover:text-ink"
+            >
+              {e}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <Reading query={query} interpretation={interpretation} />
+
+      {best && <Recommendation recipe={best} want={want} all={recipes} />}
 
       {rest.length > 0 && (
         <section className="mt-16">
           <div className="dotted-rule" aria-hidden />
           <h2 className="mt-6 text-xl font-bold tracking-tight">
-            {want ? "The rest of them" : "All of them"}
+            {asked ? "The rest of them" : "All of them"}
           </h2>
           <p className="mt-1 text-sm text-ink-soft">
             Every one is a real published recipe. Nothing here is averaged together.
@@ -92,6 +122,72 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   );
 }
 
+/**
+ * What the box understood, said out loud.
+ *
+ * This is the whole reason a search box is allowed to replace three buttons.
+ * Presets can't be misread; free text can, and silently. Showing the reading
+ * back -- including the words that meant nothing -- is what keeps it honest,
+ * and it teaches the vocabulary without a help page.
+ */
+function Reading({
+  query,
+  interpretation: i,
+}: {
+  query: string;
+  interpretation: Interpretation;
+}) {
+  if (query.trim().length === 0) {
+    return (
+      <p className="mt-6 text-sm text-ink-soft">
+        Or just scroll — everything is below.
+      </p>
+    );
+  }
+
+  if (i.empty) {
+    return (
+      <div className="mt-6 rounded-2xl border-2 border-pink bg-paper px-5 py-4">
+        <p className="text-sm font-semibold">
+          I couldn&apos;t read anything in that.
+        </p>
+        <p className="mt-1 text-sm text-ink-soft">
+          Try a texture — chewy, cakey, crispy, thin, thick, fudgy — or something
+          about effort, like &ldquo;quick&rdquo; or &ldquo;no mixer&rdquo;.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 text-sm">
+      <p>
+        <span className="text-ink-soft">Reading that as: </span>
+        {i.understood.map((u, n) => (
+          <span key={u}>
+            {n > 0 && <span className="text-ink-faint">, </span>}
+            <span className="font-semibold">{u}</span>
+          </span>
+        ))}
+      </p>
+      {i.unrecognised.length > 0 && (
+        <p className="mt-1 text-ink-faint">
+          I don&apos;t know what{" "}
+          {i.unrecognised.map((w, n) => (
+            <span key={w}>
+              {/* Oxford-less list: "a", "a and b", "a, b and c". */}
+              {n > 0 && (n === i.unrecognised.length - 1 ? " and " : ", ")}
+              <span className="italic">{w}</span>
+            </span>
+          ))}{" "}
+          {i.unrecognised.length === 1 ? "means" : "mean"} here, so{" "}
+          {i.unrecognised.length === 1 ? "it was" : "they were"} ignored.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------ the answer -- */
 
 function Recommendation({
@@ -100,7 +196,8 @@ function Recommendation({
   all,
 }: {
   recipe: ScoredRecipe;
-  want: Texture;
+  /** Null when the query was only about effort, e.g. "quick". */
+  want: Texture | null;
   all: ScoredRecipe[];
 }) {
   const withRatios = all.filter((r) => r.scores.ratios !== null);
