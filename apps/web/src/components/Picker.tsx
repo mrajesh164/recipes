@@ -203,7 +203,10 @@ function Recommendation({
           )}
 
           <details className="mt-6">
-            <summary className="cursor-pointer text-sm font-medium text-clay-deep">
+            {/* py-3 gets this to a 44px tap target. The proposal's own words:
+                "That rules out small tap targets" -- and a 20px summary in a
+                kitchen is exactly that. */}
+            <summary className="-mx-2 cursor-pointer rounded-lg px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">
               Ingredients, in grams
             </summary>
             <table className="mt-3 w-full border-collapse text-sm">
