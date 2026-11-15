@@ -39,6 +39,8 @@ const recipes: ExtractedRecipe[] = JSON.parse(
 console.log(`seeding ${recipes.length} recipes...\n`);
 
 let ingredientRows = 0;
+let recipesWritten = 0;
+let failed = 0;
 
 for (const r of recipes) {
   // source_url is unique, so re-running updates in place rather than
@@ -68,6 +70,7 @@ for (const r of recipes) {
 
   if (error || !row) {
     console.error(`  x ${r.title}: ${error?.message ?? "no row returned"}`);
+    failed++;
     continue;
   }
 
@@ -89,9 +92,11 @@ for (const r of recipes) {
   const { error: ingErr } = await db.from("ingredients").insert(rows);
   if (ingErr) {
     console.error(`  x ${r.title} ingredients: ${ingErr.message}`);
+    failed++;
     continue;
   }
 
+  recipesWritten++;
   ingredientRows += rows.length;
   const withGrams = r.ingredients.filter((i) => i.grams !== null).length;
   console.log(
@@ -115,4 +120,21 @@ else if (removed?.length) {
   for (const r of removed) console.log(`  -- removed stale: ${r.title}`);
 }
 
-console.log(`\ndone: ${recipes.length} recipes, ${ingredientRows} ingredients`);
+/**
+ * Report what was written, not what was attempted, and exit non-zero on any
+ * failure.
+ *
+ * This previously printed "done: 13 recipes" off recipes.length -- the size of
+ * the *input* -- so a run where every single upsert was rejected with
+ * "Invalid API key" still ended on a line that read like success. A seed
+ * script that lies about seeding is worse than one that crashes.
+ */
+if (failed > 0) {
+  console.error(
+    `\nFAILED: ${recipesWritten}/${recipes.length} recipes written, ` +
+      `${failed} failed. ${ingredientRows} ingredients.`,
+  );
+  process.exit(1);
+}
+
+console.log(`\ndone: ${recipesWritten} recipes, ${ingredientRows} ingredients`);
