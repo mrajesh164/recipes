@@ -59,26 +59,6 @@ export function WhyThisOne({
 
       {showRatios && mine && (
         <div className={askedEffort ? "mt-4 divide-y divide-line-soft" : "mt-1 divide-y divide-line-soft"}>
-          <Fact
-            label="Butter"
-            value={
-              recipe.method === "melted"
-                ? "melted, not creamed"
-                : recipe.method === "creamed"
-                  ? "creamed, air beaten in"
-                  : "not stated"
-            }
-            hint={
-              recipe.method === "melted"
-                ? "chewier"
-                : recipe.method === "creamed"
-                  ? "cakier"
-                  : ""
-            }
-          />
-          {only === undefined && recipe.chills_dough && (
-            <Fact label="Dough" value="chilled before baking" hint="spreads less" />
-          )}
           <RangePlot
             label="Butter per 100 g flour"
             hint="more = chewier"
@@ -106,27 +86,6 @@ export function WhyThisOne({
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-/**
- * A row shaped like a RangePlot, for the things that are not numbers.
- *
- * The butter method is the biggest texture lever that is not a ratio, so it
- * has to be on screen -- but it used to be a floating chip below the plots,
- * appearing for some recipes and not others with no heading. A set of badges
- * that comes and goes reads as decoration; the same fact as a labelled row in
- * the same list reads as evidence.
- */
-function Fact({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-2.5">
-      <span className="text-sm font-semibold">{label}</span>
-      <span className="text-sm text-ink-soft">
-        {value}
-        {hint ? <span className="ml-2 text-xs italic text-ink-faint">{hint}</span> : null}
-      </span>
     </div>
   );
 }
