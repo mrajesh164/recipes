@@ -110,16 +110,36 @@ for (const r of recipes) {
 // alone never removes, so a URL that gets dropped from urls.txt -- or one that
 // turns out to be a duplicate under a different key -- would linger and could
 // still be recommended.
-const keep = recipes.map((r) => r.sourceUrl);
-const { data: removed, error: delErr } = await db
+//
+// This used to be one `not in (...)` carrying every URL in the corpus. At 13
+// recipes that was a query string a few hundred characters long. At 250 it is
+// over fifteen kilobytes of URL, which PostgREST sits behind a proxy that will
+// refuse it -- and the failure mode is a 414 on the *cleanup* step, after the
+// upserts have already succeeded, so the corpus looks seeded and quietly keeps
+// its stale rows. Read the keys, diff them here, delete by id in batches.
+const keep = new Set(recipes.map((r) => r.sourceUrl));
+const { data: existing, error: listErr } = await db
   .from("recipes")
-  .delete()
-  .not("source_url", "in", `(${keep.map((u) => `"${u}"`).join(",")})`)
-  .select("title");
+  .select("id, source_url, title");
 
-if (delErr) console.error(`  ! cleanup failed: ${delErr.message}`);
-else if (removed?.length) {
-  for (const r of removed) console.log(`  -- removed stale: ${r.title}`);
+if (listErr) {
+  console.error(`  ! cleanup failed to list rows: ${listErr.message}`);
+  failed++;
+} else {
+  const stale = (existing ?? []).filter((r) => !keep.has(r.source_url as string));
+  for (let i = 0; i < stale.length; i += 100) {
+    const batch = stale.slice(i, i + 100);
+    const { error: delErr } = await db
+      .from("recipes")
+      .delete()
+      .in("id", batch.map((r) => r.id));
+    if (delErr) {
+      console.error(`  ! cleanup failed: ${delErr.message}`);
+      failed++;
+      break;
+    }
+    for (const r of batch) console.log(`  -- removed stale: ${r.title}`);
+  }
 }
 
 /**
