@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { fetchAllCached } from "./fetch.ts";
 import { extractRecipe, titleMatches } from "./extract.ts";
 import {
-  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie,
+  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie, usesAPreparedMix,
   type CorpusRecipe,
 } from "./dish.ts";
 
@@ -95,6 +95,33 @@ const outcomes: Outcome[] = results.map((r) => {
 
   const recipe = extractRecipe(r.html, r.finalUrl);
   if (!recipe) return { url: r.url, ok: false, reason: "no schema.org Recipe on the page" };
+
+  /**
+   * A recipe with no ingredients is not a recipe.
+   *
+   * My Baking Addiction publishes `"recipeIngredient": []` on every page --
+   * the ingredients are in the HTML of the recipe card and simply never make
+   * it into the structured data. Ten of those came through the first run as
+   * valid rows with nothing in them, which is worse than missing: they would
+   * sit in the corpus being compared against, and every ratio they offered
+   * would be zero.
+   *
+   * Four is the floor because "4-Ingredient Peanut Butter Cookies" is a real
+   * recipe in this corpus.
+   */
+  if (recipe.ingredients.length < 4) {
+    return {
+      url: r.url, ok: false,
+      reason: `only ${recipe.ingredients.length} ingredients published: "${recipe.title}"`,
+    };
+  }
+
+  // Built on a pouch of mix rather than on flour and butter? Then it states
+  // no ratio for the texture scoring to read.
+  const mix = usesAPreparedMix(recipe.ingredients.map((i) => i.raw));
+  if (mix) {
+    return { url: r.url, ok: false, reason: `built on a prepared mix: "${mix.slice(0, 48)}"` };
+  }
 
   // What did the URL promise? That is what the title has to deliver.
   const dishType = classifyDish(r.finalUrl) ?? classifyDish(r.url);

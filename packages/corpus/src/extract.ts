@@ -65,6 +65,72 @@ function jsonLdBlocks(html: string): unknown[] {
   return out;
 }
 
+/**
+ * JSON-LD carries HTML entities through unescaped, because the JSON is
+ * embedded in an HTML document and plenty of plugins never decode it on the
+ * way in. Real lines from the corpus:
+ *
+ *   1 &amp; 1/2 teaspoons vanilla extract
+ *   Oatmeal S&#8217;more Cookies
+ *
+ * Left alone, "&amp;" hides a mixed number from the quantity parser and the
+ * title shows a user raw markup. Both are silent: nothing throws, the number
+ * is simply never found.
+ */
+const NAMED: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  rsquo: "\u2019", lsquo: "\u2018", ldquo: "\u201c", rdquo: "\u201d",
+  mdash: "\u2014", ndash: "\u2013", hellip: "\u2026", deg: "\u00b0",
+  frac12: "\u00bd", frac14: "\u00bc", frac34: "\u00be", frac13: "\u2153",
+  frac23: "\u2154", times: "\u00d7", middot: "\u00b7",
+};
+
+export function decodeEntities(input: string): string {
+  return input.replace(/&(#x?[0-9a-f]+|[a-z][a-z0-9]*);/gi, (whole, body: string) => {
+    if (body[0] === "#") {
+      const code = body[1] === "x" || body[1] === "X"
+        ? parseInt(body.slice(2), 16)
+        : parseInt(body.slice(1), 10);
+      // Decoding to a control character or a lone surrogate would be worse
+      // than leaving the entity visible.
+      return Number.isFinite(code) && code >= 32 && code <= 0x10ffff
+        ? String.fromCodePoint(code)
+        : whole;
+    }
+    return NAMED[body.toLowerCase()] ?? whole;
+  });
+}
+
+/**
+ * Ingredient lists are grouped, and the group labels arrive as ingredients.
+ *
+ * "Cookie", "Frosting", "Drizzle", "For the dough:" -- these are headings in
+ * the recipe card that schema.org has no way to mark as such, so they land in
+ * recipeIngredient looking like food. They are not food: they have no
+ * quantity, they can never resolve to grams, and counting them drags down a
+ * number that is supposed to measure the parser.
+ *
+ * Deliberately narrow. A line is only a heading if it carries no digit at all
+ * and is either punctuated like a label or is one of the words recipe cards
+ * actually use for one. "Flaky sea salt" stays an ingredient -- it is real,
+ * it simply has no quantity.
+ */
+const HEADING_WORDS = new Set([
+  "cookie", "cookies", "dough", "batter", "frosting", "icing", "glaze",
+  "drizzle", "topping", "filling", "assembly", "garnish", "crust", "sauce",
+  "coating", "decoration", "decorations", "equipment", "optional",
+  "sugar", "flour", "butter", "wet", "dry", "cream",
+]);
+
+export function isSectionHeading(line: string): boolean {
+  const t = line.trim();
+  if (!t || /\d/.test(t)) return false;
+  if (/[:：]\s*$/.test(t)) return true;
+  if (/^for the\b/i.test(t)) return true;
+  const words = t.toLowerCase().replace(/[^a-z\s]/g, "").trim().split(/\s+/);
+  return words.length <= 2 && words.every((w) => HEADING_WORDS.has(w));
+}
+
 function typesOf(node: Record<string, unknown>): string[] {
   const t = node["@type"];
   if (typeof t === "string") return [t];
@@ -229,12 +295,13 @@ export function extractRecipe(html: string, sourceUrl: string): ExtractedRecipe 
     (a, b) => (asArray(b.recipeIngredient).length - asArray(a.recipeIngredient).length),
   )[0]!;
 
-  const title = str(node.name) ?? "";
-  const ingredientLines = asArray(node.recipeIngredient).filter(
-    (x): x is string => typeof x === "string",
-  );
+  const title = decodeEntities(str(node.name) ?? "");
+  const ingredientLines = asArray(node.recipeIngredient)
+    .filter((x): x is string => typeof x === "string")
+    .map((line) => decodeEntities(line).replace(/\s+/g, " ").trim())
+    .filter((line) => line && !isSectionHeading(line));
   const ingredients = ingredientLines.map(parseIngredient);
-  const instructionsText = instructionsToText(node.recipeInstructions);
+  const instructionsText = decodeEntities(instructionsToText(node.recipeInstructions));
 
   const agg = (node.aggregateRating ?? {}) as Record<string, unknown>;
 

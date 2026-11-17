@@ -70,6 +70,17 @@ export function normalizeFractions(input: string): string {
   // "10-12 minutes" or a "9-inch pan" is left alone.
   input = input.replace(/(\d)\s*-\s*(\d+\s*\/\s*\d+)/g, "$1 $2");
 
+  // Some cards spell the mixed number with an ampersand: "1 & 1/2 teaspoons
+  // vanilla extract". It reaches us as "1 &amp; 1/2" and is decoded upstream.
+  input = input.replace(/(\d)\s*&\s*(\d+\s*\/\s*\d+)/g, "$1 $2");
+
+  // A range takes its lower bound: "2 to 3 tablespoons milk" is recorded as
+  // 2 tablespoons. The alternative is what used to happen -- the unit parser
+  // met "to 3 tablespoons", found no unit, and the line resolved to nothing
+  // at all. A bound that is honest about being the low end beats a blank.
+  // Requires a digit on both sides, so "9-inch" and "1 1/2" are untouched.
+  input = input.replace(/(\d+(?:\.\d+)?)\s*(?:to|-|\u2013|\u2014)\s*\d+(?:\.\d+)?(?=\s*[a-z(])/gi, "$1");
+
   let out = "";
   for (let i = 0; i < input.length; i++) {
     const ch = input[i]!;
@@ -90,6 +101,10 @@ const VOLUME_IN_CUPS: Record<string, number> = {
   teaspoon: 1 / 48, teaspoons: 1 / 48, tsp: 1 / 48, ts: 1 / 48,
   "fluid ounce": 1 / 8, "fluid ounces": 1 / 8, "fl oz": 1 / 8,
   pint: 2, pints: 2, quart: 4, quarts: 4,
+  // A pinch is conventionally 1/16 tsp and a dash 1/8. They contribute
+  // almost no mass, but "pinch salt" was the single most common unresolved
+  // line in the corpus and it is not actually unknowable.
+  pinch: 1 / 768, dash: 1 / 384, splash: 1 / 48,
   milliliter: 1 / 236.588, milliliters: 1 / 236.588, ml: 1 / 236.588,
   liter: 4.22675, liters: 4.22675, l: 4.22675,
 };
@@ -122,6 +137,7 @@ const GRAMS_PER_CUP: Record<string, number> = {
   // sugar added, and reading it as milk understates it by a third.
   "condensed milk": 306, "evaporated milk": 252,
   "cream cheese": 227,
+  "dried fruit": 113, "corn flakes": 28, oreos: 100,
 };
 
 /**
@@ -175,6 +191,9 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bvinegar\b/, "vinegar"],
   [/\bespresso powder\b|\binstant (coffee|espresso)\b/, "espresso powder"],
   [/\bchocolate (chips?|chunks?|morsels?)\b/, "chocolate chips"],
+  // Chopped chocolate, which a bar is sold as and a recipe calls for by
+  // volume as often as by weight. Same density as chips.
+  [/\b(white|semi-?sweet|bittersweet|dark|milk) chocolate\b/, "chocolate chips"],
   [/\bcocoa\b/, "cocoa powder"],
   [/\b(vegetable |canola |rapeseed )?shortening\b/, "shortening"],
   [/\bpeanut butter\b/, "peanut butter"],
@@ -208,7 +227,9 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bpumpkin pie spice\b/, "pumpkin pie spice"],
   [/\b(ground |fresh |grated )?ginger\b/, "ginger"],
   [/\byeast\b/, "yeast"],
-  [/\b(walnuts?|pecans?|almonds?|nuts)\b/, "nuts"],
+  [/\b(walnuts?|pecans?|almonds?|hazelnuts?|peanuts?|cashews?|macadamias?|pistachios?|nuts)\b/, "nuts"],
+  [/\bdried (cranberries|cherries|blueberries|apricots|dates)\b/, "dried fruit"],
+  [/\bcorn ?flakes\b/, "corn flakes"],
   [/\braisins?\b/, "raisins"],
   [/\bbutterscotch chips\b/, "butterscotch chips"],
   [/\btoffee (bits|pieces)\b/, "toffee bits"],
@@ -225,7 +246,17 @@ const NOTES = [
 
 // ------------------------------------------------------------------ parsing --
 
-/** "1 1/2" -> 1.5, "3/4" -> 0.75, "2" -> 2, "1.5" -> 1.5 */
+/**
+ * Numbers that arrive as words. "one 3.5-ounce packet instant vanilla
+ * pudding mix" is a real line, and so is "two large eggs".
+ */
+const WORD_NUMBERS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+  a: 1, an: 1, half: 0.5,
+};
+
+/** "1 1/2" -> 1.5, "3/4" -> 0.75, "2" -> 2, "1.5" -> 1.5, "one" -> 1 */
 function parseQuantity(text: string): { value: number; display: string } | null {
   const mixed = text.match(/^(\d+)\s+(\d+)\/(\d+)/);
   if (mixed) {
@@ -239,6 +270,17 @@ function parseQuantity(text: string): { value: number; display: string } | null 
   }
   const dec = text.match(/^(\d+(?:\.\d+)?)/);
   if (dec) return { value: Number(dec[1]), display: dec[1]! };
+
+  // "a" and "an" are only a quantity in front of a unit ("a cup of flour"),
+  // never on their own, or "almond extract" would start with a quantity.
+  const word = text.match(/^([a-z]+)\b/i);
+  if (word) {
+    const w = word[1]!.toLowerCase();
+    const value = WORD_NUMBERS[w];
+    if (value !== undefined && !((w === "a" || w === "an") && !/^(a|an)\s+\w/i.test(text))) {
+      return { value, display: word[1]! };
+    }
+  }
   return null;
 }
 
@@ -345,7 +387,26 @@ export function parseIngredient(raw: string): ParsedIngredient {
     };
   }
 
-  if (!qty) return { ...base, canonicalName, note };
+  // "pinch salt", "splash of vanilla extract": a line that opens with a unit
+  // has an implied quantity of one. Safe because parseUnit anchors on a word
+  // boundary, so "Toffee bits" is not read as a tablespoon of anything.
+  if (!qty) {
+    const leading = parseUnit(stripFiller(text));
+    if (leading && canonicalName) {
+      const cups = VOLUME_IN_CUPS[leading.unit];
+      const perTsp = GRAMS_PER_TSP[canonicalName];
+      const perCup = GRAMS_PER_CUP[canonicalName];
+      if (cups !== undefined && (perTsp !== undefined || perCup !== undefined)) {
+        const grams = perTsp !== undefined ? cups * 48 * perTsp : cups * perCup!;
+        return {
+          ...base, canonicalName, note,
+          grams: round(grams), gramsSource: "converted",
+          displayQty: "1", displayUnit: leading.unit, confidence: "medium",
+        };
+      }
+    }
+    return { ...base, canonicalName, note };
+  }
 
   // 3. A weight unit needs no density either.
   if (unitMatch && unitMatch.unit in WEIGHT_IN_GRAMS) {

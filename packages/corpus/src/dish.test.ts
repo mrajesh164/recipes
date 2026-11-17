@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie,
+  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie, usesAPreparedMix,
 } from "./dish.ts";
 
 test("names the dish a url is about", () => {
@@ -94,4 +94,19 @@ test("a lined baking sheet is not a lined pan", () => {
   // "line a 13 x ..." and threw out the corpus's own Tate's copycat.
   assert.equal(notADropCookie("Line a 13 x 18 inch baking sheet with parchment."), null);
   assert.ok(notADropCookie("Line a 9 x 13 inch pan with parchment paper."));
+});
+
+test("a recipe built on a pouch of mix states no ratio", () => {
+  // The flour, butter and sugar are inside the pouch, so the two tablespoons
+  // of butter stirred in look like the entire fat content.
+  assert.ok(usesAPreparedMix(["1 pouch Betty Crocker sugar cookie mix", "1 egg"]));
+  assert.ok(usesAPreparedMix(["1 roll refrigerated chocolate chip cookie dough"]));
+  assert.ok(usesAPreparedMix(["Butter and egg called for on cookie mix pouch"]));
+});
+
+test("but flour and butter are not a prepared mix", () => {
+  assert.equal(
+    usesAPreparedMix(["2 cups all-purpose flour", "1 cup butter, softened", "2 large eggs"]),
+    null,
+  );
 });

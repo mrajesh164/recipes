@@ -45,6 +45,10 @@ export const NOT_THE_SAME_DISH = [
   "rollout", "roll-out", "piped", "iced", "frosted", "glazed", "decorated",
   "dipped", "stuffed-with", "cookie-cups", "cookie-cup", "in-a-mug", "mug",
   "pops", "cookie-balls", "cake-mix",
+  // The thing you put *on* a cookie is not a cookie. "Easy Sugar Cookie
+  // Icing" and "Sugar Cookie Buttercream Frosting" both publish a Recipe and
+  // both name a dish this corpus collects.
+  "icing", "frosting", "buttercream", "ganache",
 ];
 
 /** Substitutes the very ingredients the texture scoring reads. */
@@ -197,6 +201,35 @@ export function notADropCookie(instructions: string): string | null {
   for (const re of NOT_DROPPED) {
     const m = instructions.match(re);
     if (m) return m[0].toLowerCase();
+  }
+  return null;
+}
+
+/**
+ * Is this built on a product rather than on ingredients?
+ *
+ * "1 pouch Betty Crocker sugar cookie mix" and "1 roll refrigerated cookie
+ * dough" are real ingredient lines on real recipe pages that publish a
+ * perfectly valid schema.org Recipe. But the flour, butter and sugar are
+ * inside the pouch, so the recipe states no ratio at all -- the texture
+ * scoring has nothing to read, and what it does read is wrong, because the
+ * two tablespoons of butter stirred in look like the entire fat content.
+ *
+ * This is the same reason gluten-free and vegan versions are excluded: not
+ * snobbery about the recipe, but that it cannot answer the question.
+ */
+const PREPARED_PRODUCT = [
+  /\b(cookie|cake|brownie|muffin|pancake|biscuit)\s+mix\b/i,
+  /\brefrigerated\b[^,]{0,30}\b(dough|cookies?)\b/i,
+  /\bpouch\b[^,]{0,30}\bmix\b/i,
+  /\bcalled for on\b.{0,20}\bpouch\b/i,
+  /\bstore[- ]bought\b[^,]{0,20}\bdough\b/i,
+];
+
+/** The line that gives it away, or null. */
+export function usesAPreparedMix(ingredientLines: string[]): string | null {
+  for (const line of ingredientLines) {
+    for (const re of PREPARED_PRODUCT) if (re.test(line)) return line;
   }
   return null;
 }

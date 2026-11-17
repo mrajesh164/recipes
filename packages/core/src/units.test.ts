@@ -262,10 +262,39 @@ test("a hyphenated mixed number is still a mixed number", () => {
   assert.equal(parseIngredient("2-1/2 teaspoons ground cinnamon").grams, 6.5);
 });
 
-test("a hyphen that is not a mixed number is left alone", () => {
-  // A fraction has to follow it, so ranges and sizes are untouched.
-  assert.equal(normalizeFractions("bake 10-12 minutes"), "bake 10-12 minutes");
+test("a hyphen that is not a mixed number is not a mixed number", () => {
+  // A size keeps its hyphen: no digits follow it.
   assert.equal(normalizeFractions("one 9-inch pan"), "one 9-inch pan");
+  // A range between two digits collapses to its lower bound instead, which
+  // is the rule below.
+  assert.equal(normalizeFractions("bake 10-12 minutes"), "bake 10 minutes");
+});
+
+test("a range takes its lower bound rather than nothing", () => {
+  // "2 to 3 tablespoons milk" used to resolve to nothing at all: the unit
+  // parser met "to 3 tablespoons", found no unit where it looked, and gave
+  // up. A bound that is honest about being the low end beats a blank.
+  const r = parseIngredient("2 to 3 tablespoons milk");
+  assert.equal(r.canonicalName, "milk");
+  assert.equal(r.grams, 28.4);
+});
+
+test("an ampersand can spell a mixed number too", () => {
+  // Arrives as "1 &amp; 1/2" and is decoded before it gets here.
+  assert.equal(parseIngredient("1 & 1/2 cups all-purpose flour").grams, 180);
+});
+
+test("a quantity written as a word still counts", () => {
+  assert.equal(parseIngredient("two large eggs").grams, 100);
+  assert.equal(parseIngredient("one cup of milk").grams, 227);
+});
+
+test('but "almond extract" does not begin with a quantity', () => {
+  // "a"/"an" only count in front of a unit, or every line starting with a
+  // word would acquire a phantom 1.
+  const r = parseIngredient("almond extract, to taste");
+  assert.equal(r.displayQty, null);
+  assert.equal(r.grams, null);
 });
 
 test("a package weight in parentheses needs no density", () => {
@@ -288,4 +317,36 @@ test("a parenthetical that restates the volume still must not become grams", () 
 
 test("cream cheese is not cream", () => {
   assert.equal(parseIngredient("1 cup cream cheese").canonicalName, "cream cheese");
+});
+
+test("a line that opens with a unit has an implied quantity of one", () => {
+  // "pinch salt" was the single most common unresolved line in the corpus,
+  // and a pinch is conventionally 1/16 teaspoon -- not unknowable.
+  assert.equal(parseIngredient("pinch salt").grams, 0.4);
+  assert.equal(parseIngredient("pinch of table salt").grams, 0.4);
+  assert.equal(parseIngredient("Splash of vanilla extract").grams, 4);
+});
+
+test("but a line that merely starts with the same letter does not", () => {
+  // "T" is a tablespoon. parseUnit anchors on a word boundary, so this is
+  // toffee and not three-quarters of an ounce of it.
+  assert.equal(parseIngredient("Toffee bits").grams, null);
+  assert.equal(parseIngredient("Cinnamon sugar for rolling").grams, null);
+});
+
+test("peanuts and hazelnuts are nuts", () => {
+  // The old rule was walnut/pecan/almond/nuts, and \bnuts\b does not match
+  // inside "peanuts".
+  assert.equal(parseIngredient("1 cup chopped peanuts").grams, 113);
+  assert.equal(parseIngredient("1 cup chopped hazelnuts").grams, 113);
+});
+
+test("chopped chocolate converts like chips", () => {
+  assert.equal(parseIngredient("1/2 cup chopped semisweet or bittersweet chocolate").grams, 85);
+  assert.equal(parseIngredient("3/4 cup chopped white chocolate").grams, 127.5);
+});
+
+test("dried fruit is not a raisin but weighs like one", () => {
+  assert.equal(parseIngredient("1 cup dried cherries").canonicalName, "dried fruit");
+  assert.equal(parseIngredient("3/4 cup dried blueberries").grams, 84.8);
 });
