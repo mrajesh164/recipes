@@ -198,8 +198,11 @@ export function scoreTexture(input: TextureInput): TextureScores {
 
   if (yolkShare > 0.45) {
     signals.push({
+      // Every other signal says what the thing does to the cookie -- "air
+      // beaten in", "spreads less", "no creaming". "53% yolk by weight" was
+      // a number with no feel to it, so it read as noise beside them.
       label: "Extra yolks",
-      value: `${pct(yolkShare)} yolk by weight`,
+      value: "richer, more chew",
       leans: "chewy",
       strength: norm(yolkShare, 0.36, 0.7),
     });
