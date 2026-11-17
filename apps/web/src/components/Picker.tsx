@@ -150,6 +150,10 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         poolCount={pool.length}
       />
 
+      {/* Nothing asked yet. Rather than a page of background, show the thing
+          the whole project is about. */}
+      {query.trim() === "" && <TheSpread recipes={recipes} />}
+
       {best && (
         <Recommendation
           recipe={best}
@@ -370,9 +374,9 @@ function Reading({
     // pointing at thin air. The replacement also states the corpus size,
     // which nothing else on the page does now the grid has gone.
     return (
-      <p className="mt-6 text-sm text-ink-soft">
-        <span className="font-semibold text-ink">{count}</span> recipes in the
-        jar. Say the word and I&apos;ll pick one.
+      <p className="mt-6 text-base text-ink">
+        <span className="font-bold">{count}</span> recipes in the jar. Say the
+        word and I&apos;ll pick one.
       </p>
     );
   }
@@ -442,6 +446,76 @@ function Reading({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Three real recipes for the same cookie, at three different butter ratios.
+ *
+ * The home page used to be a search box and then a screen of sprinkles. This
+ * fills it with the project's own premise instead of decoration: these are all
+ * chocolate chip cookies, from three published sources, and they disagree
+ * about butter by nearly two to one. That disagreement is the reason the app
+ * exists, and showing it is more persuasive than a sentence claiming it.
+ *
+ * Percentiles rather than the extremes. The minimum and maximum of the corpus
+ * are a Dutch baby and a bowl of cookie dough -- real rows, technically
+ * chocolate chip, but showcasing them would be showing off the parser's edge
+ * cases rather than the spread a baker actually faces.
+ */
+function TheSpread({ recipes }: { recipes: ScoredRecipe[] }) {
+  const sorted = recipes
+    .filter(
+      (r) =>
+        r.dish_type === "chocolate chip" &&
+        r.image_url !== null &&
+        r.scores.ratios !== null &&
+        r.scores.confidence === "high",
+    )
+    .sort((a, b) => a.scores.ratios!.fatPerFlour - b.scores.ratios!.fatPerFlour);
+
+  if (sorted.length < 12) return null;
+
+  const at = (p: number) => sorted[Math.floor(p * (sorted.length - 1))]!;
+  const three = [at(0.1), at(0.5), at(0.9)];
+
+  return (
+    <section className="mt-10">
+      {/* On paper. Photographs and numbers over a field of coloured dots is
+          the same mush the plots were. */}
+      <div className="overflow-hidden rounded-3xl border-2 border-line bg-paper p-6 md:p-8">
+        <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-ink-faint">
+          Three chocolate chip recipes
+        </h2>
+        <p className="mt-2 text-lg font-semibold leading-snug">
+          Same cookie. Nearly twice the butter.
+        </p>
+
+        <ul className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
+          {three.map((r) => (
+            <li key={r.id}>
+              <div className="relative aspect-square overflow-hidden rounded-2xl">
+                <Image
+                  src={r.image_url!}
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 30vw, 180px"
+                  className="object-cover"
+                />
+              </div>
+              <p className="mt-3 text-2xl font-bold tabular-nums tracking-tight text-clay-deep">
+                {Math.round(r.scores.ratios!.fatPerFlour * 100)} g
+              </p>
+              <p className="mt-1 text-xs leading-snug text-ink-soft">{r.title}</p>
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-5 text-xs text-ink-faint">
+          Butter per 100 g of flour, measured from the published ingredients.
+        </p>
+      </div>
+    </section>
   );
 }
 

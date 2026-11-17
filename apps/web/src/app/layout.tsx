@@ -55,20 +55,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 prerender a route that reads it outside a boundary -- it fails
                 the build on /_not-found, not just here. The fallback reserves
                 the same height so the header does not jump when it resolves. */}
-            <nav className="flex min-h-[2.5rem] items-center gap-3">
+            {/* Pills, not bare links. On an opaque header these would read as
+                navigation on their own; on the sprinkled background they read
+                as text floating over a pattern until the cursor finds them. */}
+            <nav className="flex min-h-[2.5rem] items-center gap-2">
               <Suspense fallback={<span className="h-10" aria-hidden />}>
               <Show when="signed-in">
                 {/* Secondary to the task on the home page, deliberately. */}
-                <Link
-                  href="/recipes"
-                  className="rounded-full px-3 py-2 text-sm font-medium hover:bg-cream-deep"
-                >
+                <Link href="/recipes" className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep">
                   All recipes
                 </Link>
-                <Link
-                  href="/saved"
-                  className="rounded-full px-3 py-2 text-sm font-medium hover:bg-cream-deep"
-                >
+                <Link href="/saved" className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep">
                   Saved
                 </Link>
                 <UserButton />
@@ -78,7 +75,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <SignInButton mode="modal">
                   <button
                     type="button"
-                    className="rounded-full px-4 py-2 text-sm font-medium hover:bg-cream-deep"
+                    className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep"
                   >
                     Sign in
                   </button>
