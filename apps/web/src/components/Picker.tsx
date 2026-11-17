@@ -9,7 +9,8 @@ import {
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { RangePlot } from "./RangePlot";
+import { WhyThisOne } from "./WhyThisOne";
+import { CompareDialog } from "./CompareDialog";
 
 /**
  * Pick a texture, get one recipe, then browse the rest if you want to.
@@ -47,6 +48,7 @@ function asRankable(r: ScoredRecipe): Rankable {
 
 export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   const [query, setQuery] = useState("");
+  const [compare, setCompare] = useState<ScoredRecipe | null>(null);
   // Clerk Core 3 removed <SignedIn>/<SignedOut>; its replacement <Show> is an
   // async server component, so a client component asks the hook instead.
   // isLoaded matters: without it the sign-up pitch flashes for a signed-in
@@ -110,7 +112,13 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       <Reading query={query} interpretation={interpretation} />
 
       {best && (
-        <Recommendation recipe={best} want={want} all={recipes} query={query} />
+        <Recommendation
+          recipe={best}
+          want={want}
+          all={recipes}
+          query={query}
+          interpretation={interpretation}
+        />
       )}
       </>
       )}
@@ -124,12 +132,14 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((r) => (
               <li key={r.id}>
-                <Card recipe={r} />
+                <Card recipe={r} onOpen={() => setCompare(r)} />
               </li>
             ))}
           </ul>
         </section>
       )}
+
+      <CompareDialog recipe={compare} all={recipes} onClose={() => setCompare(null)} />
     </div>
   );
 }
@@ -168,7 +178,15 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
         </SignUpButton>
       </div>
 
-      {best && <Recommendation recipe={best} want="chewy" all={recipes} query="chewy" />}
+      {best && (
+        <Recommendation
+          recipe={best}
+          want="chewy"
+          all={recipes}
+          query="chewy"
+          interpretation={demo}
+        />
+      )}
     </div>
   );
 }
@@ -245,6 +263,7 @@ function Recommendation({
   want,
   all,
   query,
+  interpretation,
 }: {
   recipe: ScoredRecipe;
   /** Null when the query was only about effort, e.g. "quick". */
@@ -252,6 +271,8 @@ function Recommendation({
   all: ScoredRecipe[];
   /** Stored with the save: a better reminder than the title alone. */
   query: string;
+  /** Drives which evidence is shown. Null in the signed-out example. */
+  interpretation: Interpretation | null;
 }) {
   const withRatios = all.filter((r) => r.scores.ratios !== null);
   const mine = recipe.scores.ratios;
@@ -302,36 +323,14 @@ function Recommendation({
             {recipe.yield_count !== null && ` · makes ${recipe.yield_count}`}
           </p>
 
-          {mine && (
-            <div className="mt-6">
-              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
-                Why this one, out of {withRatios.length}
-              </h3>
-              <div className="mt-1 divide-y divide-line-soft">
-                <RangePlot
-                  label="Butter per 100 g flour"
-                  hint="more = chewier"
-                  values={withRatios.map((r) => r.scores.ratios!.fatPerFlour)}
-                  picked={mine.fatPerFlour}
-                  format={grams}
-                />
-                <RangePlot
-                  label="Brown sugar"
-                  hint="more = chewier, softer"
-                  values={withRatios.map((r) => r.scores.ratios!.brownShare)}
-                  picked={mine.brownShare}
-                  format={pct}
-                />
-                <RangePlot
-                  label="Sugar per 100 g flour"
-                  hint="more = crispier"
-                  values={withRatios.map((r) => r.scores.ratios!.sugarPerFlour)}
-                  picked={mine.sugarPerFlour}
-                  format={grams}
-                />
-              </div>
-            </div>
-          )}
+          <div className="mt-6">
+            <WhyThisOne
+              recipe={recipe}
+              all={all}
+              interpretation={interpretation}
+              want={want}
+            />
+          </div>
 
           <ul className="mt-5 flex flex-wrap gap-2">
             {recipe.scores.signals.slice(0, 3).map((s) => (
@@ -386,13 +385,13 @@ function Recommendation({
 
 /* -------------------------------------------------------------- the wall -- */
 
-function Card({ recipe }: { recipe: ScoredRecipe }) {
+function Card({ recipe, onOpen }: { recipe: ScoredRecipe; onOpen: () => void }) {
   return (
-    <a
-      href={recipe.source_url}
-      target="_blank"
-      rel="noreferrer"
-      className="group block h-full overflow-hidden rounded-2xl border border-line bg-paper transition-colors hover:border-pink-deep"
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group block h-full w-full overflow-hidden rounded-2xl border border-line bg-paper
+                 text-left transition-colors hover:border-pink-deep"
     >
       {recipe.image_url && (
         <div className="relative aspect-[4/3]">
@@ -419,6 +418,6 @@ function Card({ recipe }: { recipe: ScoredRecipe }) {
           </p>
         )}
       </div>
-    </a>
+    </button>
   );
 }
