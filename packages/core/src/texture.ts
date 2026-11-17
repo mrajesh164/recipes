@@ -113,10 +113,21 @@ export function scoreTexture(input: TextureInput): TextureScores {
   // reads above that baseline.
   const yolkShare = egg > 0 ? (yolk + wholeEgg * 0.36) / egg : 0.36;
 
-  // Ranges observed across chocolate chip cookie recipes. Anything outside
-  // them clamps rather than extrapolating.
-  const fatN = norm(fatRatio, 0.45, 0.95);
-  const sugarN = norm(sugarRatio, 0.55, 1.15);
+  // The 10th-90th percentile of the actual corpus, measured rather than
+  // guessed: 325 recipes across five drop cookies.
+  //
+  // These were 0.45-0.95 and 0.55-1.15, taken from thirteen chocolate chip
+  // cookies. Against the real distribution those ceilings sat at roughly the
+  // 62nd and 51st percentile, so 38% of recipes maxed out the fat score and
+  // half maxed out the sugar score -- above the ceiling the scoring could not
+  // tell 0.95 from 2.30. That is how a recipe sitting in the low third of the
+  // butter range came to win a "chewy" query: its fat score was pinned at
+  // maximum while the plot beside it showed otherwise.
+  //
+  // Re-measure if the corpus changes shape again. They are a property of the
+  // data, not a constant.
+  const fatN = norm(fatRatio, 0.55, 1.54);
+  const sugarN = norm(sugarRatio, 0.82, 1.77);
 
   const melted = method === "melted" ? 1 : 0;
   const creamed = method === "creamed" ? 1 : 0;

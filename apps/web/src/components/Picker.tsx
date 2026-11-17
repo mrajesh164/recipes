@@ -273,12 +273,6 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
             Chewy, cakey, crispy edges, quick, no mixer.
           </li>
           <li>
-            <span className="font-semibold text-ink">
-              It weighs {recipes.length} real recipes.
-            </span>{" "}
-            Every measurement converted to grams, so they can be compared at all.
-          </li>
-          <li>
             <span className="font-semibold text-ink">You get one, and why.</span>{" "}
             Where it sits on butter, sugar and flour against all the others.
           </li>
