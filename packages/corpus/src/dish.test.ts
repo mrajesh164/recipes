@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { classifyDish, titleKeywordsFor, titleIsExcluded } from "./dish.ts";
+import {
+  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie,
+} from "./dish.ts";
 
 test("names the dish a url is about", () => {
   assert.equal(classifyDish("https://x.com/classic-chocolate-chip-cookies-recipe"), "chocolate chip");
@@ -56,4 +58,33 @@ test("and does not fire on words that merely start the same", () => {
   assert.equal(titleIsExcluded("Crunchy Whole Grain Chocolate Chip Cookies"), null);
   assert.equal(titleIsExcluded("Supersized, Super-Soft Chocolate Chip Cookies"), null);
   assert.equal(titleIsExcluded("Best Chocolate Chip Cookies"), null);
+});
+
+test("the instructions get a vote on whether it is a drop cookie", () => {
+  // "Valentine Sugar Cookies" and "Easter Sugar Cookies" say nothing about
+  // shaping in their titles, and both turned out to be rolled, cut and iced
+  // -- a stiffer, drier dough answering a different question.
+  assert.equal(
+    notADropCookie("Chill the dough, then roll out on a floured surface and cut into shapes."),
+    "roll out",
+  );
+  assert.equal(notADropCookie("Cut out the cookies with a cookie cutter."), "cookie cutter");
+  assert.ok(notADropCookie("Press into a 9x13 pan and bake."));
+});
+
+test("rolling dough into balls is still a drop cookie", () => {
+  // The distinction the filter has to get right: this is the normal way to
+  // portion a chocolate chip cookie and must not be read as rolling it out.
+  assert.equal(
+    notADropCookie("Roll the dough into balls and place on the baking sheet."),
+    null,
+  );
+  assert.equal(
+    notADropCookie("Drop by rounded tablespoonfuls onto ungreased baking sheets."),
+    null,
+  );
+  assert.equal(
+    notADropCookie("Scoop the dough into 2-tablespoon balls, roll in cinnamon sugar."),
+    null,
+  );
 });

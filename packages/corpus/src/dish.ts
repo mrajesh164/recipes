@@ -33,6 +33,18 @@ export const NOT_THE_SAME_DISH = [
   "spritz", "shortbread", "biscotti", "macaron", "madeleine", "pinwheel",
   "slice-and-bake", "icebox", "stamp", "crinkle", "no-bake", "wafer",
   "whoopie", "tart", "truffle", "fudge", "brownie", "meringue", "pizzelle",
+  // Things made *of* cookies rather than things that are cookies. The first
+  // pass over the widened corpus pulled in a Sugar Cookie Martini, a
+  // Chocolate Chip Cookie Chocolate Lasagna and a Peach Sugar Cookie Crumble,
+  // all of which published a perfectly valid schema.org Recipe.
+  "martini", "cocktail", "latte", "smoothie", "milkshake", "shake",
+  "lasagna", "crumble", "cobbler", "cluster", "parfait", "trifle",
+  "cheesecake", "sundae", "bark", "dip", "crust", "pudding", "mousse",
+  "cookie-butter", "dough-bites", "edible",
+  // Shaped, finished or portioned some way other than scooped.
+  "rollout", "roll-out", "piped", "iced", "frosted", "glazed", "decorated",
+  "dipped", "stuffed-with", "cookie-cups", "cookie-cup", "in-a-mug", "mug",
+  "pops", "cookie-balls", "cake-mix",
 ];
 
 /** Substitutes the very ingredients the texture scoring reads. */
@@ -146,6 +158,42 @@ export function titleIsExcluded(title: string): string | null {
     // letting it match "barley".
     const stem = plain.replace(/s$/, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (new RegExp(`\\b${stem}(s|es)?\\b`, "i").test(t)) return plain;
+  }
+  return null;
+}
+
+/**
+ * Does the method described actually drop off a spoon?
+ *
+ * The title and the slug are both unreliable here. "Valentine Sugar Cookies"
+ * and "Easter Sugar Cookies" say nothing about shaping, and both turned out to
+ * be rolled, cut and iced -- which is a different dough doing a different job,
+ * stiffer and drier so it holds an edge. Its flour and butter ratio is not
+ * answering the question this corpus asks.
+ *
+ * So the instructions get a vote. These phrases are unambiguous: you do not
+ * reach for a cookie cutter or a rolling pin to make a drop cookie. Rolling
+ * dough *into balls* is still a drop cookie and is deliberately not matched.
+ */
+const NOT_DROPPED = [
+  /\bcookie cutters?\b/i,
+  /\brolling pin\b/i,
+  /\broll (?:the |out )?(?:dough )?out\b/i,
+  /\broll out\b/i,
+  /\bfloured surface\b/i,
+  /\bcut into shapes?\b/i,
+  /\bcut out (?:the )?(?:cookies|shapes)\b/i,
+  /\bpiping bag\b/i,
+  /\bpipe the (?:dough|batter)\b/i,
+  /\bpress(?:ed)? into (?:a |the )?[^.]{0,24}\b(?:pan|dish|tin)\b/i,
+  /\bline (?:a |the )?(?:8|9|13)[- ]?(?:x|by|-inch)/i,
+];
+
+/** Why this is not a drop cookie, or null if nothing says it isn't. */
+export function notADropCookie(instructions: string): string | null {
+  for (const re of NOT_DROPPED) {
+    const m = instructions.match(re);
+    if (m) return m[0].toLowerCase();
   }
   return null;
 }

@@ -252,3 +252,40 @@ test("margarine converts at butter's density", () => {
   assert.equal(r.canonicalName, "margarine");
   assert.equal(r.grams, 227);
 });
+
+test("a hyphenated mixed number is still a mixed number", () => {
+  // Taste of Home's house style. Left alone, the quantity parser reads the
+  // leading "1", the unit parser finds "-1/2 cups" and gives up, and a cup
+  // and a half of butter resolves to nothing at all. It was the single
+  // biggest source of unresolved lines in the corpus.
+  assert.equal(parseIngredient("1-1/2 cups butter, softened").grams, 340.5);
+  assert.equal(parseIngredient("2-1/2 teaspoons ground cinnamon").grams, 6.5);
+});
+
+test("a hyphen that is not a mixed number is left alone", () => {
+  // A fraction has to follow it, so ranges and sizes are untouched.
+  assert.equal(normalizeFractions("bake 10-12 minutes"), "bake 10-12 minutes");
+  assert.equal(normalizeFractions("one 9-inch pan"), "one 9-inch pan");
+});
+
+test("a package weight in parentheses needs no density", () => {
+  assert.equal(parseIngredient("1 package (8 ounces) cream cheese, softened").grams, 226.8);
+  assert.equal(parseIngredient("1 bag (12 ounces) semisweet chocolate chips").grams, 340.2);
+});
+
+test('but "each" in the line means the parenthetical is not the total', () => {
+  // "4 cans (15-1/4 ounces each)" is four times that. Reading it as the total
+  // would be silently light, so it resolves to nothing instead.
+  assert.equal(parseIngredient("4 cans (15-1/4 ounces each) sliced peaches, drained").grams, null);
+});
+
+test("a parenthetical that restates the volume still must not become grams", () => {
+  // The original trap: "(1 1/2 sticks, ...)" is not a weight.
+  const r = parseIngredient("3/4 cup unsalted butter (1 1/2 sticks, melted and cooled slightly)");
+  assert.equal(r.grams, 170.3);
+  assert.equal(r.gramsSource, "converted");
+});
+
+test("cream cheese is not cream", () => {
+  assert.equal(parseIngredient("1 cup cream cheese").canonicalName, "cream cheese");
+});

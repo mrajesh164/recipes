@@ -60,6 +60,16 @@ const VULGAR: Record<string, string> = {
  * "1½" means one and a half, so it becomes "1 1/2" rather than "11/2".
  */
 export function normalizeFractions(input: string): string {
+  // Taste of Home writes mixed numbers with a hyphen: "1-1/2 cups butter",
+  // "2-1/2 teaspoons ground cinnamon". Left alone, parseQuantity reads the
+  // leading "1", the unit parser then finds "-1/2 cups" and gives up, and a
+  // cup and a half of butter resolves to no weight at all. It was the single
+  // biggest source of unresolved lines in the corpus.
+  //
+  // A fraction has to follow the hyphen for this to fire, so a range like
+  // "10-12 minutes" or a "9-inch pan" is left alone.
+  input = input.replace(/(\d)\s*-\s*(\d+\s*\/\s*\d+)/g, "$1 $2");
+
   let out = "";
   for (let i = 0; i < input.length; i++) {
     const ch = input[i]!;
@@ -111,6 +121,7 @@ const GRAMS_PER_CUP: Record<string, number> = {
   // Not milk's 227. Condensed milk is milk with the water boiled off and
   // sugar added, and reading it as milk understates it by a third.
   "condensed milk": 306, "evaporated milk": 252,
+  "cream cheese": 227,
 };
 
 /**
@@ -177,6 +188,7 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   // quietly reported the wrong weight, which is the failure this module
   // exists to prevent.
   [/\bcream of tartar\b/, "cream of tartar"],
+  [/\bcream cheese\b/, "cream cheese"],
   [/\b(heavy |double |whipping )?cream\b/, "cream"],
   [/\byogh?urt\b/, "yogurt"],
   // Both before the plain milk rule, for the same reason as cream of tartar.
@@ -282,7 +294,23 @@ function noteFor(text: string): string | null {
  */
 function statedGrams(text: string): number | null {
   const m = text.match(/\(\s*(\d+(?:\.\d+)?)\s*(?:g|gr|gram|grams)\b/i);
-  return m ? Number(m[1]) : null;
+  if (m) return Number(m[1]);
+
+  // American brands state the package, not the measure: "1 package (8 ounces)
+  // cream cheese", "1 bag (12 ounces) semisweet chocolate chips". The weight
+  // is right there and needs no density.
+  //
+  // Not when the line says "each", though: "4 cans (15-1/4 ounces each)" is
+  // four times that, and reading the parenthetical as the total would be
+  // confidently, silently light -- the exact failure this module is built to
+  // avoid. Better to resolve nothing.
+  if (/\beach\b/i.test(text)) return null;
+  const oz = text.match(/\(\s*(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?)\s*(?:oz|ounces?)\b/i);
+  if (oz) {
+    const q = parseQuantity(oz[1]!.trim());
+    if (q) return round(q.value * 28.3495);
+  }
+  return null;
 }
 
 export function parseIngredient(raw: string): ParsedIngredient {

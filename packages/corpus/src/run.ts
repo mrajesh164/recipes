@@ -16,7 +16,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchAllCached } from "./fetch.ts";
 import { extractRecipe, titleMatches } from "./extract.ts";
-import { classifyDish, titleKeywordsFor, titleIsExcluded, type CorpusRecipe } from "./dish.ts";
+import {
+  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie,
+  type CorpusRecipe,
+} from "./dish.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG = join(HERE, "..");
@@ -107,6 +110,13 @@ const outcomes: Outcome[] = results.map((r) => {
   const banned = titleIsExcluded(recipe.title);
   if (banned) {
     return { url: r.url, ok: false, reason: `title says "${banned}": "${recipe.title}"` };
+  }
+
+  // The title said cookie. Do the instructions describe one that was dropped
+  // off a spoon, or one that was rolled out and cut?
+  const shaped = notADropCookie(recipe.instructionsText);
+  if (shaped) {
+    return { url: r.url, ok: false, reason: `not a drop cookie ("${shaped}"): "${recipe.title}"` };
   }
 
   return { url: r.url, ok: true, recipe: { ...recipe, dishType } };

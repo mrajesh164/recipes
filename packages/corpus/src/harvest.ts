@@ -66,8 +66,26 @@ const SOURCES: Source[] = [
   { name: "Inspired Taste", sitemap: "https://www.inspiredtaste.net/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
   { name: "Epicurious", sitemap: "https://www.epicurious.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: EXCLUDE },
 
+  // Second batch, probed 17 Nov after the first twelve came up short of 200.
+  { name: "Bake or Break", sitemap: "https://bakeorbreak.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Tasty", sitemap: "https://tasty.co/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Land O'Lakes", sitemap: "https://www.landolakes.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "My Baking Addiction", sitemap: "https://www.mybakingaddiction.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Joy the Baker", sitemap: "https://joythebaker.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Live Well Bake Often", sitemap: "https://www.livewellbakeoften.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Baked by Rachel", sitemap: "https://www.bakedbyrachel.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Barefeet in the Kitchen", sitemap: "https://barefeetinthekitchen.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Spend With Pennies", sitemap: "https://www.spendwithpennies.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Tutti Dolci", sitemap: "https://tutti-dolci.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Betty Crocker", sitemap: "https://www.bettycrocker.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Pillsbury", sitemap: "https://www.pillsbury.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Bon Appetit", sitemap: "https://www.bonappetit.com/sitemap.xml", include: ["/recipe", "cookie"], exclude: EXCLUDE },
+  { name: "Salty Side Dish", sitemap: "https://www.saltysidedish.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+
   // Probed and rejected, kept here so the next person does not re-probe them:
   //   403 to every request, full browser headers included --
+  //     davidlebovitz, beyondfrosting, completelydelicious, thestayathomechef,
+  //     shugarysweets, cookiedoughandovenmitt, ghirardelli (406),
   //     allrecipes, seriouseats, simplyrecipes, sallysbakingaddiction,
   //     preppykitchen, budgetbytes, cookieandkate, sugarspunrun,
   //     joyfoodsunshine, bakingamoment, crazyforcrust, halfbakedharvest,
