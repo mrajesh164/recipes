@@ -10,7 +10,9 @@ set -e
 #   sb_secret_…             Supabase secret key
 #   eyJ….….                 a JWT, which is what a legacy service_role key is
 #   -----BEGIN … PRIVATE KEY
-SECRET_RE='(sk_live_[A-Za-z0-9]|pk_live_[A-Za-z0-9]|sb_secret_[A-Za-z0-9]|eyJ[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.|-----BEGIN [A-Z ]*PRIVATE KEY)'
+#   sk_test_…               Clerk/Stripe *development* secret keys. Still
+#                           secrets: lower blast radius, same bad habit.
+SECRET_RE='(sk_live_[A-Za-z0-9]|sk_test_[A-Za-z0-9]|pk_live_[A-Za-z0-9]|sb_secret_[A-Za-z0-9]|eyJ[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.|-----BEGIN [A-Z ]*PRIVATE KEY)'
 
 echo "pre-push: scanning for secrets..."
 if git grep -nIE "$SECRET_RE" -- ':!*.example' ':!.githooks/*' 2>/dev/null; then

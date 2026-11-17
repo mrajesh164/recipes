@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { SignUpButton, useAuth } from "@clerk/nextjs";
+import { SaveButton } from "./SaveButton";
 import {
   interpret, matchScore, dominantTexture,
   type Texture, type Interpretation, type Rankable,
@@ -45,6 +47,11 @@ function asRankable(r: ScoredRecipe): Rankable {
 
 export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   const [query, setQuery] = useState("");
+  // Clerk Core 3 removed <SignedIn>/<SignedOut>; its replacement <Show> is an
+  // async server component, so a client component asks the hook instead.
+  // isLoaded matters: without it the sign-up pitch flashes for a signed-in
+  // person on every load.
+  const { isSignedIn, isLoaded } = useAuth();
 
   const interpretation = interpret(query);
   const asked = query.trim().length > 0 && !interpretation.empty;
@@ -63,6 +70,34 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 
   return (
     <div>
+      {/* The task is behind sign-in, as asked. The page around it is not --
+          a visitor still sees what this is and what it has before being
+          asked for an account, which is the difference between a gate and a
+          dead end. */}
+      {isLoaded && !isSignedIn && (
+        <div className="rounded-3xl border-2 border-clay-deep bg-paper p-6 md:p-8">
+          <h2 className="text-xl font-bold tracking-tight">
+            Tell it what you want and it picks one
+          </h2>
+          <p className="mt-2 max-w-prose text-sm text-ink-soft">
+            Describe the cookie you&apos;re after — chewy, cakey, crispy edges,
+            quick, no mixer — and it reads {recipes.length} real recipes and
+            recommends one, showing the ratios behind the choice. Sign up to
+            use it and to save what you find.
+          </p>
+          <SignUpButton mode="modal">
+            <button
+              type="button"
+              className="mt-5 rounded-full bg-clay-deep px-6 py-3 font-semibold text-paper hover:bg-clay"
+            >
+              Sign up to start
+            </button>
+          </SignUpButton>
+        </div>
+      )}
+
+      {isSignedIn && (
+      <>
       <label htmlFor="q" className="block font-semibold">
         What are you after?
       </label>
@@ -98,7 +133,11 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 
       <Reading query={query} interpretation={interpretation} />
 
-      {best && <Recommendation recipe={best} want={want} all={recipes} />}
+      {best && (
+        <Recommendation recipe={best} want={want} all={recipes} query={query} />
+      )}
+      </>
+      )}
 
       {rest.length > 0 && (
         <section className="mt-16">
@@ -194,11 +233,14 @@ function Recommendation({
   recipe,
   want,
   all,
+  query,
 }: {
   recipe: ScoredRecipe;
   /** Null when the query was only about effort, e.g. "quick". */
   want: Texture | null;
   all: ScoredRecipe[];
+  /** Stored with the save: a better reminder than the title alone. */
+  query: string;
 }) {
   const withRatios = all.filter((r) => r.scores.ratios !== null);
   const mine = recipe.scores.ratios;
@@ -238,7 +280,11 @@ function Recommendation({
             </a>
           </h2>
 
-          <p className="mt-2 text-sm text-ink-soft">
+          <div className="mt-4">
+            <SaveButton recipeId={recipe.id} savedFor={query.trim() || undefined} />
+          </div>
+
+          <p className="mt-4 text-sm text-ink-soft">
             {recipe.source_name}
             {recipe.rating !== null && ` · ${recipe.rating}★`}
             {recipe.rating_count !== null && ` (${recipe.rating_count})`}
