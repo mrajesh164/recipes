@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>v2 Plan · The Perfect Batch · Maya Rajesh</title>
-<meta name="description" content="The v2 plan for The Perfect Batch: what v1 gets wrong, what to fix first, and what is deliberately waiting.">
+<meta name="description" content="The v2 plan for The Perfect Batch: what I noticed about v1, what to fix first, and what waits.">
 <style>
   :root {
     --bg: #fdfbf7;
@@ -151,12 +151,13 @@
 
 <header>
   <p class="eyebrow">Project v2 Plan · MPCS 51238 · Autumn 2026</p>
-  <h1>What v2 fixes, and what it waits on</h1>
-  <p class="oneline">v1 takes plain words and returns <strong>one recipe, plus the evidence for why that one</strong>. v2 is about where that answer is still wrong, and what it should cover next.</p>
-</header>
+  <h1>Project v2 plan</h1>
+
+<p class="oneline">v1 takes plain words and returns <strong>one recipe, plus the evidence for why that one</strong>. v2 is about where that answer falls short.</p>
 
 <h2>Where v1 landed</h2>
-<p class="lede">The Perfect Batch exists because searching up several cookie recipes and deciding which measurements to trust is overstimulating. v1 removes the deciding: you type what you want — <em>chewy, oat</em>, or <em>extra crispy peanut butter</em>, or <em>quick, no mixer</em> — and get back a single recipe with the reasons behind it.</p>
+
+<p>The Perfect Batch exists because searching up several cookie recipes and deciding which measurements to trust is overstimulating. v1 removes the deciding: you type what you want &mdash; <em>chewy, oat</em>, or <em>extra crispy peanut butter</em>, or <em>quick, no mixer</em> &mdash; and get back a single recipe with the reasons behind it.</p>
 
 <div class="facts">
   <div class="fact"><b>325</b><span>recipes, harvested automatically from schema.org Recipe JSON-LD. No manual entry.</span></div>
@@ -165,9 +166,7 @@
   <div class="fact"><b>132</b><span>automated tests, on Next.js 16, Supabase with row-level security, Clerk and Vercel.</span></div>
 </div>
 
-<p>The corpus is five dish types: chocolate chip 157, oatmeal 73, peanut butter 55, sugar 30, snickerdoodle 10.</p>
-
-<p>The design decisions v1 already commits to, which v2 builds on rather than revisits: a free-text box instead of preset buttons; one recommendation first and the runners-up after; evidence that adapts to the question asked, so you get effort reasons when you asked about effort and ratio dot plots when you asked about texture; dot plots where every dot is a real recipe; naming a dish filters the candidates rather than reordering them, because a dish is a category, not a dial; text contrast computed against WCAG AA rather than eyeballed; detail always on opaque paper, never on the decorative sprinkled background. The core task stays behind sign-in.</p>
+<p>The corpus is five dish types: chocolate chip 157, oatmeal 73, peanut butter 55, sugar 30, snickerdoodle 10. The core task stays behind sign-in.</p>
 
 <div class="specimen">
   <p class="said">you typed: chewy nutty oat</p>
@@ -177,136 +176,89 @@
   <p class="cap">v1's honesty loop. A search box that says what it failed to understand is more trustworthy than one that silently guesses. Most of what follows is an extension of that principle rather than a departure from it.</p>
 </div>
 
-<h2>What this plan responds to</h2>
-<p>Every limitation below was measured in the v1 build, not guessed at. They are the reason the plan is ordered the way it is: the items that make the numbers <em>wrong</em> come before the items that make the product <em>bigger</em>. A recommendation drawn from a distorted range is worse than a narrow one, because the interface presents it with the same confidence either way.</p>
+<h2>What I noticed about v1 that can be improved</h2>
 
-<h2>What I saw when people used v1</h2>
-<p class="pending">To be filled in — sessions are today</p>
-<p>Two sessions are scheduled for today: a coworker who bakes weekly, and a roommate who bakes occasionally. Nothing is recorded here yet, and nothing below this line is a prediction of what they will do. The slots are the structure I will complete immediately after each session, in their words rather than mine.</p>
+<p class="lede quiet">Four things stood out from using it myself. The plan below is ordered by them.</p>
 
-<div class="slot">
-  <h3>Session 1</h3>
-  <p class="who">Coworker · bakes weekly · has opinions about texture</p>
-  <div class="prompt"><span>What they did first</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they typed into the box, verbatim</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>Where they hesitated</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they said</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they expected that wasn't there</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they did with the evidence — read it, skipped it, or argued with it</span><div class="blank"></div><div class="blank"></div></div>
+<div class="item">
+  <h4>I often don&rsquo;t have the ingredients</h4>
+  <p>A recipe I can&rsquo;t make tonight isn&rsquo;t really a recommendation. v1 asks what texture I want and never asks what is in the cupboard.</p>
 </div>
 
-<div class="slot">
-  <h3>Session 2</h3>
-  <p class="who">Roommate · bakes occasionally · less fluent in ratios</p>
-  <div class="prompt"><span>What they did first</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they typed into the box, verbatim</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>Where they hesitated</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they said</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they expected that wasn't there</span><div class="blank"></div><div class="blank"></div></div>
-  <div class="prompt"><span>What they did with the evidence — read it, skipped it, or argued with it</span><div class="blank"></div><div class="blank"></div></div>
+<div class="item">
+  <h4>I want to see the directions, not just the numbers</h4>
+  <p>The evidence for <em>why this one</em> is the strongest part of v1. The method is still a wall of text on someone else&rsquo;s site, which is where I actually have to go to bake.</p>
 </div>
 
-<p class="quiet"><strong>The priorities in the next section will be re-ordered once those observations exist.</strong> The plan as written is argued from the build and its measured limits, which is the only evidence I have today.</p>
+<div class="item">
+  <h4>Some words don&rsquo;t parse, and I expected more accurate results</h4>
+  <p>The box says what it failed to understand, which is honest, but being told a word was ignored is not the same as being understood. A few of the numbers behind the ranking are off too.</p>
+</div>
+
+<div class="item">
+  <h4>Saving doesn&rsquo;t go anywhere yet</h4>
+  <p>I can save a recipe and the list remembers what I searched for, but nothing uses it. Right now it is a bookmark, not a signal.</p>
+</div>
 
 <h2>The plan</h2>
-<p>Items tagged <span class="tag t-mine">v2 list</span> are the ones I set out to build, carried over from the proposal. Items tagged <span class="tag t-audit">v1 audit</span> came out of reviewing what v1 actually produced once the corpus was real — they were not on the original list, and several of them now outrank it.</p>
 
-<div class="band"><h3>Fix first</h3><em>the answer is currently wrong or expensive</em></div>
+<div class="band"><h3>Fix first</h3><em>the two things I noticed most</em></div>
 
 <div class="item">
-  <h4>A corpus quality gate <span class="tag t-audit">v1 audit</span></h4>
-  <p>The corpus contains things that are not drop cookies: a Dutch baby, a bowl of cookie dough balls, a "Chocolate Chip Cookie Fluff". They pass the classifier and then distort the ranges.</p>
-  <p><b>What it changes:</b> every dot on every plot becomes a thing you could actually bake as a cookie, so the spread you are shown is a real disagreement between bakers rather than a category error.</p>
-  <p><b>The hard part:</b> the gate has to reject on structure, not on title — a Dutch baby looks like a cookie to a keyword match. It needs plausible ratio bounds plus method signals (is it baked in portions?), and anything it rejects has to be visible to me, because a silent filter is the opposite of the honesty loop.</p>
+  <h4>Recipe directions, shown visually</h4>
+  <p>The piece I most want to build. A TA recommended an example I want to take inspiration from: a recipe treated as a structured object you read at a glance rather than a paragraph of steps. Quantities, order of operations, and the points where timing matters become things you find by position instead of by reading.</p>
+  <p><b>Hard part:</b> it still has to carry v1&rsquo;s evidence &mdash; the plots, the reasons, the runners-up &mdash; without turning into a dashboard.</p>
 </div>
 
 <div class="item">
-  <h4>Count oats structurally <span class="tag t-audit">v1 audit</span></h4>
-  <p>Oats are not counted as flour, so the 73 oatmeal recipes read as implausibly fatty. One currently reads 252 g of butter per 100 g of flour.</p>
-  <p><b>What it changes:</b> nearly a quarter of the corpus stops looking like an outlier, and "chewy, oat" — the example query I use everywhere — starts returning a ratio a baker recognises.</p>
-  <p><b>The hard part:</b> this is a judgement call, not a one-liner. Oats do some of flour's structural work but develop no gluten, so they cannot simply be added to the flour total. Whatever fraction I settle on has to be stated in the interface, because it changes the denominator of every number on screen.</p>
-</div>
-
-<div class="item">
-  <h4>The visual representation of a recipe <span class="tag t-mine">v2 list</span></h4>
-  <p>This is the piece I most want to build. The inspiration is a layout I saw posted on X that treats a recipe as a structured object you can read at a glance, rather than a paragraph of steps.</p>
-  <p><b>What it changes:</b> the recommendation stops being a block of text you have to parse while your hands are busy. Quantities, the order of operations, and the points where timing matters become things you can find by position instead of by reading.</p>
-  <p><b>The hard part:</b> a layout tuned for one beautiful recipe still has to carry v1's evidence — the dot plots, the reasons, the runners-up — without becoming a dashboard. And it has to degrade: 20 of the 325 photographs are capped at 600×600 because the source CDN holds nothing larger, so the design cannot assume a large image. The honest version treats the photo as optional furniture, not as the anchor.</p>
-</div>
-
-<div class="item">
-  <h4>Verify the whole thing on a phone <span class="tag t-audit">v1 audit</span></h4>
-  <p>Baking happens in a kitchen, with a phone propped against something, read from a foot away, with one hand free.</p>
-  <p><b>What it changes:</b> it tests the claim the proposal already made. Tap targets, the evidence plots at 390px, and whether the recipe view survives being scrolled with a knuckle.</p>
-  <p><b>The hard part:</b> dot plots are the format most likely to break — they need horizontal room to be readable, and the obvious mobile fallback (a number) throws away the comparison that justified the plot. Done alongside the recipe view, not after it.</p>
-</div>
-
-<div class="item">
-  <h4>Cut the signed-out payload <span class="tag t-audit">v1 audit</span></h4>
-  <p>About 1.1 MB of recipe JSON is serialized into every page load, including for signed-out visitors who only need the single example recommendation.</p>
-  <p><b>What it changes:</b> the first thing a new visitor sees — on kitchen wifi, on a phone — arrives in a fraction of the bytes. The signed-out page needs one recipe and its evidence, not the corpus.</p>
-  <p><b>The hard part:</b> none, really, beyond discipline about what each route is allowed to ship. Which is why it goes first rather than last.</p>
+  <h4>More words understood, and more accurate numbers behind them</h4>
+  <p>Widen the vocabulary, and rank <em>away</em> from a texture rather than only toward one &mdash; &ldquo;not cakey&rdquo; is currently dropped and reported, which is a dead end for a reasonable request.</p>
+  <p>The accuracy half is two known faults: the corpus still contains things that are not drop cookies, including a Dutch baby, which widens every range; and oats are not counted as flour, so the 73 oatmeal recipes read as implausibly fatty &mdash; one says 252 g of butter per 100 g of flour.</p>
+  <p><b>Hard part:</b> oats do some of flour&rsquo;s structural work but develop no gluten, so the fraction is a judgement call, and whatever I choose changes the denominator of every number on screen. It has to be stated in the interface, not hidden in the scoring.</p>
 </div>
 
 <div class="band"><h3>Add next</h3><em>new capability, once the numbers are trustworthy</em></div>
 
 <div class="item">
-  <h4>Rank away from a negated texture <span class="tag t-audit">v1 audit</span></h4>
-  <p>Today "not cakey" is refused: it is dropped and reported as dropped. That is honest, but it is a dead end for a reasonable request.</p>
-  <p><b>What it changes:</b> people describe what they want by ruling things out at least as often as by naming a target. This is the single largest category of input v1 understands and then declines.</p>
-  <p><b>The hard part:</b> the opposite of cakey is two different textures, so inverting the score is wrong — it would pick a denser cookie and a crispier cookie with equal confidence. The plausible route is to treat a negation as an exclusion over the candidate pool rather than a direction in the ranking, and say so in the honesty loop.</p>
+  <h4>Tell it what you have</h4>
+  <p>Enter the ingredients in the cupboard and get back what is actually makeable. This inverts the question v1 asks, so it needs to be a filter on candidates rather than another thing to type into the same box.</p>
+  <p><b>Hard part:</b> deciding what counts as missing. No flour is disqualifying; no vanilla is not. Structural ingredients are requirements, flavourings are preferences, and the interface has to make that distinction visible rather than silently forgiving.</p>
 </div>
 
 <div class="item">
-  <h4>A movable texture control <span class="tag t-mine">v2 list</span></h4>
-  <p><b>What it changes:</b> after you have a recommendation, a slider lets you push one axis and watch the pick move, which is a different act from describing what you want in the first place.</p>
-  <p><b>The hard part:</b> it competes directly with the free-text box, and the plan should say which wins. <b>The text box wins.</b> It is the front door, because it accepts the words people actually have and because the honesty loop depends on there being language to report back on. The slider is an adjustment offered after the answer exists, bounded by the real range of the candidate pool, so it can never ask for a cookie that nobody has baked.</p>
+  <h4>Recommendations from what you&rsquo;ve saved</h4>
+  <p>Saves already store the words that were typed when the recipe was kept, so the signal exists and is unused. Give Save a purpose: the saved set becomes a starting point for the next recommendation.</p>
+  <p><b>Hard part:</b> the reasons panel has to say that a pick came from the saved set, or the app starts making decisions it cannot explain &mdash; which is the opposite of what v1 is for.</p>
 </div>
 
 <div class="item">
-  <h4>Other baked goods, beyond cookies <span class="tag t-mine">v2 list</span></h4>
-  <p><b>What it changes:</b> the tool stops being a cookie tool. The problem it solves is not specific to cookies, and neither is the overwhelm.</p>
-  <p><b>The hard part:</b> per gram of flour stops being comparable across categories. A brownie and a scone are not on the same butter scale, so a single pooled range becomes meaningless. Comparison pools have to become per-category, which means every range, every dot plot and every texture heuristic is scoped to a category — and the interface has to make clear which pool a dot plot is drawn from. The quality gate above is the prerequisite: widening the corpus before the gate exists multiplies the Dutch baby problem.</p>
+  <h4>A movable texture control</h4>
+  <p>A slider for chewy-to-crispy, so a result can be nudged without retyping. <b>The free-text box still wins the front door</b> &mdash; it is the thing that makes this app itself, and two equal ways in would weaken both. The slider belongs after the answer, as an adjustment.</p>
+  <p><b>Hard part:</b> its range has to be the real spread of the candidates, not 0 to 100, or it promises precision the corpus cannot supply.</p>
 </div>
 
 <div class="item">
-  <h4>Recommendations based on what you've saved <span class="tag t-mine">v2 list</span></h4>
-  <p><b>What it changes:</b> the saved collection stops being an archive and starts being an input. If your saves lean chewy and low-effort, the default pick can lean that way before you type anything.</p>
-  <p><b>The hard part:</b> it quietly undermines the evidence. v1's recommendation can always be explained by the numbers on screen; a personalised one is partly explained by your history, which is off screen. The reasons panel has to be able to say "ranked up because you saved two recipes like this" or the personalisation is a silent guess.</p>
+  <h4>Other baked goods</h4>
+  <p>Brownies, muffins, banana bread. The harvesting already generalises; the scoring does not.</p>
+  <p><b>Hard part:</b> per gram of flour stops being comparable across categories &mdash; a brownie is not a cookie with different numbers. Comparison pools have to become per-category, which is the rule the dish filter already follows.</p>
 </div>
+
+<div class="band"><h3>Waiting</h3><em>wanted, but not yet</em></div>
 
 <div class="item">
-  <h4>Enter the ingredients you already have <span class="tag t-mine">v2 list</span></h4>
-  <p><b>What it changes:</b> a different entry point for a real moment — butter, oats and no brown sugar, and the question is what can be made rather than what is best.</p>
-  <p><b>The hard part:</b> it is a constraint, not a preference, and the two do not rank the same way. Missing a decoration is survivable; missing a leavener is not. That needs a notion of which ingredients are structural, which the per-gram-of-flour model has the beginnings of but does not encode. The failure case matters more than the success case: telling someone what they are one ingredient short of is more useful than silence.</p>
-</div>
-
-<div class="band"><h3>Deliberately waiting</h3><em>wanted, but the cost lands in the wrong place right now</em></div>
-
-<div class="item">
-  <h4>Live search beyond the fixed corpus <span class="tag t-mine">v2 list</span></h4>
-  <p><b>What it changes:</b> the answer stops being bounded by 325 recipes.</p>
-  <p><b>Why it waits:</b> it means trusting arbitrary pages' structured data at request time, and losing the 94% conversion guarantee that makes any of this comparable. A page fetched live might convert at 40%, and a half-converted recipe placed on a dot plot is a wrong number presented in a trustworthy format. Until the interface can show a candidate as partially understood without that looking like a bug, a curated corpus is the more honest product.</p>
-</div>
-
-<div class="item">
-  <h4>Validating the texture weights <span class="tag t-audit">v1 audit</span></h4>
-  <p><b>What it changes:</b> texture scoring is an explicit heuristic, not a measurement, and the app says so. Its weights are hand-set, and nothing checks them against how the cookies actually turn out.</p>
-  <p><b>Why it waits:</b> the only real validation is baking, which is weeks of oven time rather than a sprint item. The interim position is the one v1 already takes: label the heuristic as a heuristic, in the interface, where the person making the decision can see it.</p>
-</div>
-
-<div class="note">
-  <p><b>Not on the table.</b> The core task stays behind sign-in. Saving what you bake is the feature the whole collection idea rests on, and an account is what makes it yours. The fix for the signed-out experience is a cheaper, better example recommendation — not an open door.</p>
+  <h4>Live search beyond the corpus</h4>
+  <p>Searching the whole web at request time instead of a fixed set of 325.</p>
+  <p><b>Why it waits:</b> every number in this app rests on 94% of ingredient lines converting to grams, measured over a corpus I harvested and checked. Trusting an arbitrary page&rsquo;s structured data at request time gives that up, and a recommendation with unverified measurements behind it is worse than a smaller library.</p>
 </div>
 
 <h2>What success looks like for v2</h2>
+
 <table class="wins">
-  <tr><td>The numbers hold up</td><td><span>No recipe in the corpus reads as implausible to a baker who knows ratios. The 252 g butter per 100 g flour reading is gone, and nothing like a Dutch baby is in the pool.</span></td></tr>
-  <tr><td>More than cookies</td><td><span>At least one more category, with its own comparison pool, and an interface that makes the pool boundary visible rather than hiding it.</span></td></tr>
-  <tr><td>Fewer refusals</td><td><span>A smaller share of typed queries comes back partly dropped — negation in particular stops being a dead end.</span></td></tr>
-  <tr><td>Readable in a kitchen</td><td><span>The recipe view can be followed on a phone at arm's length, with one hand, without pinching.</span></td></tr>
-  <tr><td>Still honest</td><td><span>Every ranking decision, including the personalised ones, can be explained by something visible on the screen.</span></td></tr>
-  <tr><td>Checked against people</td><td><span>The two sessions above are written up, and this page's priority order is revised in public rather than quietly.</span></td></tr>
+  <tr><td>Readable in a kitchen</td><td><span>The directions can be followed on a phone at arm&rsquo;s length, with one hand, without pinching.</span></td></tr>
+  <tr><td>Makeable</td><td><span>I can say what is in the cupboard and get back something I can bake tonight.</span></td></tr>
+  <tr><td>Saving earns its place</td><td><span>What I have kept changes what I am shown next, and the app says when it did.</span></td></tr>
+  <tr><td>Better numbers</td><td><span>No recipe reads as implausible to a baker who knows ratios. The 252 g reading is gone, and nothing like a Dutch baby is in the pool.</span></td></tr>
+  <tr><td>Still honest</td><td><span>Every ranking decision can be explained by something visible on the screen.</span></td></tr>
 </table>
 
 <footer>
