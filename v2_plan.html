@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v2 Plan · The Perfect Batch · Maya Rajesh</title>
+<meta name="description" content="The v2 plan for The Perfect Batch: what v1 gets wrong, what to fix first, and what is deliberately waiting.">
+<style>
+  :root {
+    --bg: #fdfbf7;
+    --panel: #ffffff;
+    --ink: #22201d;
+    --ink-soft: #5c5650;
+    --ink-faint: #6f6860;
+    --line: #e7e1d7;
+    --accent: #9c4a1a;
+    --accent-soft: #fbf0e7;
+    --pick: #2f6b4f;
+    --pick-soft: #ecf4ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1917; --panel: #232020; --ink: #f2eee8; --ink-soft: #b9b2a8;
+      --ink-faint: #9d958a; --line: #37322e; --accent: #e0905c; --accent-soft: #2d2118;
+      --pick: #83c3a0; --pick-soft: #1d2823;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 22px 100px; background: var(--bg); color: var(--ink);
+    font: 17px/1.65 ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--accent); }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85em;
+    background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 4px;
+  }
+
+  header { padding: 72px 0 8px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600; margin: 0 0 14px;
+  }
+  h1 {
+    font-size: 40px; line-height: 1.12; letter-spacing: -.025em;
+    margin: 0 0 18px; max-width: 16ch;
+  }
+  .oneline {
+    font-size: 24px; line-height: 1.45; color: var(--ink); margin: 0;
+    border-left: 3px solid var(--accent); padding-left: 20px;
+    letter-spacing: -.01em;
+  }
+  .oneline strong { font-weight: 700; }
+
+  h2 {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600;
+    margin: 64px 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+  }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  .quiet { color: var(--ink-soft); }
+  ul { margin: 0 0 14px; padding-left: 20px; }
+  li { margin-bottom: 7px; }
+  .lede { font-size: 18.5px; }
+
+  /* numbers from v1 */
+  .facts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 22px 0 18px; }
+  .fact { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .fact b { display: block; font-size: 26px; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 6px; }
+  .fact span { display: block; font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
+
+  /* UI specimen */
+  .specimen {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 22px 0; font-size: 15.5px;
+  }
+  .specimen .said { color: var(--ink); font-weight: 600; margin: 0 0 10px; }
+  .specimen .read { color: var(--pick); margin: 0 0 4px; }
+  .specimen .dropped { color: var(--ink-soft); margin: 0; }
+  .specimen .cap { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-faint); }
+
+  /* worksheet slots */
+  .pending {
+    display: inline-block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    font-weight: 700; color: var(--accent); background: var(--accent-soft);
+    border-radius: 999px; padding: 4px 10px; margin-bottom: 14px;
+  }
+  .slot {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 18px 18px 8px;
+    margin: 0 0 16px; background: transparent;
+  }
+  .slot h3 { margin: 0 0 2px; font-size: 17px; }
+  .slot .who { margin: 0 0 14px; font-size: 14px; color: var(--ink-faint); }
+  .prompt { margin: 0 0 14px; }
+  .prompt span {
+    display: block; font-size: 12px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600; margin-bottom: 6px;
+  }
+  .blank { height: 1.7em; border-bottom: 1px dashed var(--line); }
+  .blank + .blank { margin-top: 2px; }
+
+  /* plan */
+  .band {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;
+    margin: 40px 0 6px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  .band h3 { margin: 0; font-size: 20px; letter-spacing: -.015em; }
+  .band em { font-style: normal; font-size: 14px; color: var(--ink-faint); }
+  .item { padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .item:last-child { border-bottom: 0; }
+  .item h4 { margin: 0 0 8px; font-size: 16.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .tag {
+    font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+    border-radius: 999px; padding: 3px 8px; white-space: nowrap;
+  }
+  .t-mine { color: var(--accent); background: var(--accent-soft); }
+  .t-audit { color: var(--pick); background: var(--pick-soft); }
+  .item p { margin: 0 0 7px; font-size: 15.5px; color: var(--ink-soft); }
+  .item p:last-child { margin-bottom: 0; }
+  .item p b { color: var(--ink); font-weight: 600; }
+
+  .note {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 16px 18px; margin: 22px 0; font-size: 15.5px; color: var(--ink-soft);
+  }
+  .note b { color: var(--ink); }
+
+  /* success */
+  .wins { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  .wins td { padding: 13px 12px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .wins tr:last-child td { border-bottom: 0; }
+  .wins td:first-child { width: 150px; white-space: normal; color: var(--ink-faint); font-weight: 600; font-size: 14px; }
+  .wins span { color: var(--ink-soft); }
+
+  footer { margin-top: 72px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--ink-faint); font-size: 14px; }
+  footer a { text-decoration: none; }
+
+  @media (max-width: 440px) {
+    header { padding-top: 48px; }
+    h1 { font-size: 32px; }
+    .oneline { font-size: 20px; padding-left: 16px; }
+    .wins td:first-child { width: 110px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Project v2 Plan · MPCS 51238 · Autumn 2026</p>
+  <h1>What v2 fixes, and what it waits on</h1>
+  <p class="oneline">v1 takes plain words and returns <strong>one recipe, plus the evidence for why that one</strong>. v2 is about where that answer is still wrong, and what it should cover next.</p>
+</header>
+
+<h2>Where v1 landed</h2>
+<p class="lede">The Perfect Batch exists because searching up several cookie recipes and deciding which measurements to trust is overstimulating. v1 removes the deciding: you type what you want — <em>chewy, oat</em>, or <em>extra crispy peanut butter</em>, or <em>quick, no mixer</em> — and get back a single recipe with the reasons behind it.</p>
+
+<div class="facts">
+  <div class="fact"><b>325</b><span>recipes, harvested automatically from schema.org Recipe JSON-LD. No manual entry.</span></div>
+  <div class="fact"><b>94%</b><span>of ingredient lines convert to grams — 3,396 of 3,632. This is what makes recipes comparable at all.</span></div>
+  <div class="fact"><b>per g flour</b><span>every quantity is expressed per gram of flour, so batch size divides out.</span></div>
+  <div class="fact"><b>132</b><span>automated tests, on Next.js 16, Supabase with row-level security, Clerk and Vercel.</span></div>
+</div>
+
+<p>The corpus is five dish types: chocolate chip 157, oatmeal 73, peanut butter 55, sugar 30, snickerdoodle 10.</p>
+
+<p>The design decisions v1 already commits to, which v2 builds on rather than revisits: a free-text box instead of preset buttons; one recommendation first and the runners-up after; evidence that adapts to the question asked, so you get effort reasons when you asked about effort and ratio dot plots when you asked about texture; dot plots where every dot is a real recipe; naming a dish filters the candidates rather than reordering them, because a dish is a category, not a dial; text contrast computed against WCAG AA rather than eyeballed; detail always on opaque paper, never on the decorative sprinkled background. The core task stays behind sign-in.</p>
+
+<div class="specimen">
+  <p class="said">you typed: chewy nutty oat</p>
+  <p class="read">Reading that as: chewy, oat</p>
+  <p class="dropped">Looking at <strong>73</strong> oatmeal recipes.</p>
+  <p class="dropped">I don't know what <em>nutty</em> means here, so it was ignored.</p>
+  <p class="cap">v1's honesty loop. A search box that says what it failed to understand is more trustworthy than one that silently guesses. Most of what follows is an extension of that principle rather than a departure from it.</p>
+</div>
+
+<h2>What this plan responds to</h2>
+<p>Every limitation below was measured in the v1 build, not guessed at. They are the reason the plan is ordered the way it is: the items that make the numbers <em>wrong</em> come before the items that make the product <em>bigger</em>. A recommendation drawn from a distorted range is worse than a narrow one, because the interface presents it with the same confidence either way.</p>
+
+<h2>What I saw when people used v1</h2>
+<p class="pending">To be filled in — sessions are today</p>
+<p>Two sessions are scheduled for today: a coworker who bakes weekly, and a roommate who bakes occasionally. Nothing is recorded here yet, and nothing below this line is a prediction of what they will do. The slots are the structure I will complete immediately after each session, in their words rather than mine.</p>
+
+<div class="slot">
+  <h3>Session 1</h3>
+  <p class="who">Coworker · bakes weekly · has opinions about texture</p>
+  <div class="prompt"><span>What they did first</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they typed into the box, verbatim</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>Where they hesitated</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they said</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they expected that wasn't there</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they did with the evidence — read it, skipped it, or argued with it</span><div class="blank"></div><div class="blank"></div></div>
+</div>
+
+<div class="slot">
+  <h3>Session 2</h3>
+  <p class="who">Roommate · bakes occasionally · less fluent in ratios</p>
+  <div class="prompt"><span>What they did first</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they typed into the box, verbatim</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>Where they hesitated</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they said</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they expected that wasn't there</span><div class="blank"></div><div class="blank"></div></div>
+  <div class="prompt"><span>What they did with the evidence — read it, skipped it, or argued with it</span><div class="blank"></div><div class="blank"></div></div>
+</div>
+
+<p class="quiet"><strong>The priorities in the next section will be re-ordered once those observations exist.</strong> The plan as written is argued from the build and its measured limits, which is the only evidence I have today.</p>
+
+<h2>The plan</h2>
+<p>Items tagged <span class="tag t-mine">v2 list</span> are the ones I set out to build, carried over from the proposal. Items tagged <span class="tag t-audit">v1 audit</span> came out of reviewing what v1 actually produced once the corpus was real — they were not on the original list, and several of them now outrank it.</p>
+
+<div class="band"><h3>Fix first</h3><em>the answer is currently wrong or expensive</em></div>
+
+<div class="item">
+  <h4>A corpus quality gate <span class="tag t-audit">v1 audit</span></h4>
+  <p>The corpus contains things that are not drop cookies: a Dutch baby, a bowl of cookie dough balls, a "Chocolate Chip Cookie Fluff". They pass the classifier and then distort the ranges.</p>
+  <p><b>What it changes:</b> every dot on every plot becomes a thing you could actually bake as a cookie, so the spread you are shown is a real disagreement between bakers rather than a category error.</p>
+  <p><b>The hard part:</b> the gate has to reject on structure, not on title — a Dutch baby looks like a cookie to a keyword match. It needs plausible ratio bounds plus method signals (is it baked in portions?), and anything it rejects has to be visible to me, because a silent filter is the opposite of the honesty loop.</p>
+</div>
+
+<div class="item">
+  <h4>Count oats structurally <span class="tag t-audit">v1 audit</span></h4>
+  <p>Oats are not counted as flour, so the 73 oatmeal recipes read as implausibly fatty. One currently reads 252 g of butter per 100 g of flour.</p>
+  <p><b>What it changes:</b> nearly a quarter of the corpus stops looking like an outlier, and "chewy, oat" — the example query I use everywhere — starts returning a ratio a baker recognises.</p>
+  <p><b>The hard part:</b> this is a judgement call, not a one-liner. Oats do some of flour's structural work but develop no gluten, so they cannot simply be added to the flour total. Whatever fraction I settle on has to be stated in the interface, because it changes the denominator of every number on screen.</p>
+</div>
+
+<div class="item">
+  <h4>The visual representation of a recipe <span class="tag t-mine">v2 list</span></h4>
+  <p>This is the piece I most want to build. The inspiration is a layout I saw posted on X that treats a recipe as a structured object you can read at a glance, rather than a paragraph of steps.</p>
+  <p><b>What it changes:</b> the recommendation stops being a block of text you have to parse while your hands are busy. Quantities, the order of operations, and the points where timing matters become things you can find by position instead of by reading.</p>
+  <p><b>The hard part:</b> a layout tuned for one beautiful recipe still has to carry v1's evidence — the dot plots, the reasons, the runners-up — without becoming a dashboard. And it has to degrade: 20 of the 325 photographs are capped at 600×600 because the source CDN holds nothing larger, so the design cannot assume a large image. The honest version treats the photo as optional furniture, not as the anchor.</p>
+</div>
+
+<div class="item">
+  <h4>Verify the whole thing on a phone <span class="tag t-audit">v1 audit</span></h4>
+  <p>Baking happens in a kitchen, with a phone propped against something, read from a foot away, with one hand free.</p>
+  <p><b>What it changes:</b> it tests the claim the proposal already made. Tap targets, the evidence plots at 390px, and whether the recipe view survives being scrolled with a knuckle.</p>
+  <p><b>The hard part:</b> dot plots are the format most likely to break — they need horizontal room to be readable, and the obvious mobile fallback (a number) throws away the comparison that justified the plot. Done alongside the recipe view, not after it.</p>
+</div>
+
+<div class="item">
+  <h4>Cut the signed-out payload <span class="tag t-audit">v1 audit</span></h4>
+  <p>About 1.1 MB of recipe JSON is serialized into every page load, including for signed-out visitors who only need the single example recommendation.</p>
+  <p><b>What it changes:</b> the first thing a new visitor sees — on kitchen wifi, on a phone — arrives in a fraction of the bytes. The signed-out page needs one recipe and its evidence, not the corpus.</p>
+  <p><b>The hard part:</b> none, really, beyond discipline about what each route is allowed to ship. Which is why it goes first rather than last.</p>
+</div>
+
+<div class="band"><h3>Add next</h3><em>new capability, once the numbers are trustworthy</em></div>
+
+<div class="item">
+  <h4>Rank away from a negated texture <span class="tag t-audit">v1 audit</span></h4>
+  <p>Today "not cakey" is refused: it is dropped and reported as dropped. That is honest, but it is a dead end for a reasonable request.</p>
+  <p><b>What it changes:</b> people describe what they want by ruling things out at least as often as by naming a target. This is the single largest category of input v1 understands and then declines.</p>
+  <p><b>The hard part:</b> the opposite of cakey is two different textures, so inverting the score is wrong — it would pick a denser cookie and a crispier cookie with equal confidence. The plausible route is to treat a negation as an exclusion over the candidate pool rather than a direction in the ranking, and say so in the honesty loop.</p>
+</div>
+
+<div class="item">
+  <h4>A movable texture control <span class="tag t-mine">v2 list</span></h4>
+  <p><b>What it changes:</b> after you have a recommendation, a slider lets you push one axis and watch the pick move, which is a different act from describing what you want in the first place.</p>
+  <p><b>The hard part:</b> it competes directly with the free-text box, and the plan should say which wins. <b>The text box wins.</b> It is the front door, because it accepts the words people actually have and because the honesty loop depends on there being language to report back on. The slider is an adjustment offered after the answer exists, bounded by the real range of the candidate pool, so it can never ask for a cookie that nobody has baked.</p>
+</div>
+
+<div class="item">
+  <h4>Other baked goods, beyond cookies <span class="tag t-mine">v2 list</span></h4>
+  <p><b>What it changes:</b> the tool stops being a cookie tool. The problem it solves is not specific to cookies, and neither is the overwhelm.</p>
+  <p><b>The hard part:</b> per gram of flour stops being comparable across categories. A brownie and a scone are not on the same butter scale, so a single pooled range becomes meaningless. Comparison pools have to become per-category, which means every range, every dot plot and every texture heuristic is scoped to a category — and the interface has to make clear which pool a dot plot is drawn from. The quality gate above is the prerequisite: widening the corpus before the gate exists multiplies the Dutch baby problem.</p>
+</div>
+
+<div class="item">
+  <h4>Recommendations based on what you've saved <span class="tag t-mine">v2 list</span></h4>
+  <p><b>What it changes:</b> the saved collection stops being an archive and starts being an input. If your saves lean chewy and low-effort, the default pick can lean that way before you type anything.</p>
+  <p><b>The hard part:</b> it quietly undermines the evidence. v1's recommendation can always be explained by the numbers on screen; a personalised one is partly explained by your history, which is off screen. The reasons panel has to be able to say "ranked up because you saved two recipes like this" or the personalisation is a silent guess.</p>
+</div>
+
+<div class="item">
+  <h4>Enter the ingredients you already have <span class="tag t-mine">v2 list</span></h4>
+  <p><b>What it changes:</b> a different entry point for a real moment — butter, oats and no brown sugar, and the question is what can be made rather than what is best.</p>
+  <p><b>The hard part:</b> it is a constraint, not a preference, and the two do not rank the same way. Missing a decoration is survivable; missing a leavener is not. That needs a notion of which ingredients are structural, which the per-gram-of-flour model has the beginnings of but does not encode. The failure case matters more than the success case: telling someone what they are one ingredient short of is more useful than silence.</p>
+</div>
+
+<div class="band"><h3>Deliberately waiting</h3><em>wanted, but the cost lands in the wrong place right now</em></div>
+
+<div class="item">
+  <h4>Live search beyond the fixed corpus <span class="tag t-mine">v2 list</span></h4>
+  <p><b>What it changes:</b> the answer stops being bounded by 325 recipes.</p>
+  <p><b>Why it waits:</b> it means trusting arbitrary pages' structured data at request time, and losing the 94% conversion guarantee that makes any of this comparable. A page fetched live might convert at 40%, and a half-converted recipe placed on a dot plot is a wrong number presented in a trustworthy format. Until the interface can show a candidate as partially understood without that looking like a bug, a curated corpus is the more honest product.</p>
+</div>
+
+<div class="item">
+  <h4>Validating the texture weights <span class="tag t-audit">v1 audit</span></h4>
+  <p><b>What it changes:</b> texture scoring is an explicit heuristic, not a measurement, and the app says so. Its weights are hand-set, and nothing checks them against how the cookies actually turn out.</p>
+  <p><b>Why it waits:</b> the only real validation is baking, which is weeks of oven time rather than a sprint item. The interim position is the one v1 already takes: label the heuristic as a heuristic, in the interface, where the person making the decision can see it.</p>
+</div>
+
+<div class="note">
+  <p><b>Not on the table.</b> The core task stays behind sign-in. Saving what you bake is the feature the whole collection idea rests on, and an account is what makes it yours. The fix for the signed-out experience is a cheaper, better example recommendation — not an open door.</p>
+</div>
+
+<h2>What success looks like for v2</h2>
+<table class="wins">
+  <tr><td>The numbers hold up</td><td><span>No recipe in the corpus reads as implausible to a baker who knows ratios. The 252 g butter per 100 g flour reading is gone, and nothing like a Dutch baby is in the pool.</span></td></tr>
+  <tr><td>More than cookies</td><td><span>At least one more category, with its own comparison pool, and an interface that makes the pool boundary visible rather than hiding it.</span></td></tr>
+  <tr><td>Fewer refusals</td><td><span>A smaller share of typed queries comes back partly dropped — negation in particular stops being a dead end.</span></td></tr>
+  <tr><td>Readable in a kitchen</td><td><span>The recipe view can be followed on a phone at arm's length, with one hand, without pinching.</span></td></tr>
+  <tr><td>Still honest</td><td><span>Every ranking decision, including the personalised ones, can be explained by something visible on the screen.</span></td></tr>
+  <tr><td>Checked against people</td><td><span>The two sessions above are written up, and this page's priority order is revised in public rather than quietly.</span></td></tr>
+</table>
+
+<footer>
+  Maya Rajesh · Design, Build, Ship · MPCS 51238 · Autumn 2026<br>
+  <a href="https://recipes-tan-nine.vercel.app/">recipes-tan-nine.vercel.app</a> · <a href="https://github.com/mrajesh164/recipes">github.com/mrajesh164/recipes</a>
+</footer>
+
+</div>
+</body>
+</html>
