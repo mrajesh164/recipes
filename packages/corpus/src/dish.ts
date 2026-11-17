@@ -186,7 +186,10 @@ const NOT_DROPPED = [
   /\bpiping bag\b/i,
   /\bpipe the (?:dough|batter)\b/i,
   /\bpress(?:ed)? into (?:a |the )?[^.]{0,24}\b(?:pan|dish|tin)\b/i,
-  /\bline (?:a |the )?(?:8|9|13)[- ]?(?:x|by|-inch)/i,
+  // A lined *pan* is a bar recipe. A lined *baking sheet* is every drop
+  // cookie ever written, and a half sheet is 13x18 -- so this has to name the
+  // pan, or it drops the corpus's own Tate's copycat.
+  /\bline (?:a |the )?\d+\s*(?:x|by|×)\s*\d+[- ]?(?:inch )?\s*(?:baking )?(?:pan|dish|tin)\b/i,
 ];
 
 /** Why this is not a drop cookie, or null if nothing says it isn't. */

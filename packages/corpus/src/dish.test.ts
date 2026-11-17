@@ -88,3 +88,10 @@ test("rolling dough into balls is still a drop cookie", () => {
     null,
   );
 });
+
+test("a lined baking sheet is not a lined pan", () => {
+  // A half sheet is 13x18. An earlier version of this rule matched any
+  // "line a 13 x ..." and threw out the corpus's own Tate's copycat.
+  assert.equal(notADropCookie("Line a 13 x 18 inch baking sheet with parchment."), null);
+  assert.ok(notADropCookie("Line a 9 x 13 inch pan with parchment paper."));
+});
