@@ -5,7 +5,7 @@ import Image from "next/image";
 import { SignUpButton, useAuth } from "@clerk/nextjs";
 import { SaveButton } from "./SaveButton";
 import {
-  interpret, matchScore, dominantTexture,
+  interpret, matchScore, dominantTexture, candidatesFor,
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
@@ -27,8 +27,9 @@ import { WhyThisOne } from "./WhyThisOne";
 const EXAMPLES = [
   "chewy",
   "crispy edges, soft middle",
-  "cakey and tall",
-  "quick, no mixer",
+  "extra thick oatmeal",
+  "peanut butter, no mixer",
+  "best snickerdoodle",
 ];
 
 function asRankable(r: ScoredRecipe): Rankable {
@@ -61,8 +62,15 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   const interpretation = interpret(query);
   const asked = query.trim().length > 0 && !interpretation.empty;
 
+  // Naming a dish removes candidates rather than reordering them, so the
+  // filter happens before the ranking and the filtered pool is what every
+  // comparison below is made against. Asking for oatmeal and then being shown
+  // where the pick sits among 325 cookies of five different kinds would be
+  // answering a wider question than the one asked.
+  const pool = candidatesFor(recipes, interpretation);
+
   const ranked = asked
-    ? [...recipes].sort(
+    ? [...pool].sort(
         (a, b) =>
           matchScore(asRankable(b), interpretation) -
           matchScore(asRankable(a), interpretation),
@@ -102,7 +110,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
             // clear the answer too, rather than leaving a stale one behind.
             if (e.target.value === "") setQuery("");
           }}
-          placeholder="chewy, thick, crispy edges, quick…"
+          placeholder="extra chewy oatmeal, crispy edges, quick…"
           autoComplete="off"
           className="w-full rounded-2xl border-2 border-line bg-paper px-5 py-4 text-lg
                      placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
@@ -135,20 +143,25 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         ))}
       </ul>
 
-      <Reading query={query} interpretation={interpretation} count={recipes.length} />
+      <Reading
+        query={query}
+        interpretation={interpretation}
+        count={recipes.length}
+        poolCount={pool.length}
+      />
 
       {best && (
         <Recommendation
           recipe={best}
           want={want}
-          all={recipes}
+          all={pool}
           query={query}
           interpretation={interpretation}
         />
       )}
 
       {asked && ranked.length > 1 && (
-        <CloseMatches matches={ranked.slice(1, 5)} best={best!} all={recipes} />
+        <CloseMatches matches={ranked.slice(1, 5)} best={best!} all={pool} />
       )}
       </>
       )}
@@ -338,11 +351,14 @@ function Reading({
   query,
   interpretation: i,
   count,
+  poolCount,
 }: {
   query: string;
   interpretation: Interpretation;
   /** Corpus size, shown in the empty state. */
   count: number;
+  /** How many recipes survived the dish filter. */
+  poolCount: number;
 }) {
   if (query.trim().length === 0) {
     // Was "Or just scroll. Everything is below." -- written when a grid of
@@ -364,7 +380,9 @@ function Reading({
           I couldn&apos;t read anything in that.
         </p>
         <p className="mt-1 text-sm text-ink-soft">
-          Try chewy, cakey, crispy, thin or fudgy. Or quick, no mixer.
+          Try a texture (chewy, cakey, extra crispy, thin, fudgy), a kind
+          (oatmeal, peanut butter, snickerdoodle) or how much work you want
+          (quick, no mixer).
         </p>
       </div>
     );
@@ -381,6 +399,30 @@ function Reading({
           </span>
         ))}
       </p>
+      {i.dishes.length > 0 && (
+        <p className="mt-1 text-ink-soft">
+          Looking at <span className="font-semibold text-ink">{poolCount}</span>{" "}
+          {i.dishes.join(" and ")} recipes, out of {count}.
+        </p>
+      )}
+
+      {/* A negated word is dropped rather than inverted, so it has to be said
+          out loud -- "not cakey" quietly doing nothing is the same silent
+          failure as a word that was never understood. */}
+      {i.refused.length > 0 && (
+        <p className="mt-1 text-ink-faint">
+          I can rank <span className="italic">toward</span> a texture but not
+          away from one, so{" "}
+          {i.refused.map((w, n) => (
+            <span key={w}>
+              {n > 0 && (n === i.refused.length - 1 ? " and " : ", ")}
+              <span className="italic">not {w}</span>
+            </span>
+          ))}{" "}
+          {i.refused.length === 1 ? "was" : "were"} left out.
+        </p>
+      )}
+
       {i.unrecognised.length > 0 && (
         <p className="mt-1 text-ink-faint">
           I don&apos;t know what{" "}
