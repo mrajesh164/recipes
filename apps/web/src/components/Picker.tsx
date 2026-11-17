@@ -264,9 +264,25 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
   return (
     <div>
       <div className="rounded-3xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
-        <h2 className="text-xl font-bold tracking-tight">
-          Say what you want. Get one recipe, and the reason.
+        <h2 className="text-xl font-bold leading-snug tracking-tight">
+          Every cookie recipe disagrees. This one tells you which to trust.
         </h2>
+        <ol className="mt-4 space-y-2 text-sm text-ink-soft">
+          <li>
+            <span className="font-semibold text-ink">Say how you want them.</span>{" "}
+            Chewy, cakey, crispy edges, quick, no mixer.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">
+              It weighs {recipes.length} real recipes.
+            </span>{" "}
+            Every measurement converted to grams, so they can be compared at all.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">You get one, and why.</span>{" "}
+            Where it sits on butter, sugar and flour against all the others.
+          </li>
+        </ol>
         <SignUpButton mode="modal">
           <button
             type="button"
@@ -277,8 +293,8 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
         </SignUpButton>
       </div>
 
-      <p className="mt-8 text-sm text-ink-soft">
-        Here is what &ldquo;chewy&rdquo; gives you, across {recipes.length} real recipes.
+      <p className="mt-8 text-sm font-medium text-ink-soft">
+        For instance, &ldquo;chewy&rdquo;:
       </p>
 
       {best && (
@@ -288,6 +304,7 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
           all={recipes}
           query="chewy"
           interpretation={demo}
+          compact
         />
       )}
     </div>
@@ -375,6 +392,7 @@ function Recommendation({
   all,
   query,
   interpretation,
+  compact = false,
 }: {
   recipe: ScoredRecipe;
   /** Null when the query was only about effort, e.g. "quick". */
@@ -384,6 +402,8 @@ function Recommendation({
   query: string;
   /** Drives which evidence is shown. Null in the signed-out example. */
   interpretation: Interpretation | null;
+  /** The signed-out example: a preview, not the real thing. */
+  compact?: boolean;
 }) {
   const withRatios = all.filter((r) => r.scores.ratios !== null);
   const mine = recipe.scores.ratios;
@@ -393,26 +413,42 @@ function Recommendation({
 
   return (
     <article className="mt-8 overflow-hidden rounded-3xl border-2 border-clay-deep bg-paper">
-      <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr]">
+      <div
+        className={
+          compact
+            ? "grid gap-0 md:grid-cols-[14rem_minmax(0,1fr)]"
+            : "grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr]"
+        }
+      >
         {recipe.image_url && (
-          <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[22rem]">
+          <div
+            className={
+              compact
+                ? "relative aspect-[4/3] md:aspect-auto md:min-h-[13rem]"
+                : "relative aspect-[4/3] md:aspect-auto md:min-h-[22rem]"
+            }
+          >
             <Image
               src={recipe.image_url}
               alt=""
               fill
-              sizes="(max-width: 768px) 100vw, 40vw"
+              // Must match what it actually renders at, or Next picks a file
+              // too small and the browser upscales it. The compact preview is
+              // a 14rem column; the full card is ~40% of a 64rem page.
+              sizes={compact ? "(max-width: 768px) 100vw, 224px" : "(max-width: 768px) 100vw, 420px"}
+              quality={90}
               className="object-cover"
               priority
             />
           </div>
         )}
 
-        <div className="p-6 md:p-8">
+        <div className={compact ? "p-5" : "p-6 md:p-8"}>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay-deep">
-            Make this one
+            {compact ? "For example" : "Make this one"}
           </p>
 
-          <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
+          <h2 className={compact ? "mt-2 text-lg font-bold leading-tight tracking-tight" : "mt-2 text-2xl font-bold leading-tight tracking-tight"}>
             <a
               href={recipe.source_url}
               target="_blank"
@@ -423,9 +459,11 @@ function Recommendation({
             </a>
           </h2>
 
-          <div className="mt-4">
-            <SaveButton recipeId={recipe.id} savedFor={query.trim() || undefined} />
-          </div>
+          {!compact && (
+            <div className="mt-4">
+              <SaveButton recipeId={recipe.id} savedFor={query.trim() || undefined} />
+            </div>
+          )}
 
           {recipe.dish_type && (
             <p className="mt-3 inline-block rounded-full bg-cream-deep px-3 py-1 text-xs font-medium text-ink-soft">
@@ -446,6 +484,7 @@ function Recommendation({
               all={all}
               interpretation={interpretation}
               want={want}
+              only={compact ? 1 : undefined}
             />
           </div>
 
@@ -472,6 +511,7 @@ function Recommendation({
             </p>
           )}
 
+          {!compact && (
           <details className="mt-6">
             {/* py-3 gets this to a 44px tap target. The proposal's own words:
                 "That rules out small tap targets" -- and a 20px summary in a
@@ -494,6 +534,7 @@ function Recommendation({
               </tbody>
             </table>
           </details>
+          )}
         </div>
       </div>
     </article>

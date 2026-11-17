@@ -23,6 +23,7 @@ export function WhyThisOne({
   interpretation,
   want,
   heading = true,
+  only,
 }: {
   recipe: ScoredRecipe;
   all: ScoredRecipe[];
@@ -30,6 +31,8 @@ export function WhyThisOne({
   interpretation: Interpretation | null;
   want: Texture | null;
   heading?: boolean;
+  /** Show only the first N plots. The signed-out preview shows one. */
+  only?: number;
 }) {
   const prefs = interpretation?.prefs;
   const askedEffort = Boolean(prefs?.quick || prefs?.easy || prefs?.popular);
@@ -63,20 +66,24 @@ export function WhyThisOne({
             picked={mine.fatPerFlour}
             format={grams}
           />
-          <RangePlot
-            label="Brown sugar"
-            hint="more = chewier, softer"
-            values={withRatios.map((r) => r.scores.ratios!.brownShare)}
-            picked={mine.brownShare}
-            format={pct}
-          />
-          <RangePlot
-            label="Sugar per 100 g flour"
-            hint="more = crispier"
-            values={withRatios.map((r) => r.scores.ratios!.sugarPerFlour)}
-            picked={mine.sugarPerFlour}
-            format={grams}
-          />
+          {only === undefined && (
+            <RangePlot
+              label="Brown sugar"
+              hint="more = chewier, softer"
+              values={withRatios.map((r) => r.scores.ratios!.brownShare)}
+              picked={mine.brownShare}
+              format={pct}
+            />
+          )}
+          {only === undefined && (
+            <RangePlot
+              label="Sugar per 100 g flour"
+              hint="more = crispier"
+              values={withRatios.map((r) => r.scores.ratios!.sugarPerFlour)}
+              picked={mine.sugarPerFlour}
+              format={grams}
+            />
+          )}
         </div>
       )}
     </div>
