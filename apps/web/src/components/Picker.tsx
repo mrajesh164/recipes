@@ -47,6 +47,11 @@ function asRankable(r: ScoredRecipe): Rankable {
 }
 
 export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
+  // `draft` is what is in the box; `query` is what has been submitted.
+  // Interpreting every keystroke meant "very cri" flashed "I couldn't read
+  // anything in that" mid-word and the whole page rearranged under the
+  // cursor. Nothing happens now until you finish and press Enter.
+  const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [compare, setCompare] = useState<ScoredRecipe | null>(null);
   // Clerk Core 3 removed <SignedIn>/<SignedOut>; its replacement <Show> is an
@@ -82,23 +87,47 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       <label htmlFor="q" className="block font-semibold">
         What are you after?
       </label>
-      <input
-        id="q"
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="chewy, thick, crispy edges, quick…"
-        autoComplete="off"
-        className="mt-3 w-full rounded-2xl border-2 border-line bg-paper px-5 py-4 text-lg
-                   placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
-      />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setQuery(draft);
+        }}
+        className="mt-3 flex gap-2"
+      >
+        <input
+          id="q"
+          type="search"
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            // Clearing the box (the native ×, or select-all-delete) should
+            // clear the answer too, rather than leaving a stale one behind.
+            if (e.target.value === "") setQuery("");
+          }}
+          placeholder="chewy, thick, crispy edges, quick…"
+          autoComplete="off"
+          className="w-full rounded-2xl border-2 border-line bg-paper px-5 py-4 text-lg
+                     placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={draft.trim() === ""}
+          className="flex-none rounded-2xl bg-clay-deep px-6 font-semibold text-paper
+                     hover:bg-clay disabled:opacity-40"
+        >
+          Find
+        </button>
+      </form>
 
       <ul className="mt-3 flex flex-wrap gap-2">
         {EXAMPLES.map((e) => (
           <li key={e}>
             <button
               type="button"
-              onClick={() => setQuery(e)}
+              onClick={() => {
+                setDraft(e);
+                setQuery(e);
+              }}
               className="rounded-full border border-line bg-paper px-3 py-2 text-xs text-ink-soft
                          hover:border-pink-deep hover:text-ink"
             >
@@ -108,7 +137,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         ))}
       </ul>
 
-      <Reading query={query} interpretation={interpretation} />
+      <Reading query={query} interpretation={interpretation} count={recipes.length} />
 
       {best && (
         <Recommendation
@@ -275,14 +304,22 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
 function Reading({
   query,
   interpretation: i,
+  count,
 }: {
   query: string;
   interpretation: Interpretation;
+  /** Corpus size, shown in the empty state. */
+  count: number;
 }) {
   if (query.trim().length === 0) {
+    // Was "Or just scroll. Everything is below." -- written when a grid of
+    // every recipe sat underneath. Nothing is below any more, so it was
+    // pointing at thin air. The replacement also states the corpus size,
+    // which nothing else on the page does now the grid has gone.
     return (
       <p className="mt-6 text-sm text-ink-soft">
-        Or just scroll. Everything is below.
+        <span className="font-semibold text-ink">{count}</span> recipes in the
+        jar. Say the word and I&apos;ll pick one.
       </p>
     );
   }
