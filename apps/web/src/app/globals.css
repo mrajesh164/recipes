@@ -12,6 +12,11 @@
  * about to be on this page, and photos win every fight with interface colour.
  * The palette's job is to frame them, not to compete.
  *
+ * Text colours are set from measured contrast, not picked by eye: --ink-faint,
+ * --pink-deep and --sage-deep all failed WCAG AA at their original values
+ * (3.60, 2.75 and 4.08 against the grounds they sit on). Re-check with the
+ * audit if any of them change.
+ *
  * No dark mode. A warm chalky cream is the whole character, and the honest
  * dark translation of it is a different design rather than an inverted one --
  * not something to invent at speed. Better to do one thing properly.
@@ -26,13 +31,13 @@
   /* Ink */
   --ink: #1f1b17;
   --ink-soft: #5d554c;
-  --ink-faint: #8a8074;
+  --ink-faint: #797066;
 
   /* Accents, all chalky */
   --pink: #e8b4b8;
-  --pink-deep: #c9838a;
+  --pink-deep: #986368;
   --sage: #9aab96;
-  --sage-deep: #6f8269;
+  --sage-deep: #687a62;
   --clay: #c87f55;
   --clay-deep: #a35f38;
   --butter: #e8c97a;

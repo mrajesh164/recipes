@@ -19,15 +19,6 @@ export default async function Page() {
           <Picker recipes={recipes} />
         </div>
 
-        <footer className="mt-24">
-          <div className="dotted-rule" aria-hidden />
-          {/* Kept short, but kept: the scoring is a heuristic and the page
-              should not imply otherwise. */}
-          <p className="mt-6 max-w-xl text-xs leading-relaxed text-ink-faint">
-            Grams converted from each recipe&apos;s own data. Texture is predicted
-            from baking science, not measured.
-          </p>
-        </footer>
       </main>
     </>
   );

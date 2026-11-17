@@ -150,7 +150,8 @@ function EffortReasons({
             aria-hidden
             className={[
               "mt-[3px] grid h-4 w-4 flex-none place-items-center rounded-full text-[10px] font-bold",
-              r.good ? "bg-sage-deep text-paper" : "bg-cream-deep text-ink-faint",
+              // ink-soft, not ink-faint: faint on cream-deep is 4.11, under AA.
+              r.good ? "bg-sage-deep text-paper" : "bg-cream-deep text-ink-soft",
             ].join(" ")}
           >
             {r.good ? "✓" : "!"}
