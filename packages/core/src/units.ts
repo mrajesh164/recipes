@@ -101,6 +101,16 @@ const GRAMS_PER_CUP: Record<string, number> = {
   "cocoa powder": 84, "chocolate chips": 170, oats: 89, cornstarch: 113,
   honey: 340, molasses: 340, "maple syrup": 312, "peanut butter": 270,
   nuts: 113, raisins: 150,
+  // Added when the corpus widened past chocolate chip. Oatmeal and sugar
+  // cookies bring a different pantry with them.
+  "corn syrup": 312, coconut: 85, "butterscotch chips": 170, "toffee bits": 150,
+  // Margarine is sold as a butter replacement and is packed to the same
+  // volume, so it converts at butter's density. It is not excluded the way a
+  // vegan butter substitute is: it is still a solid fat creamed the same way.
+  margarine: 227,
+  // Not milk's 227. Condensed milk is milk with the water boiled off and
+  // sugar added, and reading it as milk understates it by a third.
+  "condensed milk": 306, "evaporated milk": 252,
 };
 
 /**
@@ -113,6 +123,12 @@ const GRAMS_PER_TSP: Record<string, number> = {
   salt: 6, "kosher salt": 5,
   "vanilla extract": 4, cinnamon: 2.6, yeast: 3, vinegar: 5,
   "espresso powder": 2,
+  // Snickerdoodles and sugar cookies are mostly why the corpus widened, and
+  // both are built on cream of tartar.
+  "cream of tartar": 3,
+  "almond extract": 4,
+  nutmeg: 2.2, cloves: 2.1, ginger: 1.8, allspice: 2, cardamom: 2,
+  "pumpkin pie spice": 2.3,
 };
 
 /** Items counted rather than measured. Grams per one. */
@@ -142,6 +158,9 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bkosher salt\b/, "kosher salt"],
   [/\bsalt\b/, "salt"],
   [/\bvanilla\b/, "vanilla extract"],
+  // Before the nut rule below, which otherwise reads this as 113g/cup of
+  // almonds and returns a confident, wrong number for a teaspoon of extract.
+  [/\balmond extract\b/, "almond extract"],
   [/\bvinegar\b/, "vinegar"],
   [/\bespresso powder\b|\binstant (coffee|espresso)\b/, "espresso powder"],
   [/\bchocolate (chips?|chunks?|morsels?)\b/, "chocolate chips"],
@@ -152,8 +171,17 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\b(vegetable|canola|olive|sunflower) oil\b|\boil\b/, "oil"],
   [/\bbuttermilk\b/, "buttermilk"],
   [/\bsour cream\b/, "sour cream"],
+  // Before the cream rule. "Cream of tartar" is a powdered acid, not a
+  // dairy product: matched as cream it converted at 227g per cup and a
+  // teaspoon came out at 4.7g instead of 3g. Nothing threw -- it just
+  // quietly reported the wrong weight, which is the failure this module
+  // exists to prevent.
+  [/\bcream of tartar\b/, "cream of tartar"],
   [/\b(heavy |double |whipping )?cream\b/, "cream"],
   [/\byogh?urt\b/, "yogurt"],
+  // Both before the plain milk rule, for the same reason as cream of tartar.
+  [/\b(sweetened )?condensed milk\b/, "condensed milk"],
+  [/\bevaporated milk\b/, "evaporated milk"],
   [/\bmilk\b/, "milk"],
   [/\b(rolled |old[- ]fashioned )?oats\b/, "oats"],
   [/\bcorn ?starch\b/, "cornstarch"],
@@ -161,9 +189,20 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bmolasses\b/, "molasses"],
   [/\bmaple syrup\b/, "maple syrup"],
   [/\bcinnamon\b/, "cinnamon"],
+  [/\bnutmeg\b/, "nutmeg"],
+  [/\bcloves?\b/, "cloves"],
+  [/\ballspice\b/, "allspice"],
+  [/\bcardamom\b/, "cardamom"],
+  [/\bpumpkin pie spice\b/, "pumpkin pie spice"],
+  [/\b(ground |fresh |grated )?ginger\b/, "ginger"],
   [/\byeast\b/, "yeast"],
   [/\b(walnuts?|pecans?|almonds?|nuts)\b/, "nuts"],
   [/\braisins?\b/, "raisins"],
+  [/\bbutterscotch chips\b/, "butterscotch chips"],
+  [/\btoffee (bits|pieces)\b/, "toffee bits"],
+  [/\bcoconut\b/, "coconut"],
+  [/\bcorn syrup\b/, "corn syrup"],
+  [/\bmargarine\b/, "margarine"],
   [/\bwater\b/, "water"],
 ];
 

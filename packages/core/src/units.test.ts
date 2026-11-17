@@ -171,3 +171,84 @@ test("softened butter implies creaming", () => {
 test("method hints only come from butter", () => {
   assert.equal(methodHint(parseIngredient("1 cup milk, cold")), null);
 });
+
+// ------------------------------------------- the widened corpus's pantry --
+
+/**
+ * These arrived with the oatmeal, peanut butter, sugar and snickerdoodle
+ * recipes. Two of them were not missing at all -- they already resolved, to
+ * the wrong thing, which is worse.
+ */
+
+test("cream of tartar is not cream", () => {
+  // It is a powdered acid. Matched as cream it converted at 227g per cup and
+  // a teaspoon came back as 4.7g: a plausible number, confidently wrong, and
+  // nothing threw. Snickerdoodles are built on it.
+  const r = parseIngredient("1 teaspoon cream of tartar");
+  assert.equal(r.canonicalName, "cream of tartar");
+  assert.equal(r.grams, 3);
+});
+
+test("heavy cream is still cream", () => {
+  const r = parseIngredient("1 cup heavy cream");
+  assert.equal(r.canonicalName, "cream");
+  assert.equal(r.grams, 227);
+});
+
+test("almond extract is not a nut", () => {
+  // Matched by the walnut/pecan/almond rule, a teaspoon of extract was being
+  // weighed as 113g-per-cup of almonds.
+  const r = parseIngredient("1 teaspoon almond extract");
+  assert.equal(r.canonicalName, "almond extract");
+  assert.equal(r.grams, 4);
+});
+
+test("chopped almonds are still nuts", () => {
+  assert.equal(parseIngredient("1 cup chopped almonds").canonicalName, "nuts");
+});
+
+test("condensed milk is not milk", () => {
+  // Milk with the water boiled off and sugar added. Read as milk it came out
+  // a third light.
+  const r = parseIngredient("1 cup sweetened condensed milk");
+  assert.equal(r.canonicalName, "condensed milk");
+  assert.equal(r.grams, 306);
+});
+
+test("evaporated milk is not milk either", () => {
+  assert.equal(parseIngredient("1 cup evaporated milk").grams, 252);
+});
+
+test("whole milk is still milk", () => {
+  assert.equal(parseIngredient("1 cup whole milk").grams, 227);
+});
+
+test("the spices an oatmeal cookie brings with it", () => {
+  assert.equal(parseIngredient("1/2 teaspoon ground nutmeg").grams, 1.1);
+  assert.equal(parseIngredient("1/4 teaspoon ground cloves").grams, 0.5);
+  assert.equal(parseIngredient("1/2 teaspoon ground ginger").grams, 0.9);
+  assert.equal(parseIngredient("1/4 teaspoon allspice").grams, 0.5);
+  assert.equal(parseIngredient("1/2 teaspoon cardamom").grams, 1);
+  assert.equal(parseIngredient("2 teaspoons pumpkin pie spice").grams, 4.6);
+});
+
+test("ground ginger does not swallow gingerbread", () => {
+  // \bginger\b, so the word has to end there.
+  assert.equal(parseIngredient("2 cups gingerbread crumbs").canonicalName, null);
+});
+
+test("corn syrup, coconut and the chips that are not chocolate", () => {
+  assert.equal(parseIngredient("1/2 cup light corn syrup").grams, 156);
+  assert.equal(parseIngredient("1 cup shredded coconut").grams, 85);
+  assert.equal(parseIngredient("1/2 cup butterscotch chips").grams, 85);
+  assert.equal(parseIngredient("1 cup toffee bits").grams, 150);
+});
+
+test("margarine converts at butter's density", () => {
+  // Sold as a butter replacement and packed to the same volume. It is a solid
+  // fat creamed the same way, so unlike a vegan butter substitute it does not
+  // change the question the ratio is answering.
+  const r = parseIngredient("1 cup margarine");
+  assert.equal(r.canonicalName, "margarine");
+  assert.equal(r.grams, 227);
+});
