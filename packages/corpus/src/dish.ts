@@ -16,6 +16,8 @@
  * cookies, which do not.
  */
 
+import type { ExtractedRecipe } from "./extract.ts";
+
 /**
  * Shared, because the same things disqualify a recipe whichever site it is on.
  * Keeping two lists in step by hand is how Love and Lemons' carrot-oat and
@@ -59,6 +61,18 @@ export const EXCLUDE = [...NOT_THE_SAME_DISH, ...SUBSTITUTES_THE_RATIOS, ...CONF
 
 export type DishType =
   | "chocolate chip" | "oatmeal" | "peanut butter" | "sugar" | "snickerdoodle";
+
+/**
+ * A corpus row: what extract.ts could read off the page, plus which dish we
+ * believe it is.
+ *
+ * It lives here rather than in run.ts because seed.ts needs it too, and
+ * run.ts fetches the entire corpus at import time -- a type is not worth that
+ * risk, even though `import type` is erased before it could happen.
+ */
+export interface CorpusRecipe extends ExtractedRecipe {
+  dishType: DishType;
+}
 
 interface Dish {
   type: DishType;
@@ -123,11 +137,15 @@ export function titleIsExcluded(title: string): string | null {
   const t = title.toLowerCase().replace(/[-_]+/g, " ");
   for (const word of EXCLUDE) {
     const plain = word.replace(/-/g, " ");
-    // Word-ish boundaries, so "bars" does not fire on "barspoon" and
-    // "pie" does not fire on "piece".
-    if (new RegExp(`\\b${plain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(t)) {
-      return plain;
-    }
+    // Boundaries at BOTH ends, with the plural allowed explicitly.
+    //
+    // An open-ended match reads far more than it means to: "tart" fires on
+    // "cream of tartar", and "Snickerdoodles Without Cream of Tartar" is a
+    // real recipe title, not a tart. "pie" fires on "pieces". Anchoring the
+    // end and spelling out the plural keeps "bar" matching "bars" without
+    // letting it match "barley".
+    const stem = plain.replace(/s$/, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${stem}(s|es)?\\b`, "i").test(t)) return plain;
   }
   return null;
 }

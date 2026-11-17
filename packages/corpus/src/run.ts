@@ -2,6 +2,10 @@
  * Fetch every URL in urls.txt, extract it, and write rows ready for seeding.
  *
  *   node --experimental-strip-types packages/corpus/src/run.ts
+ *   node --experimental-strip-types packages/corpus/src/run.ts --refresh
+ *
+ * Pages are cached under out/cache after the first run, so iterating on the
+ * parser does not mean pulling every page down again. --refresh ignores it.
  *
  * Prints a per-site outcome and a parser-health number, which is one of the
  * two things the proposal promised to measure.
@@ -10,17 +14,12 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { fetchAll } from "./fetch.ts";
-import { extractRecipe, titleMatches, type ExtractedRecipe } from "./extract.ts";
-import { classifyDish, titleKeywordsFor, titleIsExcluded, type DishType } from "./dish.ts";
+import { fetchAllCached } from "./fetch.ts";
+import { extractRecipe, titleMatches } from "./extract.ts";
+import { classifyDish, titleKeywordsFor, titleIsExcluded, type CorpusRecipe } from "./dish.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG = join(HERE, "..");
-
-export interface CorpusRecipe extends ExtractedRecipe {
-  /** Which cookie this is. The corpus is mostly, but no longer only, chocolate chip. */
-  dishType: DishType;
-}
 
 type Outcome =
   | { url: string; ok: true; recipe: CorpusRecipe }
@@ -61,7 +60,10 @@ if (urls.length !== requested.length) {
 }
 console.log(`fetching ${urls.length} urls, one at a time...\n`);
 
-const results = await fetchAll(urls);
+// --refresh ignores the on-disk cache and pulls every page down again.
+const results = await fetchAllCached(urls, join(PKG, "out", "cache"), {
+  refresh: process.argv.includes("--refresh"),
+});
 
 /**
  * Keyed on where the request *landed*, not where it was aimed.

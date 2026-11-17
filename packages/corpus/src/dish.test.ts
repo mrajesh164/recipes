@@ -38,6 +38,17 @@ test("a title can disqualify a page the url made look fine", () => {
   assert.equal(titleIsExcluded("Vegan Chocolate Chip Cookies"), "vegan");
 });
 
+test("the exclusion list stops at word boundaries at both ends", () => {
+  // "tart" must not fire on "cream of tartar" -- a snickerdoodle recipe that
+  // advertises leaving it out is a real title, and it is not a tart.
+  assert.equal(titleIsExcluded("Snickerdoodles Without Cream of Tartar"), null);
+  // "pie" must not fire on "pieces".
+  assert.equal(titleIsExcluded("Chocolate Chip Cookies with Toffee Pieces"), null);
+  // but the plural still counts
+  assert.equal(titleIsExcluded("Pumpkin Pies"), "pie");
+  assert.equal(titleIsExcluded("Lemon Bar"), "bars");
+});
+
 test("and does not fire on words that merely start the same", () => {
   // "brown butter" is not a brownie, and these are the real titles in the
   // corpus -- a greedy substring match drops them.

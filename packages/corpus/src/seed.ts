@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
-import type { ExtractedRecipe } from "./extract.ts";
+import type { CorpusRecipe } from "./dish.ts";
 
 const PKG = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -33,7 +33,7 @@ if (!url || !key) {
 
 const db = createClient(url, key, { auth: { persistSession: false } });
 
-const recipes: ExtractedRecipe[] = JSON.parse(
+const recipes: CorpusRecipe[] = JSON.parse(
   readFileSync(join(PKG, "out", "recipes.json"), "utf8"),
 );
 console.log(`seeding ${recipes.length} recipes...\n`);
@@ -52,6 +52,7 @@ for (const r of recipes) {
         source_url: r.sourceUrl,
         source_name: r.sourceName,
         title: r.title,
+        dish_type: r.dishType,
         yield_count: r.yieldCount,
         rating: r.rating,
         rating_count: r.ratingCount,
@@ -100,7 +101,8 @@ for (const r of recipes) {
   ingredientRows += rows.length;
   const withGrams = r.ingredients.filter((i) => i.grams !== null).length;
   console.log(
-    `  ok ${r.title}  (${rows.length} ingredients, ${withGrams} with grams, ${r.method})`,
+    `  ok ${r.title}  (${r.dishType}, ${rows.length} ingredients, ` +
+      `${withGrams} with grams, ${r.method})`,
   );
 }
 
