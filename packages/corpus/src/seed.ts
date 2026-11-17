@@ -118,6 +118,22 @@ for (const r of recipes) {
 // upserts have already succeeded, so the corpus looks seeded and quietly keeps
 // its stale rows. Read the keys, diff them here, delete by id in batches.
 const keep = new Set(recipes.map((r) => r.sourceUrl));
+
+/**
+ * A seed that could not write must not prune.
+ *
+ * The two halves of this script fail independently: if every upsert is
+ * rejected -- a bad key, or a column the migrations have not been applied for
+ * yet -- the cleanup below would still run, and would still cheerfully delete
+ * every row that is not in a corpus it just failed to write. That turns a
+ * recoverable error into an empty table.
+ */
+if (failed > 0 && recipesWritten === 0) {
+  console.error(`\nFAILED: nothing was written, so nothing will be deleted either.`);
+  console.error(`${failed} recipes failed. Fix the cause and re-run.`);
+  process.exit(1);
+}
+
 const { data: existing, error: listErr } = await db
   .from("recipes")
   .select("id, source_url, title");
