@@ -316,10 +316,6 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
             <span className="font-semibold text-ink">Say how you want them.</span>{" "}
             Chewy, cakey, crispy edges, quick, no mixer.
           </li>
-          <li>
-            <span className="font-semibold text-ink">You get one, and why.</span>{" "}
-            Where it sits on butter, sugar and flour against all the others.
-          </li>
         </ol>
         <SignUpButton mode="modal">
           <button
@@ -580,7 +576,7 @@ function Recommendation({
           <div
             className={
               compact
-                ? "relative aspect-[4/3] md:aspect-auto md:min-h-[13rem]"
+                ? "relative aspect-[4/3] md:aspect-auto"
                 : "relative aspect-[4/3] md:aspect-auto md:min-h-[22rem]"
             }
           >
@@ -607,7 +603,7 @@ function Recommendation({
         <div
           className={
             compact
-              ? "p-5 md:h-[13rem] md:overflow-y-auto"
+              ? "p-5"
               : "p-6 md:h-[22rem] md:overflow-y-auto md:p-8"
           }
         >
