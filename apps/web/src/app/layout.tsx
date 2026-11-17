@@ -46,7 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
             <Link
               href="/"
-              className="font-script text-2xl font-bold leading-none text-clay-deep hover:text-clay"
+              className="font-script text-xl font-bold leading-none text-clay-deep hover:text-clay sm:text-2xl"
             >
               The Perfect Batch
             </Link>
@@ -62,10 +62,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Suspense fallback={<span className="h-10" aria-hidden />}>
               <Show when="signed-in">
                 {/* Secondary to the task on the home page, deliberately. */}
-                <Link href="/recipes" className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep">
+                <Link href="/recipes" className="rounded-full border border-line bg-paper whitespace-nowrap px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep sm:px-4">
                   All recipes
                 </Link>
-                <Link href="/saved" className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep">
+                <Link href="/saved" className="rounded-full border border-line bg-paper whitespace-nowrap px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep sm:px-4">
                   Saved
                 </Link>
                 <UserButton />
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <SignInButton mode="modal">
                   <button
                     type="button"
-                    className="rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep"
+                    className="rounded-full border border-line bg-paper whitespace-nowrap px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep sm:px-4"
                   >
                     Sign in
                   </button>
@@ -83,7 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <SignUpButton mode="modal">
                   <button
                     type="button"
-                    className="rounded-full bg-clay-deep px-4 py-2 text-sm font-semibold text-paper hover:bg-clay"
+                    className="whitespace-nowrap rounded-full bg-clay-deep px-3 py-2 text-sm font-semibold text-paper hover:bg-clay sm:px-4"
                   >
                     Sign up
                   </button>
