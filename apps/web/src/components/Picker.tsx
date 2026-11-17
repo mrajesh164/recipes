@@ -265,7 +265,7 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
     <div>
       <div className="rounded-3xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
         <h2 className="text-xl font-bold leading-snug tracking-tight">
-          Every cookie recipe disagrees. This one tells you which to trust.
+          Every cookie recipe is a little different. This helps you find yours.
         </h2>
         <ol className="mt-4 space-y-2 text-sm text-ink-soft">
           <li>
@@ -294,7 +294,7 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
       </div>
 
       <p className="mt-8 text-sm font-medium text-ink-soft">
-        For instance, &ldquo;chewy&rdquo;:
+        For instance, if you say &ldquo;chewy&rdquo;:
       </p>
 
       {best && (
