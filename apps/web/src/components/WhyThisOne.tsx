@@ -56,10 +56,7 @@ export function WhyThisOne({
     <div>
       {heading && (
         <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
-          {label ??
-            (askedEffort && !askedTexture
-              ? "Why this one"
-              : `Why this one, out of ${withRatios.length}`)}
+          {label ?? "Why this one"}
         </h3>
       )}
 

@@ -412,7 +412,7 @@ function Reading({
       {i.dishes.length > 0 && (
         <p className="mt-1 text-ink-soft">
           Looking at <span className="font-semibold text-ink">{poolCount}</span>{" "}
-          {i.dishes.join(" and ")} recipes, out of {count}.
+          {i.dishes.join(" and ")} recipes.
         </p>
       )}
 
