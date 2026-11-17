@@ -159,11 +159,11 @@
 
 <h2>Where v1 landed</h2>
 
-<p>The Perfect Batch exists because searching up several cookie recipes and deciding which measurements to trust is overstimulating. v1 removes the deciding: you type what you want &mdash; <em>chewy, oat</em>, or <em>extra crispy peanut butter</em>, or <em>quick, no mixer</em> &mdash; and get back a single recipe with the reasons behind it.</p>
+<p>The Perfect Batch exists because searching up several cookie recipes and deciding which measurements to trust is overstimulating. v1 removes the deciding: you type what you want and get back a single recipe with the reasons behind it. The box takes plain words, like <em>chewy, oat</em>, or <em>extra crispy peanut butter</em>, or <em>quick, no mixer</em>.</p>
 
 <div class="facts">
   <div class="fact"><b>325</b><span>recipes, harvested automatically from schema.org Recipe JSON-LD. No manual entry.</span></div>
-  <div class="fact"><b>94%</b><span>of ingredient lines convert to grams — 3,396 of 3,632. This is what makes recipes comparable at all.</span></div>
+  <div class="fact"><b>94%</b><span>of ingredient lines convert to grams, 3,396 of 3,632. This is what makes recipes comparable at all.</span></div>
   <div class="fact"><b>per g flour</b><span>every quantity is expressed per gram of flour, so batch size divides out.</span></div>
   <div class="fact"><b>132</b><span>automated tests, on Next.js 16, Supabase with row-level security, Clerk and Vercel.</span></div>
 </div>
@@ -209,15 +209,15 @@
 <div class="item">
   <h4>Recipe directions, shown visually</h4>
   <p>The piece I most want to build. A TA recommended an example I want to take inspiration from: a recipe treated as a structured object you read at a glance rather than a paragraph of steps. Quantities, order of operations, and the points where timing matters become things you find by position instead of by reading.</p>
-  <p><b>Design problem:</b> it still has to carry v1&rsquo;s evidence &mdash; the plots, the reasons, the runners-up &mdash; without turning into a dashboard.</p>
+  <p><b>Design problem:</b> it still has to carry v1&rsquo;s evidence, the plots and the reasons and the runners-up, without turning into a dashboard.</p>
 </div>
 
 <div class="item">
   <h4>More words understood, and more accurate numbers behind them</h4>
-  <p>Widen the vocabulary, and rank <em>away</em> from a texture rather than only toward one &mdash; &ldquo;not cakey&rdquo; is currently dropped and reported, which is a dead end for a reasonable request.</p>
+  <p>Widen the vocabulary, and rank <em>away</em> from a texture rather than only toward one. &ldquo;Not cakey&rdquo; is currently dropped and reported, which is a dead end for a reasonable request.</p>
   <p>The accuracy half is two known faults. A few recipes in the corpus are not really the dish they were filed under, which widens every range they sit in. And oats are not counted as flour, so oatmeal recipes read as fattier than they are.</p>
   <p>This is a design problem before it is an arithmetic one: the plots present a wrong number with exactly the same confidence as a right one, so the interface is quietly vouching for something it has not earned.</p>
-  <p><b>Design problem:</b> oats do some of flour&rsquo;s structural work but develop no gluten, so how much to count is a judgement call &mdash; and whatever I choose changes the denominator of every number on screen. It has to be stated in the interface, not buried in the scoring.</p>
+  <p><b>Design problem:</b> oats do some of flour&rsquo;s structural work but develop no gluten, so how much to count is a judgement call, and whatever I choose changes the denominator of every number on screen. It has to be stated in the interface, not buried in the scoring.</p>
 </div>
 
 <div class="band"><h3>Add next</h3><em>new capability, once the numbers are trustworthy</em></div>
@@ -231,19 +231,19 @@
 <div class="item">
   <h4>Recommendations from what you&rsquo;ve saved</h4>
   <p>Saves already store the words that were typed when the recipe was kept, so the signal exists and is unused. Give Save a purpose: the saved set becomes a starting point for the next recommendation.</p>
-  <p><b>Design problem:</b> the reasons panel has to say that a pick came from the saved set, or the app starts making decisions it cannot explain &mdash; which is the opposite of what v1 is for.</p>
+  <p><b>Design problem:</b> the reasons panel has to say that a pick came from the saved set, or the app starts making decisions it cannot explain, which is the opposite of what v1 is for.</p>
 </div>
 
 <div class="item">
   <h4>A movable texture control</h4>
-  <p>A slider for chewy-to-crispy, so a result can be nudged without retyping. <b>The free-text box still wins the front door</b> &mdash; it is the thing that makes this app itself, and two equal ways in would weaken both. The slider belongs after the answer, as an adjustment.</p>
+  <p>A slider for chewy-to-crispy, so a result can be nudged without retyping. <b>The free-text box still wins the front door.</b> It is the thing that makes this app itself, and two equal ways in would weaken both. The slider belongs after the answer, as an adjustment.</p>
   <p><b>Design problem:</b> its range has to be the real spread of the candidates, not 0 to 100, or it promises precision the corpus cannot supply.</p>
 </div>
 
 <div class="item">
   <h4>Other baked goods</h4>
   <p>Brownies, muffins, banana bread. The harvesting already generalises; the scoring does not.</p>
-  <p><b>Design problem:</b> per gram of flour stops being comparable across categories &mdash; a brownie is not a cookie with different numbers. Comparison pools have to become per-category, and the interface has to show which pool you are looking at &mdash; a dot plot that silently changed what it was comparing would be worse than no plot.</p>
+  <p><b>Design problem:</b> per gram of flour stops being comparable across categories. A brownie is not a cookie with different numbers. Comparison pools have to become per-category, and the interface has to show which pool you are looking at. A dot plot that silently changed what it was comparing would be worse than no plot.</p>
 </div>
 
 <div class="band"><h3>Potential</h3><em>further out</em></div>
