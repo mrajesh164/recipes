@@ -74,22 +74,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           a visitor still sees what this is and what it has before being
           asked for an account, which is the difference between a gate and a
           dead end. */}
-      {isLoaded && !isSignedIn && (
-        <div className="rounded-3xl border-2 border-clay-deep bg-paper p-6 md:p-8">
-          <h2 className="text-xl font-bold tracking-tight">Sign up to find yours</h2>
-          <p className="mt-2 text-sm text-ink-soft">
-            Describe what you want. It picks from {recipes.length} real recipes.
-          </p>
-          <SignUpButton mode="modal">
-            <button
-              type="button"
-              className="mt-5 rounded-full bg-clay-deep px-6 py-3 font-semibold text-paper hover:bg-clay"
-            >
-              Sign up
-            </button>
-          </SignUpButton>
-        </div>
-      )}
+      {isLoaded && !isSignedIn && <Example recipes={recipes} />}
 
       {isSignedIn && (
       <>
@@ -150,6 +135,45 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 }
 
 /**
+ * What a signed-out visitor sees.
+ *
+ * Previously this was a pitch and then a wall of cookie photographs, which
+ * showed that the app has recipes but not what it does with them. The ratios
+ * are the actual product, so they go here: a real recommendation for a real
+ * query, rendered by the same component the signed-in page uses, so the demo
+ * cannot drift from the thing it is demonstrating.
+ */
+function Example({ recipes }: { recipes: ScoredRecipe[] }) {
+  const demo = interpret("chewy");
+  const best = [...recipes].sort(
+    (a, b) => matchScore(asRankable(b), demo) - matchScore(asRankable(a), demo),
+  )[0];
+
+  return (
+    <div>
+      <div className="rounded-3xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
+        <h2 className="text-xl font-bold tracking-tight">
+          Say what you want. Get one recipe, and the reason.
+        </h2>
+        <p className="mt-2 text-sm text-ink-soft">
+          Here is what &ldquo;chewy&rdquo; gives you, across {recipes.length} real recipes.
+        </p>
+        <SignUpButton mode="modal">
+          <button
+            type="button"
+            className="mt-4 rounded-full bg-clay-deep px-6 py-3 font-semibold text-paper hover:bg-clay"
+          >
+            Sign up to try it
+          </button>
+        </SignUpButton>
+      </div>
+
+      {best && <Recommendation recipe={best} want="chewy" all={recipes} query="chewy" />}
+    </div>
+  );
+}
+
+/**
  * What the box understood, said out loud.
  *
  * This is the whole reason a search box is allowed to replace three buttons.
@@ -167,7 +191,7 @@ function Reading({
   if (query.trim().length === 0) {
     return (
       <p className="mt-6 text-sm text-ink-soft">
-        Or just scroll — everything is below.
+        Or just scroll. Everything is below.
       </p>
     );
   }
@@ -179,7 +203,7 @@ function Reading({
           I couldn&apos;t read anything in that.
         </p>
         <p className="mt-1 text-sm text-ink-soft">
-          Try chewy, cakey, crispy, thin or fudgy — or quick, no mixer.
+          Try chewy, cakey, crispy, thin or fudgy. Or quick, no mixer.
         </p>
       </div>
     );
