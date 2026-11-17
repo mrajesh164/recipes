@@ -166,7 +166,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       )}
 
       {asked && ranked.length > 1 && (
-        <CloseMatches matches={ranked.slice(1, 5)} best={best!} all={pool} />
+        <CloseMatches matches={ranked.slice(1, 5)} all={pool} />
       )}
       </>
       )}
@@ -180,19 +180,21 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
  * A grid of every recipe stopped making sense the moment the corpus passed a
  * couple of dozen: scrolling two hundred photographs to find a cookie is the
  * overwhelm this project exists to remove, just with better pictures. So only
- * the near misses are shown, and each says the one way it differs from the
- * pick -- which is the only reason to look at a runner-up at all.
+ * the near misses are shown.
+ *
+ * Each row used to end with the one ratio it differed most on -- "-84 g
+ * sugar", "-62% brown sugar". It was precise and nobody asked for it: a list
+ * of runners-up is scanned, not studied, and four rows of signed arithmetic
+ * read as noise. The same numbers are a click away, in context, as plots.
  *
  * Fixed at four, so the page is the same height whether the corpus holds
  * thirteen recipes or a thousand.
  */
 function CloseMatches({
   matches,
-  best,
   all,
 }: {
   matches: ScoredRecipe[];
-  best: ScoredRecipe;
   all: ScoredRecipe[];
 }) {
   return (
@@ -204,7 +206,10 @@ function CloseMatches({
       <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
         Close behind
       </h2>
-      <ul className="mt-3 divide-y divide-line-soft">
+      {/* On paper, like everything else that carries detail. These rows used
+          to sit straight on the sprinkles, with thumbnails and small grey
+          type competing against a field of coloured dots. */}
+      <ul className="mt-3 divide-y divide-line-soft overflow-hidden rounded-3xl border-2 border-line bg-paper">
         {matches.map((r) => (
           <li key={r.id}>
             {/* Native <details> rather than a dialog: several can be open at
@@ -212,8 +217,8 @@ function CloseMatches({
                 keyboard support and independent toggling with no state. */}
             <details className="group">
               <summary
-                className="flex cursor-pointer list-none items-center gap-4 py-3
-                           [&::-webkit-details-marker]:hidden"
+                className="flex cursor-pointer list-none items-center gap-4 px-4 py-3
+                           hover:bg-cream-deep [&::-webkit-details-marker]:hidden"
               >
                 {r.image_url && (
                   <span className="relative block h-14 w-14 flex-none overflow-hidden rounded-xl">
@@ -230,9 +235,6 @@ function CloseMatches({
                     {r.rating !== null && ` · ${r.rating}★`}
                   </span>
                 </span>
-                <span className="flex-none text-right text-xs text-ink-soft">
-                  {differenceFrom(r, best)}
-                </span>
                 <span
                   aria-hidden
                   className="flex-none text-ink-faint transition-transform group-open:rotate-90"
@@ -241,11 +243,10 @@ function CloseMatches({
                 </span>
               </summary>
 
-              {/* On paper, not on the page. The plots are made of small grey
-                  dots and the background is made of small coloured ones --
-                  read together they are mush. Every other place a plot
-                  appears sits on an opaque card for the same reason. */}
-              <div className="mb-4 ml-[4.5rem] mr-2 rounded-2xl border border-line bg-paper p-5">
+              {/* No card of its own any more: the list around it is already
+                  paper, so a second bordered box inside it was a box in a
+                  box. */}
+              <div className="ml-[4.5rem] mr-4 pb-5">
                 <WhyThisOne recipe={r} all={all} interpretation={null} want={null} heading={false} />
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <a
@@ -265,28 +266,6 @@ function CloseMatches({
       </ul>
     </section>
   );
-}
-
-/**
- * The single most useful thing to say about a runner-up: how it differs from
- * the one being recommended. Picks whichever ratio differs most, so the line
- * is never filler.
- */
-function differenceFrom(r: ScoredRecipe, best: ScoredRecipe): string {
-  const a = r.scores.ratios;
-  const b = best.scores.ratios;
-  if (!a || !b) return "";
-  if (r.method !== best.method && r.method && r.method !== "other") {
-    return `${r.method} butter`;
-  }
-  const diffs: [string, number, string][] = [
-    ["butter", a.fatPerFlour - b.fatPerFlour, `${Math.round(Math.abs(a.fatPerFlour - b.fatPerFlour) * 100)} g`],
-    ["brown sugar", a.brownShare - b.brownShare, `${Math.round(Math.abs(a.brownShare - b.brownShare) * 100)}%`],
-    ["sugar", a.sugarPerFlour - b.sugarPerFlour, `${Math.round(Math.abs(a.sugarPerFlour - b.sugarPerFlour) * 100)} g`],
-  ];
-  const [label, delta, amount] = diffs.sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0]!;
-  if (Math.abs(delta) < 0.02) return "almost identical";
-  return `${delta > 0 ? "+" : "−"}${amount} ${label}`;
 }
 
 /**
