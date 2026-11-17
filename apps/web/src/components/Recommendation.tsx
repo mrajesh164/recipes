@@ -118,12 +118,18 @@ export function Recommendation({
           </p>
 
           <div className="mt-6">
+            {/* The same evidence either way. The preview used to show one plot
+                of the three, and it showed the first one -- butter -- rather
+                than whichever best explained the pick. On a cookie that won
+                "chewy" on melted butter and 79% brown sugar, butter per flour
+                was its weakest reason and the only one a visitor could see.
+                A demo that argues the case less well than the real thing is
+                worse than no demo. */}
             <WhyThisOne
               recipe={recipe}
               all={all}
               interpretation={interpretation}
               want={want}
-              only={compact ? 1 : undefined}
             />
           </div>
 
