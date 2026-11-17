@@ -458,7 +458,18 @@ function Recommendation({
           </div>
         )}
 
-        <div className={compact ? "p-5" : "p-6 md:p-8"}>
+        {/* A fixed viewport at md+, scrolling inside. Opening Ingredients used
+            to add its height to the card -- capping it at 16rem only made the
+            growth smaller, not absent. Now the card is always the height of
+            its photograph and the content scrolls within. Stacked on mobile,
+            where a fixed height would be wrong. */}
+        <div
+          className={
+            compact
+              ? "p-5 md:h-[13rem] md:overflow-y-auto"
+              : "p-6 md:h-[22rem] md:overflow-y-auto md:p-8"
+          }
+        >
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay-deep">
             {compact ? "For example" : "Make this one"}
           </p>
