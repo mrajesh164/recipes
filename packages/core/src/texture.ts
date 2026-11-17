@@ -84,14 +84,64 @@ function gramsOf(ings: ParsedIngredient[], names: string[]): number {
   return total;
 }
 
+/** Fats, each counted at how much of it behaves like butter. */
+function fatEquivalentGrams(ings: ParsedIngredient[]): number {
+  let total = 0;
+  for (const i of ings) {
+    if (i.grams === null || i.canonicalName === null) continue;
+    const weight = FAT_EQUIVALENT[i.canonicalName];
+    if (weight !== undefined) total += i.grams * weight;
+  }
+  return total;
+}
+
 const FLOURS = ["flour", "bread flour", "cake flour", "whole wheat flour"];
-const FATS = ["butter", "shortening", "oil", "peanut butter"];
+
+/**
+ * How much of each fat is actually fat.
+ *
+ * Peanut butter was counted at its full weight, like butter, and that is what
+ * put a recipe on the signed-out page claiming 263 g of butter per 100 g of
+ * flour -- off the end of an axis that stops at 230. Commercial peanut butter
+ * is around half fat by weight; the rest is protein, fibre and sugar, which
+ * behave more like the dry side of the recipe than like shortening. Counting
+ * all 202 g of it as fat makes a peanut butter cookie incomparable with a
+ * butter cookie, and that is how one came to win a "chewy" query against 313
+ * recipes that actually are buttery.
+ *
+ * Butter, oil, shortening and margarine stay at 1. Butter really is only
+ * about 81% fat, but the ratio is read as "butter per 100 g flour" and the
+ * scale below is calibrated in those terms, so butter is the unit rather than
+ * pure fat. The number this produces is butter-equivalent, not lipid.
+ *
+ * Deliberately not reassigning peanut butter's other half to the flour side.
+ * It would arguably be more accurate -- the protein does some of flour's
+ * structural work -- but "arguably" is doing a lot of work in that sentence,
+ * and this file already says it is a heuristic. Halving the fat fixes a
+ * number that was plainly wrong; the rest is a guess about baking chemistry I
+ * cannot check against the corpus.
+ */
+const FAT_EQUIVALENT: Record<string, number> = {
+  butter: 1,
+  margarine: 1,
+  shortening: 1,
+  oil: 1,
+  "peanut butter": 0.5,
+  // Biscoff is about 30% fat; the rest is biscuit, which is to say flour and
+  // sugar that have already been baked once.
+  "cookie butter": 0.3,
+};
+
+// Not here, deliberately: "peanut butter chips" and "chocolate chips". They
+// are inclusions. A cookie studded with peanut butter chips is not a fattier
+// cookie, it is a cookie with sweets in it, and the dough around them is
+// whatever the dough is.
 
 export function scoreTexture(input: TextureInput): TextureScores {
   const { ingredients, method, chillsDough } = input;
 
   const flour = gramsOf(ingredients, FLOURS);
-  const fat = gramsOf(ingredients, FATS);
+  const fat = fatEquivalentGrams(ingredients);
   const brown = gramsOf(ingredients, ["brown sugar"]);
   const white = gramsOf(ingredients, ["sugar", "powdered sugar"]);
   const yolk = gramsOf(ingredients, ["egg yolk"]);
@@ -114,7 +164,7 @@ export function scoreTexture(input: TextureInput): TextureScores {
   const yolkShare = egg > 0 ? (yolk + wholeEgg * 0.36) / egg : 0.36;
 
   // The 10th-90th percentile of the actual corpus, measured rather than
-  // guessed: 325 recipes across five drop cookies.
+  // guessed: 325 recipes across five drop cookies, 313 of which state a ratio.
   //
   // These were 0.45-0.95 and 0.55-1.15, taken from thirteen chocolate chip
   // cookies. Against the real distribution those ceilings sat at roughly the
@@ -124,9 +174,19 @@ export function scoreTexture(input: TextureInput): TextureScores {
   // butter range came to win a "chewy" query: its fat score was pinned at
   // maximum while the plot beside it showed otherwise.
   //
-  // Re-measure if the corpus changes shape again. They are a property of the
-  // data, not a constant.
-  const fatN = norm(fatRatio, 0.55, 1.54);
+  // The fat ceiling then moved again, 1.54 to 1.26, when peanut butter stopped
+  // being counted as pure fat and peanut butter chips, M&Ms and cookie butter
+  // stopped being counted as peanut butter. That is the rule this comment
+  // keeps asking for: the windows are a property of the data, so changing what
+  // goes into the data means measuring them again. The corpus maximum came
+  // down with it, 3.78 to 2.52, and the recipes claiming more than twice their
+  // flour in fat went from 22 to 4 -- the four being genuinely peanut-butter-
+  // heavy recipes with very little flour, which is a real ratio rather than a
+  // parsing artefact.
+  //
+  // The sugar window did not move at all, which is the check that the change
+  // touched only what it was meant to.
+  const fatN = norm(fatRatio, 0.54, 1.26);
   const sugarN = norm(sugarRatio, 0.82, 1.77);
 
   const melted = method === "melted" ? 1 : 0;

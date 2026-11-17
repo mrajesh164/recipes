@@ -129,6 +129,13 @@ const GRAMS_PER_CUP: Record<string, number> = {
   // Added when the corpus widened past chocolate chip. Oatmeal and sugar
   // cookies bring a different pantry with them.
   "corn syrup": 312, coconut: 85, "butterscotch chips": 170, "toffee bits": 150,
+  // Same as the other baking chips.
+  "peanut butter chips": 170,
+  // Not from King Arthur, who do not publish it: derived from a Biscoff jar's
+  // net weight against its volume, so treat it as the least certain number in
+  // this table. It only has to be closer than butter's 227, which is what it
+  // was being converted at.
+  "cookie butter": 250,
   // Margarine is sold as a butter replacement and is packed to the same
   // volume, so it converts at butter's density. It is not excluded the way a
   // vegan butter substitute is: it is still a solid fat creamed the same way.
@@ -196,6 +203,17 @@ const CANONICAL: ReadonlyArray<readonly [RegExp, string]> = [
   [/\b(white|semi-?sweet|bittersweet|dark|milk) chocolate\b/, "chocolate chips"],
   [/\bcocoa\b/, "cocoa powder"],
   [/\b(vegetable |canola |rapeseed )?shortening\b/, "shortening"],
+  // Inclusions that happen to have "peanut butter" in their name. Half a cup
+  // of peanut butter chips, or of M&Ms, or of chopped peanut butter cups, is
+  // candy -- mostly sugar and a chocolate shell. Read as peanut butter they
+  // came to 135 g each, and one recipe with all three of them claimed three
+  // times its own weight in fat.
+  [/\bpeanut butter (chips?|morsels?|baking chips?)\b/, "peanut butter chips"],
+  [/\bpeanut butter (m\s?&\s?m'?s?|cups?)\b/, "chocolate chips"],
+  // Cookie butter is Biscoff: biscuit crumb and sugar with some oil in it,
+  // not a solid fat. The \bbutter\b rule below read it as 113 g of butter,
+  // which doubled one recipe's butter and put it top of the outlier list.
+  [/\b(cookie butter|biscoff|speculoos)\b/, "cookie butter"],
   [/\bpeanut butter\b/, "peanut butter"],
   [/\bbutter\b/, "butter"],
   [/\b(vegetable|canola|olive|sunflower) oil\b|\boil\b/, "oil"],

@@ -127,3 +127,35 @@ test("confidence beats a narrow score win", () => {
   const low = { id: "low", scores: { ...high.scores, chewy: high.scores.chewy + 0.02, confidence: "low" as const } };
   assert.equal(rankFor([low, high], "chewy")[0]!.id, "high");
 });
+
+/* ------------------------------------------------------- fat equivalence */
+
+test("peanut butter counts as half its weight in fat", () => {
+  // Commercial peanut butter is around 50% fat; the rest is protein, fibre
+  // and sugar. Counted whole, it put a recipe on the signed-out page claiming
+  // 263 g of butter per 100 g of flour, on an axis that stops at 230.
+  const withPB = scoreTexture({
+    ingredients: [
+      { raw: "1 cup flour", grams: 120, canonicalName: "flour", quantity: 1, unit: "cup" },
+      { raw: "1 cup peanut butter", grams: 270, canonicalName: "peanut butter", quantity: 1, unit: "cup" },
+    ],
+    method: "creamed",
+    chillsDough: false,
+  });
+  assert.equal(withPB.ratios?.fatPerFlour, 270 * 0.5 / 120);
+});
+
+test("baking chips are not fat at all", () => {
+  const s = scoreTexture({
+    ingredients: [
+      { raw: "1 cup flour", grams: 120, canonicalName: "flour", quantity: 1, unit: "cup" },
+      { raw: "1/2 cup butter", grams: 113, canonicalName: "butter", quantity: 0.5, unit: "cup" },
+      { raw: "1 cup peanut butter chips", grams: 170, canonicalName: "peanut butter chips", quantity: 1, unit: "cup" },
+      { raw: "1 cup chocolate chips", grams: 170, canonicalName: "chocolate chips", quantity: 1, unit: "cup" },
+    ],
+    method: "creamed",
+    chillsDough: false,
+  });
+  // The butter alone. A cookie studded with sweets is not a fattier cookie.
+  assert.equal(s.ratios?.fatPerFlour, 113 / 120);
+});

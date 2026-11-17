@@ -350,3 +350,35 @@ test("dried fruit is not a raisin but weighs like one", () => {
   assert.equal(parseIngredient("1 cup dried cherries").canonicalName, "dried fruit");
   assert.equal(parseIngredient("3/4 cup dried blueberries").grams, 84.8);
 });
+
+/* ------------------------------------------------- things with "butter" or
+   "peanut butter" in the name that are not either one. Each of these was a
+   real row in the corpus inflating a real recipe's fat ratio. ---------- */
+
+test("peanut butter chips are an inclusion, not peanut butter", () => {
+  const r = parseIngredient("1/2 cup peanut butter chips");
+  assert.equal(r.canonicalName, "peanut butter chips");
+  assert.equal(r.grams, 85); // chips, 170 g per cup
+});
+
+test("peanut butter M&Ms and cups are candy", () => {
+  assert.equal(parseIngredient("1/2 cup peanut butter M&Ms").canonicalName, "chocolate chips");
+  assert.equal(
+    parseIngredient("1/2 cup chopped mini peanut butter cups").canonicalName,
+    "chocolate chips",
+  );
+});
+
+test("cookie butter is not butter", () => {
+  // The \bbutter\b rule read this as 113 g of butter, doubling the butter in
+  // Chocolate Oatmeal Biscoff Cookies.
+  const r = parseIngredient("1/2 cup cookie butter");
+  assert.equal(r.canonicalName, "cookie butter");
+  assert.equal(parseIngredient("2 tablespoons Biscoff spread").canonicalName, "cookie butter");
+});
+
+test("the ordering still leaves real butter and peanut butter alone", () => {
+  assert.equal(parseIngredient("1 cup peanut butter").canonicalName, "peanut butter");
+  assert.equal(parseIngredient("1/2 cup unsalted butter, softened").canonicalName, "butter");
+  assert.equal(parseIngredient("1 cup creamy peanut butter").canonicalName, "peanut butter");
+});
