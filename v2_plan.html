@@ -150,10 +150,12 @@
 <div class="wrap">
 
 <header>
-  <p class="eyebrow">Project v2 Plan · MPCS 51238 · Autumn 2026</p>
+  <p class="eyebrow">Project v2 Plan · Design focus · MPCS 51238 · Autumn 2026</p>
   <h1>Project v2 plan</h1>
 
 <p class="oneline">v1 takes plain words and returns <strong>one recipe, plus the evidence for why that one</strong>. v2 builds on that: the directions you actually bake from, the ingredients you already have, and the recipes you&rsquo;ve kept.</p>
+
+<p class="quiet">Every item below is a question about what the person sees and decides, not only about what the app computes. Where the two pull apart, the interface is the thing that has to give way.</p>
 
 <h2>Where v1 landed</h2>
 
@@ -207,14 +209,15 @@
 <div class="item">
   <h4>Recipe directions, shown visually</h4>
   <p>The piece I most want to build. A TA recommended an example I want to take inspiration from: a recipe treated as a structured object you read at a glance rather than a paragraph of steps. Quantities, order of operations, and the points where timing matters become things you find by position instead of by reading.</p>
-  <p><b>Hard part:</b> it still has to carry v1&rsquo;s evidence &mdash; the plots, the reasons, the runners-up &mdash; without turning into a dashboard.</p>
+  <p><b>Design problem:</b> it still has to carry v1&rsquo;s evidence &mdash; the plots, the reasons, the runners-up &mdash; without turning into a dashboard.</p>
 </div>
 
 <div class="item">
   <h4>More words understood, and more accurate numbers behind them</h4>
   <p>Widen the vocabulary, and rank <em>away</em> from a texture rather than only toward one &mdash; &ldquo;not cakey&rdquo; is currently dropped and reported, which is a dead end for a reasonable request.</p>
   <p>The accuracy half is two known faults. A few recipes in the corpus are not really the dish they were filed under, which widens every range they sit in. And oats are not counted as flour, so oatmeal recipes read as fattier than they are.</p>
-  <p><b>Hard part:</b> oats do some of flour&rsquo;s structural work but develop no gluten, so how much to count is a judgement call &mdash; and whatever I choose changes the denominator of every number on screen. It has to be stated in the interface, not buried in the scoring.</p>
+  <p>This is a design problem before it is an arithmetic one: the plots present a wrong number with exactly the same confidence as a right one, so the interface is quietly vouching for something it has not earned.</p>
+  <p><b>Design problem:</b> oats do some of flour&rsquo;s structural work but develop no gluten, so how much to count is a judgement call &mdash; and whatever I choose changes the denominator of every number on screen. It has to be stated in the interface, not buried in the scoring.</p>
 </div>
 
 <div class="band"><h3>Add next</h3><em>new capability, once the numbers are trustworthy</em></div>
@@ -222,25 +225,25 @@
 <div class="item">
   <h4>Tell it what you have</h4>
   <p>Enter the ingredients in the cupboard and get back what is actually makeable. This inverts the question v1 asks, so it needs to be a filter on candidates rather than another thing to type into the same box.</p>
-  <p><b>Hard part:</b> deciding what counts as missing. No flour is disqualifying; no vanilla is not. Structural ingredients are requirements, flavourings are preferences, and the interface has to make that distinction visible rather than silently forgiving.</p>
+  <p><b>Design problem:</b> deciding what counts as missing. No flour is disqualifying; no vanilla is not. Structural ingredients are requirements, flavourings are preferences, and the interface has to make that distinction visible rather than silently forgiving.</p>
 </div>
 
 <div class="item">
   <h4>Recommendations from what you&rsquo;ve saved</h4>
   <p>Saves already store the words that were typed when the recipe was kept, so the signal exists and is unused. Give Save a purpose: the saved set becomes a starting point for the next recommendation.</p>
-  <p><b>Hard part:</b> the reasons panel has to say that a pick came from the saved set, or the app starts making decisions it cannot explain &mdash; which is the opposite of what v1 is for.</p>
+  <p><b>Design problem:</b> the reasons panel has to say that a pick came from the saved set, or the app starts making decisions it cannot explain &mdash; which is the opposite of what v1 is for.</p>
 </div>
 
 <div class="item">
   <h4>A movable texture control</h4>
   <p>A slider for chewy-to-crispy, so a result can be nudged without retyping. <b>The free-text box still wins the front door</b> &mdash; it is the thing that makes this app itself, and two equal ways in would weaken both. The slider belongs after the answer, as an adjustment.</p>
-  <p><b>Hard part:</b> its range has to be the real spread of the candidates, not 0 to 100, or it promises precision the corpus cannot supply.</p>
+  <p><b>Design problem:</b> its range has to be the real spread of the candidates, not 0 to 100, or it promises precision the corpus cannot supply.</p>
 </div>
 
 <div class="item">
   <h4>Other baked goods</h4>
   <p>Brownies, muffins, banana bread. The harvesting already generalises; the scoring does not.</p>
-  <p><b>Hard part:</b> per gram of flour stops being comparable across categories &mdash; a brownie is not a cookie with different numbers. Comparison pools have to become per-category, which is the rule the dish filter already follows.</p>
+  <p><b>Design problem:</b> per gram of flour stops being comparable across categories &mdash; a brownie is not a cookie with different numbers. Comparison pools have to become per-category, and the interface has to show which pool you are looking at &mdash; a dot plot that silently changed what it was comparing would be worse than no plot.</p>
 </div>
 
 <div class="band"><h3>Potential</h3><em>further out</em></div>
