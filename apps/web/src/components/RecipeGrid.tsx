@@ -82,6 +82,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                   {r.title}
                 </h2>
                 <p className="mt-1 text-xs text-ink-faint">
+                  {r.dish_type ? `${r.dish_type} · ` : ""}
                   {r.source_name}
                   {r.rating !== null && ` · ${r.rating}★`}
                 </p>

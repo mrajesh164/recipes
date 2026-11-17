@@ -208,6 +208,7 @@ function CloseMatches({
                   {r.title}
                 </span>
                 <span className="block text-xs text-ink-faint">
+                  {r.dish_type ? `${r.dish_type} · ` : ""}
                   {r.source_name}
                   {r.rating !== null && ` · ${r.rating}★`}
                 </span>
@@ -425,6 +426,12 @@ function Recommendation({
           <div className="mt-4">
             <SaveButton recipeId={recipe.id} savedFor={query.trim() || undefined} />
           </div>
+
+          {recipe.dish_type && (
+            <p className="mt-3 inline-block rounded-full bg-cream-deep px-3 py-1 text-xs font-medium text-ink-soft">
+              {recipe.dish_type}
+            </p>
+          )}
 
           <p className="mt-4 text-sm text-ink-soft">
             {recipe.source_name}

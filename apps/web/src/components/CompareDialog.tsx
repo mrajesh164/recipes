@@ -69,6 +69,7 @@ export function CompareDialog({
                   {recipe.title}
                 </h2>
                 <p className="mt-1 text-sm text-ink-soft">
+                  {recipe.dish_type ? `${recipe.dish_type} · ` : ""}
                   {recipe.source_name}
                   {recipe.rating !== null && ` · ${recipe.rating}★`}
                   {recipe.yield_count !== null && ` · makes ${recipe.yield_count}`}

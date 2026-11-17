@@ -26,6 +26,8 @@ export interface Recipe {
   chills_dough: boolean;
   hand_entered: boolean;
   image_url: string | null;
+  /** Which drop cookie. Null for rows that predate the widening. */
+  dish_type: string | null;
   ingredients: Ingredient[];
 }
 
@@ -75,6 +77,11 @@ export async function getRecipes(): Promise<ScoredRecipe[]> {
   // table -- which would be wrong silently, the worst way to be wrong.
   return (data ?? []).map((r) => {
     const recipe = r as Recipe;
+    // Four sources publish "//host/path" with no scheme. Next treats a leading
+    // // as a local path and refuses to optimise it.
+    if (recipe.image_url?.startsWith("//")) {
+      recipe.image_url = `https:${recipe.image_url}`;
+    }
     return {
       ...recipe,
       scores: scoreTexture({
