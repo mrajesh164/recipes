@@ -16,6 +16,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchAllCached } from "./fetch.ts";
 import { extractRecipe, titleMatches } from "./extract.ts";
+import { upgradeImages } from "./images.ts";
 import {
   classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie, usesAPreparedMix,
   type CorpusRecipe,
@@ -226,9 +227,21 @@ if (unresolved.length) {
   }
 }
 
+// ------------------------------------------------------- photographs --
+
+// Done after the drops, so no request is spent on a recipe that is not going
+// into the corpus.
+const picked = good.map((o) => o.recipe);
+const img = await upgradeImages(picked, join(PKG, "out", "image-originals.json"));
+console.log(
+  `\nphotographs:  ${picked.filter((r) => r.imageUrl).length}/${picked.length} have one` +
+    `, ${img.upgraded} upgraded to the un-cropped original` +
+    (img.checked ? ` (${img.checked} checked this run)` : " (all cached)"),
+);
+
 // ---------------------------------------------------------------- output --
 
 mkdirSync(join(PKG, "out"), { recursive: true });
 const outPath = join(PKG, "out", "recipes.json");
-writeFileSync(outPath, JSON.stringify(good.map((o) => o.recipe), null, 2));
+writeFileSync(outPath, JSON.stringify(picked, null, 2));
 console.log(`\nwrote ${good.length} recipes to ${outPath}`);

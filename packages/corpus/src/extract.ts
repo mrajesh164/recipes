@@ -262,20 +262,79 @@ export function detectMethod(ings: ParsedIngredient[], instructions: string): Me
  * either -- and sites use all three. Google requires the property for recipe
  * rich results, so in practice every page that publishes a Recipe publishes a
  * photograph too.
+ *
+ * It takes the LARGEST, which is the whole point of this function and was the
+ * cause of a visible bug. 211 of the 325 corpus recipes publish an array, and
+ * it is conventionally ordered 1:1, 4:3, 16:9 -- Google asks for several crops
+ * of the same photo. Taking the first meant taking the square thumbnail, often
+ * 480x480, and then rendering it 640px wide in a card. Every one of those
+ * pictures was visibly soft, which is what "blurry pic" was.
+ *
+ * Size comes from the declared width/height when the site publishes an
+ * ImageObject, and from the filename when it does not -- WordPress stamps the
+ * crop into the name as "-1200x800", which 74 of the corpus URLs carry.
  */
-export function imageUrlFrom(v: unknown): string | null {
-  if (typeof v === "string") return v || null;
+interface Sized { url: string; pixels: number }
+
+/** WordPress and friends: "...cookies-480x480.jpg" -> 230400. */
+function pixelsFromUrl(url: string): number {
+  const m = url.match(/[-_](\d{2,4})x(\d{2,4})\.(?:jpe?g|png|webp|avif)(?:\?|$)/i);
+  return m ? Number(m[1]) * Number(m[2]) : 0;
+}
+
+function sizedImages(v: unknown, out: Sized[] = []): Sized[] {
+  if (typeof v === "string") {
+    if (v) out.push({ url: v, pixels: pixelsFromUrl(v) });
+    return out;
+  }
   if (Array.isArray(v)) {
-    for (const item of v) { const u = imageUrlFrom(item); if (u) return u; }
-    return null;
+    for (const item of v) sizedImages(item, out);
+    return out;
   }
   if (v && typeof v === "object") {
     const o = v as Record<string, unknown>;
     for (const k of ["url", "contentUrl"]) {
-      if (typeof o[k] === "string" && o[k]) return o[k] as string;
+      const u = o[k];
+      if (typeof u === "string" && u) {
+        // A declared size beats one guessed from the filename, since the
+        // filename often describes a crop of a much larger original.
+        const w = num(o.width);
+        const h = num(o.height);
+        const declared = w !== null && h !== null ? w * h : 0;
+        out.push({ url: u, pixels: declared || pixelsFromUrl(u) });
+        break;
+      }
     }
   }
-  return null;
+  return out;
+}
+
+export function imageUrlFrom(v: unknown): string | null {
+  const all = sizedImages(v);
+  if (all.length === 0) return null;
+  // Stable: equal sizes keep publication order, so a site that declares
+  // nothing still gets its own first choice rather than an arbitrary one.
+  let best = all[0]!;
+  for (const c of all) if (c.pixels > best.pixels) best = c;
+  return best.url;
+}
+
+/**
+ * The un-cropped original behind a WordPress crop, if the URL names one.
+ *
+ * "cookies-480x480.jpg" is a derivative; "cookies.jpg" is what the author
+ * uploaded, and it is usually 1200-2000px wide. Stripping the suffix is a
+ * guess, though -- the original can be gone, or the crop can be the only
+ * version -- so this only proposes the URL. Whoever calls it has to confirm
+ * the file is really there before putting it in the database, because a 404
+ * here is a card with no photograph at all, which is worse than a soft one.
+ */
+export function originalImageCandidate(url: string): string | null {
+  const m = url.match(/^(.*?)[-_](\d{2,4})x(\d{2,4})(\.(?:jpe?g|png|webp|avif))(\?.*)?$/i);
+  if (!m) return null;
+  // Already big enough that the original is unlikely to be worth a request.
+  if (Number(m[2]) >= 1200) return null;
+  return `${m[1]}${m[4]}${m[5] ?? ""}`;
 }
 
 function hostnameOf(url: string): string {
