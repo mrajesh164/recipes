@@ -22,12 +22,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      >
-        <body className="flex min-h-full flex-col">
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
+        {/* Inside <body>, not around <html>. Current Clerk Next.js SDKs
+            require it here. */}
+        <ClerkProvider>
           <div className="scallop" aria-hidden />
 
           <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
@@ -77,8 +79,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </header>
 
           {children}
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
