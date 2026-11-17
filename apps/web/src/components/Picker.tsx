@@ -67,7 +67,6 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
     : [];
 
   const best = ranked[0];
-  const rest = asked ? ranked.slice(1) : recipes;
   const want = dominantTexture(interpretation);
 
   return (
@@ -120,28 +119,101 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           interpretation={interpretation}
         />
       )}
-      </>
-      )}
 
-      {rest.length > 0 && (
-        <section className="mt-16">
-          <div className="dotted-rule" aria-hidden />
-          <h2 className="mt-6 text-xl font-bold tracking-tight">
-            {asked ? "The rest of them" : "All of them"}
-          </h2>
-          <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {rest.map((r) => (
-              <li key={r.id}>
-                <Card recipe={r} onOpen={() => setCompare(r)} />
-              </li>
-            ))}
-          </ul>
-        </section>
+      {asked && ranked.length > 1 && (
+        <CloseMatches
+          matches={ranked.slice(1, 5)}
+          best={best!}
+          onOpen={setCompare}
+        />
+      )}
+      </>
       )}
 
       <CompareDialog recipe={compare} all={recipes} onClose={() => setCompare(null)} />
     </div>
   );
+}
+
+/**
+ * The next few matches, as rows rather than a wall.
+ *
+ * A grid of every recipe stopped making sense the moment the corpus passed a
+ * couple of dozen: scrolling two hundred photographs to find a cookie is the
+ * overwhelm this project exists to remove, just with better pictures. So only
+ * the near misses are shown, and each says the one way it differs from the
+ * pick -- which is the only reason to look at a runner-up at all.
+ *
+ * Fixed at four, so the page is the same height whether the corpus holds
+ * thirteen recipes or a thousand.
+ */
+function CloseMatches({
+  matches,
+  best,
+  onOpen,
+}: {
+  matches: ScoredRecipe[];
+  best: ScoredRecipe;
+  onOpen: (r: ScoredRecipe) => void;
+}) {
+  return (
+    <section className="mt-10">
+      <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
+        Close behind
+      </h2>
+      <ul className="mt-3 divide-y divide-line-soft">
+        {matches.map((r) => (
+          <li key={r.id}>
+            <button
+              type="button"
+              onClick={() => onOpen(r)}
+              className="group flex w-full items-center gap-4 py-3 text-left"
+            >
+              {r.image_url && (
+                <span className="relative block h-14 w-14 flex-none overflow-hidden rounded-xl">
+                  <Image src={r.image_url} alt="" fill sizes="56px" className="object-cover" />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold group-hover:text-clay-deep">
+                  {r.title}
+                </span>
+                <span className="block text-xs text-ink-faint">
+                  {r.source_name}
+                  {r.rating !== null && ` · ${r.rating}★`}
+                </span>
+              </span>
+              <span className="flex-none text-right text-xs text-ink-soft">
+                {differenceFrom(r, best)}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * The single most useful thing to say about a runner-up: how it differs from
+ * the one being recommended. Picks whichever ratio differs most, so the line
+ * is never filler.
+ */
+function differenceFrom(r: ScoredRecipe, best: ScoredRecipe): string {
+  const a = r.scores.ratios;
+  const b = best.scores.ratios;
+  if (!a || !b) return "";
+  if (r.method !== best.method && r.method && r.method !== "other") {
+    return `${r.method} butter`;
+  }
+  const diffs: [string, number, string][] = [
+    ["butter", a.fatPerFlour - b.fatPerFlour, `${Math.round(Math.abs(a.fatPerFlour - b.fatPerFlour) * 100)} g`],
+    ["brown sugar", a.brownShare - b.brownShare, `${Math.round(Math.abs(a.brownShare - b.brownShare) * 100)}%`],
+    ["sugar", a.sugarPerFlour - b.sugarPerFlour, `${Math.round(Math.abs(a.sugarPerFlour - b.sugarPerFlour) * 100)} g`],
+  ];
+  const [label, delta, amount] = diffs.sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0]!;
+  if (Math.abs(delta) < 0.02) return "almost identical";
+  return `${delta > 0 ? "+" : "−"}${amount} ${label}`;
 }
 
 /**
@@ -165,9 +237,6 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
         <h2 className="text-xl font-bold tracking-tight">
           Say what you want. Get one recipe, and the reason.
         </h2>
-        <p className="mt-2 text-sm text-ink-soft">
-          Here is what &ldquo;chewy&rdquo; gives you, across {recipes.length} real recipes.
-        </p>
         <SignUpButton mode="modal">
           <button
             type="button"
@@ -177,6 +246,10 @@ function Example({ recipes }: { recipes: ScoredRecipe[] }) {
           </button>
         </SignUpButton>
       </div>
+
+      <p className="mt-8 text-sm text-ink-soft">
+        Here is what &ldquo;chewy&rdquo; gives you, across {recipes.length} real recipes.
+      </p>
 
       {best && (
         <Recommendation
@@ -384,40 +457,3 @@ function Recommendation({
 }
 
 /* -------------------------------------------------------------- the wall -- */
-
-function Card({ recipe, onOpen }: { recipe: ScoredRecipe; onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group block h-full w-full overflow-hidden rounded-2xl border border-line bg-paper
-                 text-left transition-colors hover:border-pink-deep"
-    >
-      {recipe.image_url && (
-        <div className="relative aspect-[4/3]">
-          <Image
-            src={recipe.image_url}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover"
-          />
-        </div>
-      )}
-      <div className="p-4">
-        <h3 className="font-bold leading-snug tracking-tight group-hover:text-clay-deep">
-          {recipe.title}
-        </h3>
-        <p className="mt-1 text-xs text-ink-faint">
-          {recipe.source_name}
-          {recipe.rating !== null && ` · ${recipe.rating}★`}
-        </p>
-        {recipe.method && recipe.method !== "other" && (
-          <p className="mt-2 inline-block rounded-full bg-cream-deep px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
-            {recipe.method} butter
-          </p>
-        )}
-      </div>
-    </button>
-  );
-}
