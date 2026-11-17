@@ -58,6 +58,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <nav className="flex min-h-[2.5rem] items-center gap-3">
               <Suspense fallback={<span className="h-10" aria-hidden />}>
               <Show when="signed-in">
+                {/* Secondary to the task on the home page, deliberately. */}
+                <Link
+                  href="/recipes"
+                  className="rounded-full px-3 py-2 text-sm font-medium hover:bg-cream-deep"
+                >
+                  All recipes
+                </Link>
                 <Link
                   href="/saved"
                   className="rounded-full px-3 py-2 text-sm font-medium hover:bg-cream-deep"
