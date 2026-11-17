@@ -192,7 +192,11 @@ function CloseMatches({
 }) {
   return (
     <section className="mt-10">
-      <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
+      {/* Darker and a size up than the labels inside the cards. Those sit on
+          opaque paper; this one sits directly on the sprinkles, and faint
+          grey small-caps over a field of coloured dots is the one place on
+          the page where the background wins. */}
+      <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
         Close behind
       </h2>
       <ul className="mt-3 divide-y divide-line-soft">
