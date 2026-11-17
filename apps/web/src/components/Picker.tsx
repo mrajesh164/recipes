@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { SignUpButton, useAuth } from "@clerk/nextjs";
 import { SaveButton } from "./SaveButton";
 import {
@@ -150,9 +151,9 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         poolCount={pool.length}
       />
 
-      {/* Nothing asked yet. Rather than a page of background, show the thing
-          the whole project is about. */}
-      {query.trim() === "" && <TheSpread recipes={recipes} />}
+      {/* Nothing asked yet: offer the two places to go, rather than a screen
+          of background. */}
+      {query.trim() === "" && <Shortcuts recipes={recipes} />}
 
       {best && (
         <Recommendation
@@ -450,71 +451,90 @@ function Reading({
 }
 
 /**
- * Three real recipes for the same cookie, at three different butter ratios.
+ * Where to go when you have not asked for anything yet.
  *
- * The home page used to be a search box and then a screen of sprinkles. This
- * fills it with the project's own premise instead of decoration: these are all
- * chocolate chip cookies, from three published sources, and they disagree
- * about butter by nearly two to one. That disagreement is the reason the app
- * exists, and showing it is more persuasive than a sentence claiming it.
+ * This replaced a panel comparing three recipes' butter ratios. The idea was
+ * to show the project's premise -- that recipes disagree -- but the percentile
+ * picks included a giant single cookie, so "same cookie, nearly twice the
+ * butter" read as a contradiction rather than an argument. The evidence
+ * belongs beside a recommendation, where there is a recipe to explain; on an
+ * empty page it was a chart asking to be studied before anything was asked.
  *
- * Percentiles rather than the extremes. The minimum and maximum of the corpus
- * are a Dutch baby and a bowl of cookie dough -- real rows, technically
- * chocolate chip, but showcasing them would be showing off the parser's edge
- * cases rather than the spread a baker actually faces.
+ * So: the two places you can actually go, as photographs rather than as the
+ * small text links in the header.
  */
-function TheSpread({ recipes }: { recipes: ScoredRecipe[] }) {
-  const sorted = recipes
-    .filter(
-      (r) =>
-        r.dish_type === "chocolate chip" &&
-        r.image_url !== null &&
-        r.scores.ratios !== null &&
-        r.scores.confidence === "high",
-    )
-    .sort((a, b) => a.scores.ratios!.fatPerFlour - b.scores.ratios!.fatPerFlour);
+function Shortcuts({ recipes }: { recipes: ScoredRecipe[] }) {
+  // Deterministic, so the tile does not reshuffle on every render. Sorted by
+  // id rather than picked at random for the same reason.
+  const photos = recipes
+    .filter((r) => r.image_url !== null)
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .slice(0, 4);
 
-  if (sorted.length < 12) return null;
-
-  const at = (p: number) => sorted[Math.floor(p * (sorted.length - 1))]!;
-  const three = [at(0.1), at(0.5), at(0.9)];
+  if (photos.length < 4) return null;
 
   return (
-    <section className="mt-10">
-      {/* On paper. Photographs and numbers over a field of coloured dots is
-          the same mush the plots were. */}
-      <div className="overflow-hidden rounded-3xl border-2 border-line bg-paper p-6 md:p-8">
-        <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-ink-faint">
-          Three chocolate chip recipes
-        </h2>
-        <p className="mt-2 text-lg font-semibold leading-snug">
-          Same cookie. Nearly twice the butter.
-        </p>
-
-        <ul className="mt-6 grid grid-cols-3 gap-3 md:gap-5">
-          {three.map((r) => (
-            <li key={r.id}>
-              <div className="relative aspect-square overflow-hidden rounded-2xl">
-                <Image
-                  src={r.image_url!}
-                  alt=""
-                  fill
-                  sizes="(max-width: 768px) 30vw, 180px"
-                  className="object-cover"
-                />
-              </div>
-              <p className="mt-3 text-2xl font-bold tabular-nums tracking-tight text-clay-deep">
-                {Math.round(r.scores.ratios!.fatPerFlour * 100)} g
-              </p>
-              <p className="mt-1 text-xs leading-snug text-ink-soft">{r.title}</p>
-            </li>
+    <section className="mt-10 grid gap-4 md:grid-cols-[1.6fr_1fr]">
+      <Link
+        href="/recipes"
+        className="group overflow-hidden rounded-3xl border-2 border-line bg-paper
+                   transition-colors hover:border-pink-deep"
+      >
+        <div className="grid grid-cols-4">
+          {photos.map((r) => (
+            <div key={r.id} className="relative aspect-square">
+              <Image
+                src={r.image_url!}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 25vw, 120px"
+                className="object-cover"
+              />
+            </div>
           ))}
-        </ul>
+        </div>
+        <div className="p-5">
+          <h2 className="text-lg font-bold tracking-tight group-hover:text-clay-deep">
+            All recipes
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Scroll all {recipes.length}, or filter by name.
+          </p>
+        </div>
+      </Link>
 
-        <p className="mt-5 text-xs text-ink-faint">
-          Butter per 100 g of flour, measured from the published ingredients.
-        </p>
-      </div>
+      {/* No photograph here on purpose. Any cookie put on this tile would look
+          like something you had already saved, and on a new account that is a
+          promise the page cannot keep. */}
+      <Link
+        href="/saved"
+        className="group flex flex-col justify-between overflow-hidden rounded-3xl border-2
+                   border-line bg-cream-deep p-5 transition-colors hover:border-pink-deep"
+      >
+        {/* A drawn mark rather than an emoji: the colour emoji ships Apple's
+            palette, which is nothing like this one, and it reads as a sticker
+            dropped on the page. */}
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          className="h-9 w-9 text-clay-deep"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 3.5h12a1 1 0 0 1 1 1v16l-7-4.2-7 4.2v-16a1 1 0 0 1 1-1Z" />
+        </svg>
+        <span className="mt-8">
+          <span className="block text-lg font-bold tracking-tight group-hover:text-clay-deep">
+            Saved
+          </span>
+          <span className="mt-1 block text-sm text-ink-soft">
+            The ones you kept.
+          </span>
+        </span>
+      </Link>
     </section>
   );
 }
