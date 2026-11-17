@@ -130,32 +130,40 @@ test("confidence beats a narrow score win", () => {
 
 /* ------------------------------------------------------- fat equivalence */
 
+/**
+ * Built through parseIngredient rather than as literals: the bug spanned both
+ * modules -- a parsing rule decided the canonical name and the weighting
+ * decided what that name was worth -- so the test should cross the same seam.
+ */
+function score(lines: string[]) {
+  return scoreTexture({
+    ingredients: lines.map(parseIngredient),
+    method: "creamed",
+    chillsDough: false,
+  });
+}
+
 test("peanut butter counts as half its weight in fat", () => {
   // Commercial peanut butter is around 50% fat; the rest is protein, fibre
   // and sugar. Counted whole, it put a recipe on the signed-out page claiming
   // 263 g of butter per 100 g of flour, on an axis that stops at 230.
-  const withPB = scoreTexture({
-    ingredients: [
-      { raw: "1 cup flour", grams: 120, canonicalName: "flour", quantity: 1, unit: "cup" },
-      { raw: "1 cup peanut butter", grams: 270, canonicalName: "peanut butter", quantity: 1, unit: "cup" },
-    ],
-    method: "creamed",
-    chillsDough: false,
-  });
-  assert.equal(withPB.ratios?.fatPerFlour, 270 * 0.5 / 120);
+  const s = score(["1 cup all-purpose flour", "1 cup peanut butter"]);
+  assert.equal(s.ratios?.fatPerFlour, (270 * 0.5) / 120);
 });
 
-test("baking chips are not fat at all", () => {
-  const s = scoreTexture({
-    ingredients: [
-      { raw: "1 cup flour", grams: 120, canonicalName: "flour", quantity: 1, unit: "cup" },
-      { raw: "1/2 cup butter", grams: 113, canonicalName: "butter", quantity: 0.5, unit: "cup" },
-      { raw: "1 cup peanut butter chips", grams: 170, canonicalName: "peanut butter chips", quantity: 1, unit: "cup" },
-      { raw: "1 cup chocolate chips", grams: 170, canonicalName: "chocolate chips", quantity: 1, unit: "cup" },
-    ],
-    method: "creamed",
-    chillsDough: false,
-  });
+test("baking chips and candy are not fat at all", () => {
+  const s = score([
+    "1 cup all-purpose flour",
+    "1/2 cup unsalted butter",
+    "1 cup peanut butter chips",
+    "1 cup chocolate chips",
+    "1/2 cup peanut butter M&Ms",
+  ]);
   // The butter alone. A cookie studded with sweets is not a fattier cookie.
-  assert.equal(s.ratios?.fatPerFlour, 113 / 120);
+  assert.equal(s.ratios?.fatPerFlour, 113.5 / 120);
+});
+
+test("cookie butter is weighted as a spread, not as butter", () => {
+  const s = score(["1 cup all-purpose flour", "1 cup cookie butter"]);
+  assert.equal(s.ratios?.fatPerFlour, (250 * 0.3) / 120);
 });
