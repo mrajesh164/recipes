@@ -66,7 +66,16 @@ export async function getRecipes(): Promise<ScoredRecipe[]> {
 
   const { data, error } = await supabaseRead()
     .from("recipes")
-    .select("*, ingredients(*)")
+    // Explicit columns, not `*`. `*` drags raw_jsonld along -- the whole
+    // structured-data blob per recipe -- and since the corpus ships to the
+    // client for instant ranking, that put 7.6 MB on the wire at 325
+    // recipes. Invisible at 13. Nothing renders it.
+    //
+    // One string literal, not concatenation: supabase-js parses this at the
+    // type level and cannot read a built-up string.
+    .select(
+      "id, source_url, source_name, title, yield_count, rating, rating_count, method, bake_temp_f, bake_minutes, chills_dough, hand_entered, image_url, dish_type, ingredients(position, raw_text, canonical_name, grams, grams_source, display_qty, display_unit)",
+    )
     .order("title")
     .order("position", { referencedTable: "ingredients" });
 
