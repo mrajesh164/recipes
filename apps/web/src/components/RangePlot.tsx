@@ -31,9 +31,23 @@ export interface RangePlotProps {
 export function RangePlot({ label, hint, values, picked, format }: RangePlotProps) {
   if (values.length === 0) return null;
 
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
+  // The axis spans the 5th-95th percentile, not the full range.
+  //
+  // At 13 recipes min-to-max was fine. At 325 it is not: a handful of recipes
+  // parse badly -- 526 g of butter per 100 g of flour is not a cookie, and
+  // neither is 0 g -- and because the axis stretched to fit them, all 313
+  // real recipes squashed into the left third. The plot got less readable as
+  // the corpus grew, which is the opposite of its job.
+  //
+  // Values outside the window are clamped to the edge rather than dropped, so
+  // the dot count still matches the corpus and nothing is hidden.
+  const sorted = [...values].sort((a, b) => a - b);
+  const at = (p: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.floor(p * (sorted.length - 1))))]!;
+  const lo = sorted.length >= 20 ? at(0.05) : sorted[0]!;
+  const hi = sorted.length >= 20 ? at(0.95) : sorted[sorted.length - 1]!;
   const span = hi - lo;
+  const clampedLo = values.filter((v) => v < lo).length;
+  const clampedHi = values.filter((v) => v > hi).length;
 
   // Every recipe identical on this ratio: a plot would be a single stack of
   // dots implying a spread that isn't there. Say so in words instead.
@@ -50,7 +64,7 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
     );
   }
 
-  const x = (v: number) => ((v - lo) / span) * 100;
+  const x = (v: number) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
 
   return (
     <div className="py-2.5">
@@ -82,9 +96,15 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
       </div>
 
       <div className="flex justify-between text-[11px] tabular-nums text-ink-faint">
-        <span>{format(lo)}</span>
+        <span>
+          {clampedLo > 0 && <span title={`${clampedLo} below`}>&lsaquo; </span>}
+          {format(lo)}
+        </span>
         <span className="font-semibold text-clay-deep">{format(picked)}</span>
-        <span>{format(hi)}</span>
+        <span>
+          {format(hi)}
+          {clampedHi > 0 && <span title={`${clampedHi} above`}> &rsaquo;</span>}
+        </span>
       </div>
     </div>
   );
