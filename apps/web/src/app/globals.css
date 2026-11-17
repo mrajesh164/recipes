@@ -42,6 +42,7 @@
 }
 
 @theme inline {
+  --font-script: var(--font-script);
   --color-cream: var(--cream);
   --color-cream-deep: var(--cream-deep);
   --color-paper: var(--paper);

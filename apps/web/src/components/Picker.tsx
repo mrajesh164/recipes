@@ -76,21 +76,16 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           dead end. */}
       {isLoaded && !isSignedIn && (
         <div className="rounded-3xl border-2 border-clay-deep bg-paper p-6 md:p-8">
-          <h2 className="text-xl font-bold tracking-tight">
-            Tell it what you want and it picks one
-          </h2>
-          <p className="mt-2 max-w-prose text-sm text-ink-soft">
-            Describe the cookie you&apos;re after — chewy, cakey, crispy edges,
-            quick, no mixer — and it reads {recipes.length} real recipes and
-            recommends one, showing the ratios behind the choice. Sign up to
-            use it and to save what you find.
+          <h2 className="text-xl font-bold tracking-tight">Sign up to find yours</h2>
+          <p className="mt-2 text-sm text-ink-soft">
+            Describe what you want. It picks from {recipes.length} real recipes.
           </p>
           <SignUpButton mode="modal">
             <button
               type="button"
               className="mt-5 rounded-full bg-clay-deep px-6 py-3 font-semibold text-paper hover:bg-clay"
             >
-              Sign up to start
+              Sign up
             </button>
           </SignUpButton>
         </div>
@@ -101,10 +96,6 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       <label htmlFor="q" className="block font-semibold">
         What are you after?
       </label>
-      <p className="mt-1 text-sm text-ink-soft">
-        Describe the cookie you want. Texture, or how much effort you feel like.
-      </p>
-
       <input
         id="q"
         type="search"
@@ -145,9 +136,6 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           <h2 className="mt-6 text-xl font-bold tracking-tight">
             {asked ? "The rest of them" : "All of them"}
           </h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Every one is a real published recipe. Nothing here is averaged together.
-          </p>
           <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((r) => (
               <li key={r.id}>
@@ -191,8 +179,7 @@ function Reading({
           I couldn&apos;t read anything in that.
         </p>
         <p className="mt-1 text-sm text-ink-soft">
-          Try a texture — chewy, cakey, crispy, thin, thick, fudgy — or something
-          about effort, like &ldquo;quick&rdquo; or &ldquo;no mixer&rdquo;.
+          Try chewy, cakey, crispy, thin or fudgy — or quick, no mixer.
         </p>
       </div>
     );
@@ -340,8 +327,8 @@ function Recommendation({
 
           {recipe.scores.confidence === "low" && (
             <p className="mt-4 text-xs text-ink-faint">
-              Not much of this recipe&apos;s ingredient list could be read, so this is a
-              weaker guess than usual.
+              Much of this ingredient list couldn&apos;t be read, so this is a
+              weaker guess.
             </p>
           )}
 
@@ -350,7 +337,7 @@ function Recommendation({
                 "That rules out small tap targets" -- and a 20px summary in a
                 kitchen is exactly that. */}
             <summary className="-mx-2 cursor-pointer rounded-lg px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">
-              Ingredients, in grams
+              Ingredients
             </summary>
             <table className="mt-3 w-full border-collapse text-sm">
               <tbody>

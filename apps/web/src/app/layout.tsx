@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Dancing_Script } from "next/font/google";
 import {
   ClerkProvider,
   Show,
@@ -14,8 +14,19 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+/**
+ * The wordmark face. Display only -- a script at body size is hard to read,
+ * and the whole point of the chalky palette is that the interface stays quiet
+ * so the photographs can be loud.
+ */
+const script = Dancing_Script({
+  variable: "--font-script",
+  subsets: ["latin"],
+  weight: ["600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "Which chocolate chip cookie recipe should I make?",
+  title: "The Perfect Batch",
   description:
     "Say how you want your cookies to come out and this picks one of the real recipes it has, showing the ratios behind the choice.",
 };
@@ -24,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${script.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {/* Inside <body>, not around <html>. Current Clerk Next.js SDKs
@@ -35,9 +46,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
             <Link
               href="/"
-              className="text-sm font-bold tracking-tight hover:text-clay-deep"
+              className="font-script text-2xl font-bold leading-none text-clay-deep hover:text-clay"
             >
-              Cookie ratios
+              The Perfect Batch
             </Link>
 
             {/* Auth state is runtime data, and Cache Components will not
