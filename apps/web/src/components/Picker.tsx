@@ -482,37 +482,6 @@ function Recommendation({
             />
           </div>
 
-          {/* Only the signals the plots above cannot show.
-              "Fat to flour · 2.63 to 1" sat directly beneath a plot reading
-              "Butter per 100 g flour: 263 g" -- the same number twice, in two
-              notations, one of which no baker has a feel for. What is left is
-              the qualitative stuff: how the butter was handled, extra yolks,
-              whether the dough is chilled. */}
-          {(() => {
-            const PLOTTED = ["Fat to flour", "Sugar to flour", "Brown sugar", "White sugar"];
-            const extra = recipe.scores.signals
-              .filter((s) => !PLOTTED.includes(s.label))
-              .slice(0, 3);
-            if (extra.length === 0) return null;
-            return (
-              <ul className="mt-5 flex flex-wrap gap-2">
-                {extra.map((s) => (
-                  <li
-                    key={s.label}
-                    className={[
-                      "rounded-full px-3 py-1 text-xs font-medium",
-                      s.leans === want
-                        ? "bg-sage-deep text-paper"
-                        : "bg-cream-deep text-ink-soft",
-                    ].join(" ")}
-                  >
-                    {s.label} · {s.value}
-                  </li>
-                ))}
-              </ul>
-            );
-          })()}
-
           {recipe.scores.confidence === "low" && (
             <p className="mt-4 text-xs text-ink-faint">
               Much of this ingredient list couldn&apos;t be read, so this is a
