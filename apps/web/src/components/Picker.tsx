@@ -10,7 +10,6 @@ import {
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { WhyThisOne } from "./WhyThisOne";
-import { CompareDialog } from "./CompareDialog";
 
 /**
  * Pick a texture, get one recipe, then browse the rest if you want to.
@@ -53,7 +52,6 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   // cursor. Nothing happens now until you finish and press Enter.
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
-  const [compare, setCompare] = useState<ScoredRecipe | null>(null);
   // Clerk Core 3 removed <SignedIn>/<SignedOut>; its replacement <Show> is an
   // async server component, so a client component asks the hook instead.
   // isLoaded matters: without it the sign-up pitch flashes for a signed-in
@@ -150,16 +148,10 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       )}
 
       {asked && ranked.length > 1 && (
-        <CloseMatches
-          matches={ranked.slice(1, 5)}
-          best={best!}
-          onOpen={setCompare}
-        />
+        <CloseMatches matches={ranked.slice(1, 5)} best={best!} all={recipes} />
       )}
       </>
       )}
-
-      <CompareDialog recipe={compare} all={recipes} onClose={() => setCompare(null)} />
     </div>
   );
 }
@@ -179,11 +171,11 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 function CloseMatches({
   matches,
   best,
-  onOpen,
+  all,
 }: {
   matches: ScoredRecipe[];
   best: ScoredRecipe;
-  onOpen: (r: ScoredRecipe) => void;
+  all: ScoredRecipe[];
 }) {
   return (
     <section className="mt-10">
@@ -193,30 +185,52 @@ function CloseMatches({
       <ul className="mt-3 divide-y divide-line-soft">
         {matches.map((r) => (
           <li key={r.id}>
-            <button
-              type="button"
-              onClick={() => onOpen(r)}
-              className="group flex w-full items-center gap-4 py-3 text-left"
-            >
-              {r.image_url && (
-                <span className="relative block h-14 w-14 flex-none overflow-hidden rounded-xl">
-                  <Image src={r.image_url} alt="" fill sizes="56px" className="object-cover" />
+            {/* Native <details> rather than a dialog: several can be open at
+                once, which is the point -- you are comparing. It also brings
+                keyboard support and independent toggling with no state. */}
+            <details className="group">
+              <summary
+                className="flex cursor-pointer list-none items-center gap-4 py-3
+                           [&::-webkit-details-marker]:hidden"
+              >
+                {r.image_url && (
+                  <span className="relative block h-14 w-14 flex-none overflow-hidden rounded-xl">
+                    <Image src={r.image_url} alt="" fill sizes="56px" className="object-cover" />
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold group-open:text-clay-deep">
+                    {r.title}
+                  </span>
+                  <span className="block text-xs text-ink-faint">
+                    {r.dish_type ? `${r.dish_type} · ` : ""}
+                    {r.source_name}
+                    {r.rating !== null && ` · ${r.rating}★`}
+                  </span>
                 </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold group-hover:text-clay-deep">
-                  {r.title}
+                <span className="flex-none text-right text-xs text-ink-soft">
+                  {differenceFrom(r, best)}
                 </span>
-                <span className="block text-xs text-ink-faint">
-                  {r.dish_type ? `${r.dish_type} · ` : ""}
-                  {r.source_name}
-                  {r.rating !== null && ` · ${r.rating}★`}
+                <span
+                  aria-hidden
+                  className="flex-none text-ink-faint transition-transform group-open:rotate-90"
+                >
+                  ›
                 </span>
-              </span>
-              <span className="flex-none text-right text-xs text-ink-soft">
-                {differenceFrom(r, best)}
-              </span>
-            </button>
+              </summary>
+
+              <div className="pb-5 pl-[4.5rem] pr-2">
+                <WhyThisOne recipe={r} all={all} interpretation={null} want={null} heading={false} />
+                <a
+                  href={r.source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-block text-sm font-medium text-clay-deep underline underline-offset-4"
+                >
+                  Open the recipe
+                </a>
+              </div>
+            </details>
           </li>
         ))}
       </ul>
@@ -410,16 +424,16 @@ function Recommendation({
       <div
         className={
           compact
-            ? "grid gap-0 md:grid-cols-[14rem_minmax(0,1fr)]"
-            : "grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr]"
+            ? "grid gap-0 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start"
+            : "grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr] md:items-start"
         }
       >
         {recipe.image_url && (
           <div
             className={
               compact
-                ? "relative aspect-[4/3] md:aspect-auto md:min-h-[13rem]"
-                : "relative aspect-[4/3] md:aspect-auto md:min-h-[22rem]"
+                ? "relative aspect-[4/3] md:aspect-auto md:h-[13rem]"
+                : "relative aspect-[4/3] md:aspect-auto md:h-[22rem]"
             }
           >
             <Image
@@ -497,7 +511,11 @@ function Recommendation({
             <summary className="-mx-2 cursor-pointer rounded-lg px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">
               Ingredients
             </summary>
-            <table className="mt-3 w-full border-collapse text-sm">
+            {/* Bounded, with its own scroll. Fifteen ingredient rows used to
+                grow the whole card -- and with the grid stretching, the
+                photograph alongside it too. */}
+            <div className="mt-3 max-h-64 overflow-y-auto pr-1">
+            <table className="w-full border-collapse text-sm">
               <tbody>
                 {recipe.ingredients.map((i) => (
                   <tr key={i.position} className="border-b border-line-soft last:border-0">
@@ -511,6 +529,7 @@ function Recommendation({
                 ))}
               </tbody>
             </table>
+            </div>
           </details>
           )}
         </div>
