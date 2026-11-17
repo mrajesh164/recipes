@@ -166,7 +166,12 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       )}
 
       {asked && ranked.length > 1 && (
-        <CloseMatches matches={ranked.slice(1, 5)} all={pool} />
+        <CloseMatches
+          matches={ranked.slice(1, 5)}
+          all={pool}
+          interpretation={interpretation}
+          want={want}
+        />
       )}
       </>
       )}
@@ -193,9 +198,14 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 function CloseMatches({
   matches,
   all,
+  interpretation,
+  want,
 }: {
   matches: ScoredRecipe[];
   all: ScoredRecipe[];
+  /** The same query the pick was judged on, so a runner-up answers it too. */
+  interpretation: Interpretation;
+  want: Texture | null;
 }) {
   return (
     <section className="mt-10">
@@ -247,7 +257,19 @@ function CloseMatches({
                   paper, so a second bordered box inside it was a box in a
                   box. */}
               <div className="ml-[4.5rem] mr-4 pb-5">
-                <WhyThisOne recipe={r} all={all} interpretation={null} want={null} heading={false} />
+                {/* The real interpretation, not null. These rows used to show
+                    ratio plots whatever was asked, so someone who typed
+                    "quick, no mixer" got butter-per-flour four times over and
+                    never found out that two of the runners-up also skip the
+                    chilling. A runner-up has to answer the question the pick
+                    was answering, or there is no comparing them. */}
+                <WhyThisOne
+                  recipe={r}
+                  all={all}
+                  interpretation={interpretation}
+                  want={want}
+                  label="Why it's close"
+                />
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <a
                     href={r.source_url}
