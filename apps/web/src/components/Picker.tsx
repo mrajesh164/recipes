@@ -219,16 +219,23 @@ function CloseMatches({
                 </span>
               </summary>
 
-              <div className="pb-5 pl-[4.5rem] pr-2">
+              {/* On paper, not on the page. The plots are made of small grey
+                  dots and the background is made of small coloured ones --
+                  read together they are mush. Every other place a plot
+                  appears sits on an opaque card for the same reason. */}
+              <div className="mb-4 ml-[4.5rem] mr-2 rounded-2xl border border-line bg-paper p-5">
                 <WhyThisOne recipe={r} all={all} interpretation={null} want={null} heading={false} />
-                <a
-                  href={r.source_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-block text-sm font-medium text-clay-deep underline underline-offset-4"
-                >
-                  Open the recipe
-                </a>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <a
+                    href={r.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full bg-clay-deep px-4 py-2.5 text-sm font-semibold text-paper hover:bg-clay"
+                  >
+                    Open the recipe
+                  </a>
+                  <SaveButton recipeId={r.id} compact />
+                </div>
               </div>
             </details>
           </li>
@@ -424,16 +431,16 @@ function Recommendation({
       <div
         className={
           compact
-            ? "grid gap-0 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start"
-            : "grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr] md:items-start"
+            ? "grid gap-0 md:grid-cols-[14rem_minmax(0,1fr)]"
+            : "grid gap-0 md:grid-cols-[minmax(0,1fr)_1.15fr]"
         }
       >
         {recipe.image_url && (
           <div
             className={
               compact
-                ? "relative aspect-[4/3] md:aspect-auto md:h-[13rem]"
-                : "relative aspect-[4/3] md:aspect-auto md:h-[22rem]"
+                ? "relative aspect-[4/3] md:aspect-auto md:min-h-[13rem]"
+                : "relative aspect-[4/3] md:aspect-auto md:min-h-[22rem]"
             }
           >
             <Image
@@ -511,9 +518,11 @@ function Recommendation({
             <summary className="-mx-2 cursor-pointer rounded-lg px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">
               Ingredients
             </summary>
-            {/* Bounded, with its own scroll. Fifteen ingredient rows used to
-                grow the whole card -- and with the grid stretching, the
-                photograph alongside it too. */}
+            {/* Bounded, with its own scroll. Twenty ingredient rows used to
+                grow the card by their full height. Top-aligning the columns
+                stopped that but left dead space beside a taller content
+                column, so the image stretches as before and the cap is what
+                keeps the growth in hand. */}
             <div className="mt-3 max-h-64 overflow-y-auto pr-1">
             <table className="w-full border-collapse text-sm">
               <tbody>
