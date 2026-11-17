@@ -57,7 +57,11 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         </p>
       )}
 
-      <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Denser than the recommendation. Browsing is a scanning task: at three
+          columns 325 recipes was a very long scroll, and each tile was far
+          bigger than the decision it supports. Two columns even on a phone,
+          because a cookie photograph reads fine small. */}
+      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {shown.map((r) => (
           <li key={r.id}>
             <button
@@ -72,25 +76,23 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                     src={r.image_url}
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    // Has to track the column count above, or the browser
+                    // fetches a file for the wrong width and the tile is
+                    // either soft or needlessly heavy.
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                     className="object-cover"
                   />
                 </div>
               )}
-              <div className="p-4">
-                <h2 className="font-bold leading-snug tracking-tight group-hover:text-clay-deep">
+              <div className="p-3">
+                <h2 className="text-sm font-bold leading-snug tracking-tight group-hover:text-clay-deep">
                   {r.title}
                 </h2>
-                <p className="mt-1 text-xs text-ink-faint">
+                <p className="mt-1 text-[11px] text-ink-faint">
                   {r.dish_type ? `${r.dish_type} · ` : ""}
                   {r.source_name}
                   {r.rating !== null && ` · ${r.rating}★`}
                 </p>
-                {r.method && r.method !== "other" && (
-                  <p className="mt-2 inline-block rounded-full bg-cream-deep px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
-                    {r.method} butter
-                  </p>
-                )}
               </div>
             </button>
           </li>
