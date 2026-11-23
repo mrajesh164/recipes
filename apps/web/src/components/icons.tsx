@@ -8,8 +8,18 @@
  * beside rather than carrying its own.
  */
 
-/** A square with an arrow leaving it: this link takes you off the site. */
-export function ExternalLinkIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+/**
+ * Every icon is this shape of thing, so the box, the stroke and the joins are
+ * declared once here instead of on each glyph. An icon that wants a different
+ * weight is not a variant, it is a second icon set.
+ */
+function Glyph({
+  className,
+  children,
+}: {
+  className: string;
+  children: React.ReactNode;
+}) {
   return (
     <svg
       aria-hidden
@@ -21,10 +31,28 @@ export function ExternalLinkIcon({ className = "h-3.5 w-3.5" }: { className?: st
       strokeLinecap="round"
       strokeLinejoin="round"
     >
+      {children}
+    </svg>
+  );
+}
+
+/** A square with an arrow leaving it: this link takes you off the site. */
+export function ExternalLinkIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <Glyph className={className}>
       {/* the square, open at the corner the arrow leaves through */}
       <path d="M14 4h6v6" />
       <path d="M20 4 11 13" />
       <path d="M19 15v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" />
-    </svg>
+    </Glyph>
+  );
+}
+
+/** A bookmark: the saved list. */
+export function BookmarkIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <Glyph className={className}>
+      <path d="M6 3.5h12a1 1 0 0 1 1 1v16l-7-4.2-7 4.2v-16a1 1 0 0 1 1-1Z" />
+    </Glyph>
   );
 }

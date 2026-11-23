@@ -11,7 +11,7 @@ import {
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { ExternalLinkIcon } from "./icons";
+import { BookmarkIcon, ExternalLinkIcon } from "./icons";
 import { WhyThisOne } from "./WhyThisOne";
 
 /**
@@ -430,18 +430,7 @@ function Shortcuts({ recipes }: { recipes: ScoredRecipe[] }) {
         {/* A drawn mark rather than an emoji: the colour emoji ships Apple's
             palette, which is nothing like this one, and it reads as a sticker
             dropped on the page. */}
-        <svg
-          aria-hidden
-          viewBox="0 0 24 24"
-          className="h-9 w-9 text-clay-deep"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M6 3.5h12a1 1 0 0 1 1 1v16l-7-4.2-7 4.2v-16a1 1 0 0 1 1-1Z" />
-        </svg>
+        <BookmarkIcon className="h-9 w-9 text-clay-deep" />
         <span className="mt-8">
           <span className="block text-lg font-bold tracking-tight group-hover:text-clay-deep">
             Saved
