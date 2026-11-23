@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v2 Build Plan · The Perfect Batch · Maya Rajesh</title>
+<meta name="description" content="The build plan for v2 of The Perfect Batch: the order the work happens in, revised after feedback.">
+<style>
+  :root {
+    --bg: #fdfbf7;
+    --panel: #ffffff;
+    --ink: #22201d;
+    --ink-soft: #5c5650;
+    --ink-faint: #6f6860;
+    --line: #e7e1d7;
+    --accent: #9c4a1a;
+    --accent-soft: #fbf0e7;
+    --pick: #2f6b4f;
+    --pick-soft: #ecf4ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1917; --panel: #232020; --ink: #f2eee8; --ink-soft: #b9b2a8;
+      --ink-faint: #9d958a; --line: #37322e; --accent: #e0905c; --accent-soft: #2d2118;
+      --pick: #83c3a0; --pick-soft: #1d2823;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 22px 100px; background: var(--bg); color: var(--ink);
+    font: 17px/1.65 ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--accent); }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85em;
+    background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 4px;
+    overflow-wrap: break-word;
+  }
+
+  header { padding: 72px 0 8px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600; margin: 0 0 14px;
+  }
+  h1 {
+    font-size: 40px; line-height: 1.12; letter-spacing: -.025em;
+    margin: 0 0 18px; max-width: 16ch;
+  }
+  .oneline {
+    font-size: 24px; line-height: 1.45; color: var(--ink); margin: 0;
+    border-left: 3px solid var(--accent); padding-left: 20px;
+    letter-spacing: -.01em;
+  }
+  .oneline strong { font-weight: 700; }
+
+  h2 {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600;
+    margin: 64px 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+  }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  .quiet { color: var(--ink-soft); }
+  ul { margin: 0 0 14px; padding-left: 20px; }
+  li { margin-bottom: 7px; }
+  .lede { font-size: 18.5px; }
+
+  /* contents */
+  .toc {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 20px; margin: 28px 0 0; font-size: 14.5px;
+  }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 26px; }
+  .toc li { break-inside: avoid; margin-bottom: 4px; }
+  .toc a { text-decoration: none; color: var(--ink-soft); }
+
+  /* counted facts */
+  .facts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 22px 0 18px; }
+  .fact { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .fact b { display: block; font-size: 26px; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 6px; }
+  .fact span { display: block; font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
+
+  /* UI specimen */
+  .specimen {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; margin: 22px 0; font-size: 15.5px;
+  }
+  .specimen .said { color: var(--ink); font-weight: 600; margin: 0 0 10px; }
+  .specimen .read { color: var(--pick); margin: 0 0 4px; }
+  .specimen .dropped { color: var(--ink-soft); margin: 0; }
+  .specimen .cap { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-faint); }
+
+  /* plan */
+  .band {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;
+    margin: 40px 0 6px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  .band h3 { margin: 0; font-size: 20px; letter-spacing: -.015em; }
+  .band em { font-style: normal; font-size: 14px; color: var(--ink-faint); }
+  .item { padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .item:last-child { border-bottom: 0; }
+  .item h4 { margin: 0 0 8px; font-size: 16.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .num {
+    flex: none; width: 26px; height: 26px; border-radius: 999px;
+    background: var(--accent); color: var(--bg);
+    font-size: 13px; font-weight: 700; line-height: 26px; text-align: center;
+  }
+  .tag {
+    font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+    border-radius: 999px; padding: 3px 8px; white-space: nowrap;
+  }
+  .t-ta { color: var(--accent); background: var(--accent-soft); }
+  .t-peer { color: var(--pick); background: var(--pick-soft); }
+  .t-mine { color: var(--ink-faint); background: transparent; border: 1px solid var(--line); }
+  .item p { margin: 0 0 7px; font-size: 15.5px; color: var(--ink-soft); }
+  .item p:last-child { margin-bottom: 0; }
+  .item p b { color: var(--ink); font-weight: 600; }
+  .item ul { font-size: 15.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  .item ul b { color: var(--ink); font-weight: 600; }
+
+  .note {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 16px 18px; margin: 22px 0; font-size: 15.5px; color: var(--ink-soft);
+  }
+  .note b { color: var(--ink); }
+
+  /* two-column lists */
+  .wins { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  .wins td { padding: 13px 12px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .wins tr:last-child td { border-bottom: 0; }
+  .wins td:first-child { width: 150px; white-space: normal; color: var(--ink-faint); font-weight: 600; font-size: 14px; }
+  .wins span { color: var(--ink-soft); }
+  .wins b { color: var(--ink); font-weight: 600; }
+
+  footer { margin-top: 72px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--ink-faint); font-size: 14px; }
+  footer a { text-decoration: none; }
+
+  @media (max-width: 440px) {
+    header { padding-top: 48px; }
+    h1 { font-size: 32px; }
+    .oneline { font-size: 20px; padding-left: 16px; }
+    .wins td:first-child { width: 104px; }
+    .toc ol { columns: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Project v2 Build Plan · Design focus · MPCS 51238 · Autumn 2026</p>
+  <h1>Project v2 build plan</h1>
+
+  <p class="oneline">The submitted v2 plan says <strong>what v2 is</strong>. This says <strong>what order it gets built in</strong>, after the feedback.</p>
+</header>
+
+<div class="toc">
+  <ol>
+    <li><a href="#what">What this is</a></li>
+    <li><a href="#judgement">The judgement that sets the order</a></li>
+    <li><a href="#feedback">The feedback</a></li>
+    <li><a href="#faults">Faults carried over</a></li>
+    <li><a href="#plan">Build plan, slices 0 to 7</a></li>
+    <li><a href="#done">Done when</a></li>
+    <li><a href="#scope">Not in scope</a></li>
+  </ol>
+</div>
+
+<h2 id="what">1. What this is</h2>
+
+<p><code>apps/web/public/v2_plan.html</code> is the v2 plan deliverable, submitted during v1 week, and nothing here replaces or contradicts it: this is the build plan, the order the work actually happens in, revised in light of the TA and peer feedback that arrived after that plan was written.</p>
+
+<p class="quiet">Where the two documents touch, the submitted plan is the authority on <em>what</em> and this one is the authority on <em>when</em>. Live, at <a href="https://recipes-tan-nine.vercel.app/">recipes-tan-nine.vercel.app</a>, source at <a href="https://github.com/mrajesh164/recipes">github.com/mrajesh164/recipes</a>.</p>
+
+<h2 id="judgement">2. The judgement that sets the order</h2>
+
+<p class="lede"><strong>The feedback is overwhelmingly about coherence, not features.</strong></p>
+
+<p>Of the ten points the TA made, seven are about hierarchy, scatter, and not knowing where to look: the name appearing twice, the actions getting lost in the saved view, icons needing a normalization pass, the UI feeling scattered, texture applied everywhere instead of in places, being confused about where to look, and the instruction to arrange everything better. One more, the width changing after you search, is about the interface feeling unsturdy. One is an affordance that does not exist yet, the square with an arrow for a link that leaves the site. Exactly one is a feature request: that the search box should recognise anything.</p>
+
+<div class="facts">
+  <div class="fact"><b>7 of 10</b><span>TA points are about hierarchy, scatter, or not knowing where to look. One is a feature request.</span></div>
+  <div class="fact"><b>2</b><span>places the app renders its own name: <code>layout.tsx:51</code> and <code>page.tsx:17</code>.</span></div>
+  <div class="fact"><b>1</b><span>inline <code>&lt;svg&gt;</code> in the entire app, a bookmark glyph. Three outbound links, no external mark.</span></div>
+  <div class="fact"><b>1 line</b><span><code>scrollbar-gutter: stable</code> on <code>html</code> is the whole fix for the reported width jump.</span></div>
+</div>
+
+<p>So v2 leads with a design pass and the feature requests queue behind it. The reasoning is not sequencing for its own sake: adding a pantry filter to a scattered interface makes a scattered interface with a pantry filter. Every feature in section 6 puts at least one more control on a surface that three separate people have now said is hard to read. Deciding where controls live is a precondition for adding any.</p>
+
+<p>It also happens that this is the graded surface. Design is the focus for this project and is held to a higher standard than the rest, so the thing the feedback is complaining about is the thing being marked.</p>
+
+<h2 id="feedback">3. The feedback</h2>
+
+<h3>From the TA</h3>
+<ul>
+  <li>Rethink the hierarchy in the visual layout. <b>The Perfect Batch</b> appears twice.</li>
+  <li>The screen width changes after you type and search, which makes the interface feel unsturdy.</li>
+  <li>The saved-recipe view needs work. The lines with dots are confusing, and <b>Open recipe</b> and <b>Save</b> get lost and are hard to find.</li>
+  <li>Do a normalization pass on icons and interaction elements.</li>
+  <li>Use a square with an arrow for <b>Open recipe</b>, because it takes the user off the site.</li>
+  <li>The UI feels scattered. Clean it up.</li>
+      <li>Arrange everything better.</li>
+  <li>Maybe a white background, with sprinkles and texture confined to certain areas.</li>
+  <li>It is confusing where to look.</li>
+  <li>Ideally the search box recognises anything. When it does not, that could be a delightful or surprising moment, or it could suggest alternatives and near-match recipes.</li>
+</ul>
+
+<h3>From peers</h3>
+<ul>
+  <li>A pantry or ingredients filter.</li>
+  <li>How long a recipe takes.</li>
+  <li>Recording feedback after trying a recipe: liked, or did not like.</li>
+  <li>Personal information and allergies.</li>
+  <li>Choosing from several recipe results rather than one.</li>
+</ul>
+
+<h3>Mine, wanted in v1 and not done</h3>
+<ul>
+  <li>GitHub issues as the unit of work.</li>
+  <li>Continuous integration.</li>
+  <li>Pull requests rather than pushes to main.</li>
+  <li>Subagents reviewing pull requests.</li>
+</ul>
+
+<h2 id="faults">4. Faults carried over from v1</h2>
+
+<p class="quiet">Known, still open, and each one now has a slice that owns it.</p>
+
+<table class="wins">
+  <tr><td>Mislabelled recipes</td><td><span>A few recipes in the corpus are not the dish they were filed under, which widens every range they sit in. <b>Slice 4.</b></span></td></tr>
+  <tr><td>Oats are not flour</td><td><span>Oats are not counted as flour, so oatmeal recipes read as fattier than they are, across all 73 of them. <b>Slice 4.</b></span></td></tr>
+  <tr><td>Negation dropped</td><td><span>&ldquo;Not cakey&rdquo; is reported as not understood rather than used, which is a dead end for a reasonable request. <b>Slice 5.</b></span></td></tr>
+  <tr><td>Payload</td><td><span>Roughly 1.1 MB of recipe JSON is serialized into every page load, and it grows with the corpus. <b>Slice 1 if it is one serialization boundary, its own issue if not.</b></span></td></tr>
+</table>
+
+<div class="note">
+  <b>Why the first two belong to the plot slice and not to a maths slice.</b> The submitted plan already makes this argument and it still holds: the plots present a wrong number with exactly the same confidence as a right one, so the interface is quietly vouching for something it has not earned. Fixing the readability of a plot that is showing the wrong figure is the wrong order of operations.
+</div>
+
+<h2 id="plan">5. Build plan</h2>
+
+<p class="quiet">Eight slices. Each is something that can be deployed and looked at, which is the same unit <code>PLAN.md</code> section 7 already uses. Deploy after every slice.</p>
+
+<div class="band"><h3>Slice 0</h3><em>before any of the work</em></div>
+
+<div class="item">
+  <h4><span class="num">0</span> Set the workflow up first <span class="tag t-mine">mine</span></h4>
+  <p>GitHub issues as the unit of work, one per slice. A GitHub Actions workflow running on every pull request. Pull requests rather than pushes to main. An agent review on each pull request before it merges.</p>
+  <p><b>Why this is first and not last.</b> Retrofitting it after the work gains nothing. Issues written after the fact are documentation, not a unit of work, and a pipeline added at the end has never caught anything. Put it in before slice 1 and the seven slices that follow all flow through it, which means the process is demonstrated rather than described.</p>
+  <p><b>The CI config is already written.</b> <code>.githooks/pre-push</code> runs a credential-shape scan and a typecheck today. The Actions workflow transcribes those two steps and adds the 132 tests. This is a transcription of checks that already exist, not an invention, which is most of why it is a cheap first slice rather than an expensive one.</p>
+  <p><b>Done when</b> every slice below arrived as a pull request that closes an issue, with CI green and an agent review on the diff.</p>
+</div>
+
+<div class="band"><h3>Slices 1 to 4</h3><em>the design pass, where the grade is</em></div>
+
+<div class="item">
+  <h4><span class="num">1</span> The cheap structural fixes <span class="tag t-ta">TA</span></h4>
+  <p class="quiet">Roughly a day. Three reported complaints, each with a one-line cause.</p>
+  <ul>
+    <li><b>The name twice.</b> &ldquo;The Perfect Batch&rdquo; renders as the header logo at <code>apps/web/src/app/layout.tsx:51</code> and again as the page <code>&lt;h1&gt;</code> at <code>apps/web/src/app/page.tsx:17</code>. This slice ends the duplication. Slice 3 decides what the surviving line says.</li>
+    <li><b>The width jump.</b> <code>globals.css</code> sets no <code>scrollbar-gutter</code>. Results make the page taller than the viewport, a scrollbar appears, and the layout shifts sideways by its width. That is exactly the unsturdiness reported. <code>scrollbar-gutter: stable</code> on <code>html</code> is the whole fix.</li>
+    <li><b>The external-link mark.</b> Three <code>target="_blank"</code> links carry no affordance at all. Add the square with an arrow. It is the first icon in the set slice 2 defines, so it gets drawn to that spec rather than pulled from somewhere.</li>
+  </ul>
+  <p>No design problem here, which is the reason these go first. Nothing in this slice needs a judgement call, and two of the three TA complaints about sturdiness and affordance close on the first day.</p>
+</div>
+
+<div class="item">
+  <h4><span class="num">2</span> A design system, written down <span class="tag t-ta">TA</span></h4>
+  <p>This is the TA&rsquo;s &ldquo;normalize the icons&rdquo; and &ldquo;white background, texture only in certain areas&rdquo; taken as one job, because they are one job: both are rules about what the surface is allowed to do.</p>
+  <ul>
+    <li><b>A type scale and a spacing scale</b>, as custom properties, with a fixed number of steps, so that a later slice cannot invent a fourteenth size.</li>
+    <li><b>One icon set at one stroke weight.</b> The whole app currently contains one inline <code>&lt;svg&gt;</code>, a bookmark glyph. There is no icon system to normalize: there is nothing. So the pass means drawing the set, not auditing one.</li>
+    <li><b>Surface rules, stated.</b> What is paper, meaning the white working surface. What is cream. What is patterned.</li>
+    <li><b>The sprinkles get zones.</b> The texture is a repeating SVG data URI applied to <code>body</code>, so it sits behind everything on every page. Confining it means moving it off <code>body</code> onto named containers: the header band, empty states, the signed-out page. The working surface goes white.</li>
+  </ul>
+  <p><b>Design problem:</b> the texture is most of what gives this app a character, so taking it off <code>body</code> risks replacing a scattered app with a forgettable one. The rule has to say where the pattern is <em>required</em>, not only where it is banned.</p>
+</div>
+
+<div class="item">
+  <h4><span class="num">3</span> A hierarchy pass on the three views <span class="tag t-ta">TA</span></h4>
+  <p>Home and recommendation, saved, browse. For each view, name the one primary thing, then place the actions consistently and in the same spot across all three. This is the answer to &ldquo;it is confusing where to look&rdquo; and to &ldquo;Open recipe gets lost&rdquo;.</p>
+  <ul>
+    <li><b>Home.</b> The recommendation is primary, the reasons panel is second, and the free-text box keeps the front door. The submitted plan already settled that last point and it is not reopened here.</li>
+    <li><b>Saved.</b> Each saved recipe gets one obvious primary action in a fixed position, rather than a row of equal-weight links that the eye has to sort through. This is where the TA said things get lost, and it is the view with the least design attention in v1.</li>
+    <li><b>Browse.</b> A list of 325 is not useful until it says what it is sorted by.</li>
+  </ul>
+  <p><b>The duplicated title, decided.</b> Two options. Either the <code>&lt;h1&gt;</code> goes and the header logo carries the name alone, or the <code>&lt;h1&gt;</code> stops repeating the name and becomes the actual proposition, what the app will do for you. Preference: the second. The header carries identity and the <code>&lt;h1&gt;</code> carries the offer. Repeating the name spends the largest type on the screen saying nothing.</p>
+  <p><b>Design problem:</b> &ldquo;arrange everything better&rdquo; is not actionable until each view has one stated primary. The deliverable of this slice is that sentence, per view, written into the repo, so every later placement decision can be checked against it instead of argued about.</p>
+</div>
+
+<div class="item">
+  <h4><span class="num">4</span> Make the plots readable <span class="tag t-ta">TA</span></h4>
+  <p>The TA says the lines with dots are confusing. This is the hardest item on the list, and it is hard for an uncomfortable reason: the dot plots are the best idea in the product and they are apparently not reading. The evidence panel is the whole difference between this and a search engine, so if it does not land, the thing that makes the app worth building does not land.</p>
+  <p>Options worth naming, roughly cheapest first. One or two of them, not all five.</p>
+  <ul>
+    <li><b>Fewer dots.</b> A hundred and fifty-seven points on one axis is a smear, not a comparison.</li>
+    <li><b>Binning</b>, so the shape of the corpus is visible instead of every member of it.</li>
+    <li><b>A clearer axis</b>, with a unit and a direction, so the reader is not inferring both.</li>
+    <li><b>Label the extremes</b>, so the ends of the line mean something without a legend.</li>
+    <li><b>Position in words, beside the plot.</b> &ldquo;More butter than four in five chocolate chip recipes.&rdquo; It is worth entertaining that the sentence does most of the work and the plot is the garnish.</li>
+  </ul>
+  <p>The two accuracy faults from section 4 land here, because a readable plot showing a wrong number is worse than an unreadable one.</p>
+  <p><b>Design problem:</b> the plot has to answer &ldquo;why this one&rdquo; at a glance, and it currently asks the reader to decode an axis before it pays anything back. Whichever option wins has to require nothing to be learned first.</p>
+</div>
+
+<div class="band"><h3>Slices 5 to 6</h3><em>after the surface is coherent</em></div>
+
+<div class="item">
+  <h4><span class="num">5</span> A search box that recognises anything <span class="tag t-ta">TA</span></h4>
+  <p>Three parts, in this order.</p>
+  <ul>
+    <li><b>Widen the vocabulary.</b> v1 reports what it dropped, which is honest, but being told a word was ignored is not the same as being understood.</li>
+    <li><b>Act on negation instead of dropping it.</b> Rank away from a texture, not only toward one. &ldquo;Not cakey&rdquo; is currently a reported dead end for a request any baker would consider reasonable.</li>
+    <li><b>Design the no-match case properly.</b> The TA offered two shapes for it: a delightful or surprising moment, or suggested alternatives and near-match recipes. Probably both. The near match is the useful half, and the moment is what keeps a dead end from reading as a failure.</li>
+  </ul>
+  <p>All of this extends the honesty loop that already exists rather than replacing it.</p>
+  <div class="specimen">
+    <p class="said">you typed: not cakey, nutty oat</p>
+    <p class="read">Today: reading that as oat.</p>
+    <p class="dropped">&ldquo;Not cakey&rdquo; dropped. &ldquo;Nutty&rdquo; dropped. Two of three words discarded, both reported honestly, and the result is a recommendation the person did not ask for.</p>
+    <p class="cap">After slice 5, the same phrase should rank away from cakey, offer a near match for nutty, and still say plainly what it did with each word. The loop stays, it just stops being a terminus.</p>
+  </div>
+  <p><b>Design problem:</b> &ldquo;recognises anything&rdquo; and &ldquo;says honestly what it failed to understand&rdquo; pull against each other, and a box that silently guesses is worse than one that admits a gap. The target is a box that always returns something and always says what it did with your words.</p>
+</div>
+
+<div class="item">
+  <h4><span class="num">6</span> The feature requests <span class="tag t-peer">peers</span></h4>
+  <p>Held until slices 2 and 3 have said where controls live, because each of these adds a control to the surface the feedback already calls scattered.</p>
+  <table class="wins">
+    <tr><td>Pantry and ingredients</td><td><span>Already in the submitted plan as &ldquo;Tell it what you have&rdquo;, first in its <b>Add next</b> band. Peers arrived at it independently. That convergence is the useful signal here: the strongest unprompted request is also the one already planned, so it leads this slice.</span></td></tr>
+    <tr><td>From what you saved</td><td><span>Also already in the submitted plan. Saves already store the words typed when the recipe was kept, so the signal exists and is unused.</span></td></tr>
+    <tr><td>Time to make</td><td><span>New, from peers. <code>bake_minutes</code> and <code>chills_dough</code> are already columns, so this is mostly a display decision.</span></td></tr>
+    <tr><td>Several results</td><td><span>New. It is in tension with v1&rsquo;s premise, which is removing the deciding. More likely the runners-up become visible than the answer becomes a list of five.</span></td></tr>
+    <tr><td>Post-bake feedback</td><td><span>New. Liked, or did not like. Every table today is public-read and nobody-writes, so this is the first real write surface after saves and carries the RLS work with it.</span></td></tr>
+    <tr><td>Allergies</td><td><span>New. Mechanically the same shape as the pantry filter: both are constraints on candidates. Probably one filter with two labels, not two systems.</span></td></tr>
+  </table>
+  <p>The submitted plan&rsquo;s texture slider and other baked goods sit in this band too and keep their stated place in it.</p>
+  <p><b>Design problem:</b> six requests, and the honest version of this slice ships two or three of them well rather than all six thinly. The pantry filter and the saved-set recommendation are the two with a design problem already worked out in the submitted plan, so they go first.</p>
+</div>
+
+<div class="band"><h3>Slice 7</h3><em>parked</em></div>
+
+<div class="item">
+  <h4><span class="num">7</span> Live search beyond the corpus <span class="tag t-mine">mine</span></h4>
+  <p>Searching the web at request time rather than a fixed set of 325. Parked, unchanged from the submitted plan.</p>
+  <p><b>What it would cost:</b> every number in this app rests on 94% of ingredient lines converting to grams, 3,396 of 3,632, over a corpus that was harvested and checked. Trusting an arbitrary page&rsquo;s structured data at request time gives that up, and a recommendation with unverified measurements behind it is worse than a smaller library.</p>
+</div>
+
+<h2 id="done">6. Done when</h2>
+
+<table class="wins">
+  <tr><td>It is sturdy</td><td><span>The layout does not move when results arrive, at 390px and at desktop width.</span></td></tr>
+  <tr><td>One name</td><td><span>The app says its own name once, and the largest type on the page says something.</span></td></tr>
+  <tr><td>Actions are findable</td><td><span>On each of the three views, someone who has not seen it can say what the page is for and where the primary action is, without being told.</span></td></tr>
+  <tr><td>One icon set</td><td><span>Every icon comes from one set at one stroke weight, and every outbound link carries the external mark.</span></td></tr>
+  <tr><td>Texture is placed</td><td><span>The working surface is white and the sprinkles appear only in zones the design system names.</span></td></tr>
+  <tr><td>The plots read</td><td><span>Someone seeing a dot plot for the first time can say what it is telling them, quickly, and no recipe in it reads as implausible to a baker who knows ratios.</span></td></tr>
+  <tr><td>No dead ends</td><td><span>No typed phrase ends in nothing: a recipe, or a near match, or a clear account of what was not understood plus something to do next.</span></td></tr>
+  <tr><td>Through the workflow</td><td><span>Every slice above arrived as a pull request closing an issue, with CI green and a review on the diff.</span></td></tr>
+  <tr><td>Still honest</td><td><span>Every ranking decision can be explained by something visible on the screen.</span></td></tr>
+</table>
+
+<h2 id="scope">7. Not in scope</h2>
+
+<table class="wins">
+  <tr><td>Live web search</td><td><span>Slice 7, parked, for the reason given there.</span></td></tr>
+  <tr><td>Reopening sign-in</td><td><span>The core task stays behind sign-in. Settled, and not revisited in v2.</span></td></tr>
+  <tr><td>A second front door</td><td><span>The free-text box wins. A texture slider is an adjustment after the answer, as the submitted plan says.</span></td></tr>
+  <tr><td>Replacing the plots</td><td><span>Slice 4 makes them readable. It does not swap them for bar charts or for prose alone.</span></td></tr>
+  <tr><td>More dish types</td><td><span>Beyond the current five, only if slices 0 to 5 finish early.</span></td></tr>
+  <tr><td>New dependencies</td><td><span>No icon or styling library. The set gets drawn, which is cheaper at this size than learning one.</span></td></tr>
+  <tr><td>Rewriting the v2 plan</td><td><span><code>apps/web/public/v2_plan.html</code> is submitted and stands as written.</span></td></tr>
+</table>
+
+<footer>
+  Maya Rajesh · Design, Build, Ship · MPCS 51238 · Autumn 2026<br>
+  <a href="https://recipes-tan-nine.vercel.app/">recipes-tan-nine.vercel.app</a> · <a href="https://github.com/mrajesh164/recipes">github.com/mrajesh164/recipes</a>
+</footer>
+
+</div>
+</body>
+</html>
