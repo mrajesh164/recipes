@@ -17,18 +17,48 @@ import { CompareDialog } from "./CompareDialog";
  * Cards open the compare dialog rather than linking straight out, because the
  * ratios are the thing this app knows that the source site doesn't.
  */
+/**
+ * How a browse list can be ordered.
+ *
+ * The list was already alphabetical, because the query orders by title, but
+ * nothing on the page said so. An unlabelled order reads as no order, which is
+ * what makes a wall of 325 feel arbitrary: you cannot tell whether the top of
+ * the list means anything. Saying it is most of the fix. Being able to change
+ * it costs almost nothing on top, because every recipe is already here in the
+ * browser and sorting is not a new request.
+ */
+const SORTS = {
+  title: { label: "A to Z", compare: (a: ScoredRecipe, b: ScoredRecipe) => a.title.localeCompare(b.title) },
+  rating: {
+    label: "Best rated",
+    // Unrated last rather than first. A null is not a zero, and it is not a
+    // five either.
+    compare: (a: ScoredRecipe, b: ScoredRecipe) =>
+      (b.rating ?? -1) - (a.rating ?? -1) || a.title.localeCompare(b.title),
+  },
+  dish: {
+    label: "By kind",
+    compare: (a: ScoredRecipe, b: ScoredRecipe) =>
+      (a.dish_type ?? "").localeCompare(b.dish_type ?? "") || a.title.localeCompare(b.title),
+  },
+} as const;
+
+type SortKey = keyof typeof SORTS;
+
 export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   const [compare, setCompare] = useState<ScoredRecipe | null>(null);
   const [filter, setFilter] = useState("");
+  const [sort, setSort] = useState<SortKey>("title");
 
   const q = filter.trim().toLowerCase();
-  const shown = q
+  const matched = q
     ? recipes.filter(
         (r) =>
           r.title.toLowerCase().includes(q) ||
           r.source_name.toLowerCase().includes(q),
       )
     : recipes;
+  const shown = [...matched].sort(SORTS[sort].compare);
 
   return (
     <div>
@@ -45,11 +75,34 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                    placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
       />
 
-      <p className="mt-3 text-sm text-ink-soft">
-        {shown.length === recipes.length
-          ? `${recipes.length} recipes`
-          : `${shown.length} of ${recipes.length}`}
-      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <p className="text-sm text-ink-soft">
+          {shown.length === recipes.length
+            ? `${recipes.length} recipes`
+            : `${shown.length} of ${recipes.length}`}
+          , sorted{" "}
+          <span className="font-semibold text-ink">{SORTS[sort].label.toLowerCase()}</span>
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(SORTS) as SortKey[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setSort(k)}
+              aria-pressed={sort === k}
+              className={[
+                "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                sort === k
+                  ? "border-clay-deep bg-clay-deep text-paper"
+                  : "border-line bg-paper text-ink-soft hover:border-pink-deep hover:text-ink",
+              ].join(" ")}
+            >
+              {SORTS[k].label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {shown.length === 0 && (
         <p className="mt-10 text-sm text-ink-soft">
