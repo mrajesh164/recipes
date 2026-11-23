@@ -8,7 +8,7 @@ export default async function Page() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-6">
-      <h1 className="font-script text-5xl font-bold leading-none text-clay-deep">
+      <h1 className="text-2xl font-bold tracking-tight">
         All recipes
       </h1>
       <p className="mt-3 max-w-prose text-sm text-ink-soft">

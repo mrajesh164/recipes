@@ -16,7 +16,7 @@ export const metadata = { title: "Saved recipes" };
 export default function Page() {
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-6">
-      <h1 className="text-3xl font-bold tracking-tight">Saved</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Saved</h1>
       <Suspense fallback={<p className="mt-6 text-sm text-ink-soft">Looking…</p>}>
         <List />
       </Suspense>

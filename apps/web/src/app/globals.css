@@ -46,6 +46,50 @@
   --line-soft: #efe7db;
 }
 
+/**
+ * The type scale. Seven steps, and no eighth.
+ *
+ * `--text-*: initial` clears Tailwind's default scale before these are
+ * declared, so the seven below are the only sizes that exist. I checked what
+ * that actually does to an off-scale size: `text-4xl` still compiles, and
+ * Tailwind emits no rule for it at all, so the text renders at whatever it
+ * inherits. Not a build error, but not a quiet near-miss either -- it looks
+ * plainly unstyled, which is the kind of wrong you notice.
+ *
+ * Before this pass the app used ten sizes plus two arbitrary pixel values, and
+ * the three page titles were three different sizes (3xl on Saved, 5xl on All
+ * recipes, 6xl/7xl on home). That is most of what "rethink the hierarchy" was
+ * pointing at.
+ *
+ * Steps are named for what they are for, not for how big they are:
+ *
+ *   xs      12   micro labels, the small-caps section heads, axis numbers
+ *   sm      14   secondary text, metadata, captions
+ *   base    16   body
+ *   lg      18   a lead line, a card title
+ *   xl      22   a section heading inside a view
+ *   2xl     28   a page title. All three pages now use this one.
+ *   display fluid, 40 to 64. The wordmark on the home page, nothing else.
+ */
+@theme {
+  --text-*: initial;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.2;
+  --text-display: clamp(2.5rem, 8vw, 4rem);
+  --text-display--line-height: 1.05;
+}
+
 @theme inline {
   --font-script: var(--font-script);
   --color-cream: var(--cream);

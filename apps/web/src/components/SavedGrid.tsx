@@ -57,12 +57,12 @@ export function SavedGrid({
                 <h2 className="text-sm font-bold leading-snug tracking-tight group-hover:text-clay-deep">
                   {item.recipe.title}
                 </h2>
-                <p className="mt-1 text-[11px] text-ink-faint">
+                <p className="mt-1 text-xs text-ink-faint">
                   {item.recipe.source_name}
                   {item.recipe.rating !== null && ` · ${item.recipe.rating}★`}
                 </p>
                 {item.savedFor && (
-                  <p className="mt-2 inline-block rounded-full bg-cream-deep px-2.5 py-0.5 text-[11px] text-ink-soft">
+                  <p className="mt-2 inline-block rounded-full bg-cream-deep px-2.5 py-0.5 text-xs text-ink-soft">
                     saved for &ldquo;{item.savedFor}&rdquo;
                   </p>
                 )}

@@ -88,7 +88,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                 <h2 className="text-sm font-bold leading-snug tracking-tight group-hover:text-clay-deep">
                   {r.title}
                 </h2>
-                <p className="mt-1 text-[11px] text-ink-faint">
+                <p className="mt-1 text-xs text-ink-faint">
                   {r.dish_type ? `${r.dish_type} · ` : ""}
                   {r.source_name}
                   {r.rating !== null && ` · ${r.rating}★`}

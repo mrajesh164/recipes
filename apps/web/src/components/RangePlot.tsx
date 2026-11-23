@@ -95,7 +95,7 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
         />
       </div>
 
-      <div className="flex justify-between text-[11px] tabular-nums text-ink-faint">
+      <div className="flex justify-between text-xs tabular-nums text-ink-faint">
         <span>
           {clampedLo > 0 && <span title={`${clampedLo} below`}>&lsaquo; </span>}
           {format(lo)}
