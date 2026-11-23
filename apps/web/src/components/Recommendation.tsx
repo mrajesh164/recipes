@@ -3,6 +3,7 @@ import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { SaveButton } from "./SaveButton";
 import { WhyThisOne } from "./WhyThisOne";
+import { ExternalLinkIcon } from "./icons";
 
 /**
  * The answer: one recipe, and the evidence for it.
@@ -96,6 +97,8 @@ export function Recommendation({
             >
               {recipe.title}
             </a>
+            <ExternalLinkIcon className="ml-1.5 inline h-4 w-4 shrink-0 align-baseline text-ink-faint" />
+            <span className="sr-only">(opens in a new tab)</span>
           </h2>
 
           {!compact && (

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
+import { ExternalLinkIcon } from "./icons";
 import { WhyThisOne } from "./WhyThisOne";
 import { SaveButton } from "./SaveButton";
 
@@ -141,9 +142,11 @@ function Body({
             href={recipe.source_url}
             target="_blank"
             rel="noreferrer"
-            className="rounded-full bg-clay-deep px-5 py-3 text-sm font-semibold text-paper hover:bg-clay"
+            className="inline-flex items-center gap-1.5 rounded-full bg-clay-deep px-5 py-3 text-sm font-semibold text-paper hover:bg-clay"
           >
             Open the recipe
+            <ExternalLinkIcon />
+            <span className="sr-only">(opens in a new tab)</span>
           </a>
           <SaveButton recipeId={recipe.id} compact />
         </div>

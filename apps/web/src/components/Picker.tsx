@@ -11,6 +11,7 @@ import {
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
+import { ExternalLinkIcon } from "./icons";
 import { WhyThisOne } from "./WhyThisOne";
 
 /**
@@ -246,9 +247,11 @@ function CloseMatches({
                     href={r.source_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full bg-clay-deep px-4 py-2.5 text-sm font-semibold text-paper hover:bg-clay"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-clay-deep px-4 py-2.5 text-sm font-semibold text-paper hover:bg-clay"
                   >
                     Open the recipe
+                    <ExternalLinkIcon />
+                    <span className="sr-only">(opens in a new tab)</span>
                   </a>
                   <SaveButton recipeId={r.id} compact />
                 </div>
