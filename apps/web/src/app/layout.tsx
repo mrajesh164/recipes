@@ -88,7 +88,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <SignUpButton mode="modal">
                   <button
                     type="button"
-                    className="whitespace-nowrap rounded-full bg-clay-deep px-3 py-2 text-sm font-semibold text-paper hover:bg-clay sm:px-4"
+                    className="whitespace-nowrap rounded-full border border-clay-deep bg-clay-deep px-3 py-2 text-sm font-semibold text-paper hover:border-clay hover:bg-clay sm:px-4"
                   >
                     Sign up
                   </button>

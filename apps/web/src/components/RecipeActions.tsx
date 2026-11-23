@@ -32,14 +32,19 @@ export function RecipeActions({
         href={recipe.source_url}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-full bg-clay-deep px-5 py-3
-                   text-sm font-semibold text-paper transition-colors hover:bg-clay"
+        // border-2 in the same colour as the fill, which is invisible but puts
+        // this button on the same box model as Save. Without it the two differ
+        // by 4px however the padding is set, because only one of them has a
+        // border contributing to its height.
+        className="inline-flex items-center gap-1.5 rounded-full border-2 border-clay-deep
+                   bg-clay-deep px-4 py-3 text-sm font-semibold text-paper transition-colors
+                   hover:border-clay hover:bg-clay"
       >
         Open the recipe
         <ExternalLinkIcon />
         <span className="sr-only">(opens in a new tab)</span>
       </a>
-      <SaveButton recipeId={recipe.id} savedFor={savedFor} compact />
+      <SaveButton recipeId={recipe.id} savedFor={savedFor} />
     </div>
   );
 }
