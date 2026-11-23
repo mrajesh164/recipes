@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { CompareDialog } from "./CompareDialog";
+import { RecipeActions } from "./RecipeActions";
 
 export interface SavedItem {
   /** The row in saved_recipes, not the recipe. */
@@ -33,31 +34,44 @@ export function SavedGrid({
 
   return (
     <div>
-      <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {/* Rows, not a four-across grid of tiles.
+ 
+          A saved recipe had no visible action on it at all: the whole card was
+          one click target that opened the comparison, and you had to already
+          know that. But you saved it in order to bake it, so opening it is the
+          primary thing and it belongs on the card, in the same place on every
+          card. Two across at most, because a tile narrow enough to fit four
+          cannot hold a button as well. */}
+      <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {items.map((item) => (
-          <li key={item.id}>
-            <button
-              type="button"
-              onClick={() => setCompare(item.recipe)}
-              className="group block h-full w-full overflow-hidden rounded-2xl border border-line
-                         bg-paper text-left transition-colors hover:border-pink-deep"
-            >
+          <li
+            key={item.id}
+            className="overflow-hidden rounded-2xl border border-line bg-paper"
+          >
+            <div className="flex gap-4 p-4">
               {item.recipe.image_url && (
-                <div className="relative aspect-[4/3]">
+                <button
+                  type="button"
+                  onClick={() => setCompare(item.recipe)}
+                  aria-label={`Compare ${item.recipe.title} with the others`}
+                  className="group relative h-24 w-24 flex-none overflow-hidden rounded-xl"
+                >
                   <Image
                     src={item.recipe.image_url}
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className="object-cover"
+                    sizes="96px"
+                    className="object-cover transition-transform group-hover:scale-105"
                   />
-                </div>
+                </button>
               )}
-              <div className="p-3">
-                <h2 className="text-sm font-bold leading-snug tracking-tight group-hover:text-clay-deep">
+
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base font-bold leading-snug tracking-tight">
                   {item.recipe.title}
                 </h2>
                 <p className="mt-1 text-xs text-ink-faint">
+                  {item.recipe.dish_type ? `${item.recipe.dish_type} · ` : ""}
                   {item.recipe.source_name}
                   {item.recipe.rating !== null && ` · ${item.recipe.rating}★`}
                 </p>
@@ -67,7 +81,20 @@ export function SavedGrid({
                   </p>
                 )}
               </div>
-            </button>
+            </div>
+
+            {/* The action row, same component and same order as everywhere
+                else, on a ruled footer so it is in one place on every row. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft px-4 py-3">
+              <RecipeActions recipe={item.recipe} savedFor={item.savedFor ?? undefined} />
+              <button
+                type="button"
+                onClick={() => setCompare(item.recipe)}
+                className="rounded-full px-3 py-2 text-xs font-semibold text-clay-deep hover:bg-cream-deep"
+              >
+                Compare
+              </button>
+            </div>
           </li>
         ))}
       </ul>
