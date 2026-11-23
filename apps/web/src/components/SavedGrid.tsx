@@ -53,7 +53,7 @@ export function SavedGrid({
                 <button
                   type="button"
                   onClick={() => setCompare(item.recipe)}
-                  aria-label={`Compare ${item.recipe.title} with the others`}
+                  aria-label={`See the ratios for ${item.recipe.title}`}
                   className="group relative h-24 w-24 flex-none overflow-hidden rounded-xl"
                 >
                   <Image
@@ -92,7 +92,7 @@ export function SavedGrid({
                 onClick={() => setCompare(item.recipe)}
                 className="rounded-full px-3 py-2 text-xs font-semibold text-clay-deep hover:bg-cream-deep"
               >
-                Compare
+                See the ratios
               </button>
             </div>
           </li>
