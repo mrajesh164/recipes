@@ -41,9 +41,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Inside <body>, not around <html>. Current Clerk Next.js SDKs
             require it here. */}
         <ClerkProvider>
-          <div className="scallop" aria-hidden />
+          {/* The one band that keeps the texture. The chrome is where the
+              character belongs: it is the part of the page with nothing to
+              read closely, so a pattern costs nothing there and the app would
+              be anonymous without it. */}
+          <div className="sprinkled">
+            <div className="scallop" aria-hidden />
 
-          <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
+            <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
             <Link
               href="/"
               className="font-script text-xl font-bold leading-none text-clay-deep hover:text-clay sm:text-2xl"
@@ -90,8 +95,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 </SignUpButton>
               </Show>
               </Suspense>
-            </nav>
-          </header>
+              </nav>
+            </header>
+          </div>
 
           {children}
         </ClerkProvider>
