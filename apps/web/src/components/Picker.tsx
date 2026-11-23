@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { SaveButton } from "./SaveButton";
 import { Recommendation } from "./Recommendation";
 import { asRankable } from "@/lib/rankable";
 import {
@@ -11,7 +10,8 @@ import {
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { BookmarkIcon, ExternalLinkIcon } from "./icons";
+import { BookmarkIcon } from "./icons";
+import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
 
 /**
@@ -235,6 +235,10 @@ function CloseMatches({
                     never found out that two of the runners-up also skip the
                     chilling. A runner-up has to answer the question the pick
                     was answering, or there is no comparing them. */}
+                <div className="mb-5">
+                  <RecipeActions recipe={r} />
+                </div>
+
                 <WhyThisOne
                   recipe={r}
                   all={all}
@@ -242,19 +246,6 @@ function CloseMatches({
                   want={want}
                   label="Why it's close"
                 />
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <a
-                    href={r.source_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-clay-deep px-4 py-2.5 text-sm font-semibold text-paper hover:bg-clay"
-                  >
-                    Open the recipe
-                    <ExternalLinkIcon />
-                    <span className="sr-only">(opens in a new tab)</span>
-                  </a>
-                  <SaveButton recipeId={r.id} compact />
-                </div>
               </div>
             </details>
           </li>

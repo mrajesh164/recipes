@@ -3,9 +3,8 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { ExternalLinkIcon } from "./icons";
 import { WhyThisOne } from "./WhyThisOne";
-import { SaveButton } from "./SaveButton";
+import { RecipeActions } from "./RecipeActions";
 
 /**
  * Where any recipe sits among the others.
@@ -111,6 +110,11 @@ function Body({
           </button>
         </div>
 
+        {/* Same row, same place, as the recommendation and the runners-up. */}
+        <div className="mt-5">
+          <RecipeActions recipe={recipe} />
+        </div>
+
         <div className="mt-6">
           {/* No "Why this one" heading here. Nothing was asked -- you
               clicked a cookie -- so there is no "why", and the heading
@@ -137,19 +141,6 @@ function Body({
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <a
-            href={recipe.source_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-clay-deep px-5 py-3 text-sm font-semibold text-paper hover:bg-clay"
-          >
-            Open the recipe
-            <ExternalLinkIcon />
-            <span className="sr-only">(opens in a new tab)</span>
-          </a>
-          <SaveButton recipeId={recipe.id} compact />
-        </div>
 
         <details className="mt-6">
           <summary className="-mx-2 cursor-pointer rounded-lg px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">

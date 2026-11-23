@@ -1,9 +1,8 @@
 import Image from "next/image";
 import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { SaveButton } from "./SaveButton";
 import { WhyThisOne } from "./WhyThisOne";
-import { ExternalLinkIcon } from "./icons";
+import { RecipeActions } from "./RecipeActions";
 
 /**
  * The answer: one recipe, and the evidence for it.
@@ -88,24 +87,12 @@ export function Recommendation({
             {compact ? "For example" : "Make this one"}
           </p>
 
+          {/* Plain text, not a link. The action row below opens it, and a title
+              that was also a link gave two ways to do one thing with two
+              different affordances. */}
           <h2 className={compact ? "mt-2 text-lg font-bold leading-tight tracking-tight" : "mt-2 text-2xl font-bold leading-tight tracking-tight"}>
-            <a
-              href={recipe.source_url}
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-pink decoration-2 underline-offset-4 hover:decoration-clay-deep"
-            >
-              {recipe.title}
-            </a>
-            <ExternalLinkIcon className="ml-1.5 inline h-4 w-4 shrink-0 align-baseline text-ink-faint" />
-            <span className="sr-only">(opens in a new tab)</span>
+            {recipe.title}
           </h2>
-
-          {!compact && (
-            <div className="mt-4">
-              <SaveButton recipeId={recipe.id} savedFor={query.trim() || undefined} />
-            </div>
-          )}
 
           {recipe.dish_type && (
             <p className="mt-3 inline-block rounded-full bg-cream-deep px-3 py-1 text-xs font-medium text-ink-soft">
@@ -119,6 +106,16 @@ export function Recommendation({
             {recipe.rating_count !== null && ` (${recipe.rating_count})`}
             {recipe.yield_count !== null && ` · makes ${recipe.yield_count}`}
           </p>
+
+          {/* Above the reasons, not below them. The content column scrolls at
+              md and up, so anything placed under the plots can sit off the
+              bottom of the card, which is the other half of how the action got
+              lost. Identify, act, then justify. */}
+          {!compact && (
+            <div className="mt-5">
+              <RecipeActions recipe={recipe} savedFor={query.trim() || undefined} />
+            </div>
+          )}
 
           <div className="mt-6">
             {/* The same evidence either way. The preview used to show one plot
