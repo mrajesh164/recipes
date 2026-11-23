@@ -74,6 +74,24 @@
  * sit on --paper, which is opaque, so nothing is ever read over a sprinkle.
  * The scatter is seeded, so the tile is the same on every build.
  */
+/**
+ * Reserve the scrollbar's width whether or not there is a scrollbar.
+ *
+ * Without this the page is narrower the moment results make it taller than the
+ * viewport: a scrollbar appears, takes its width out of the layout, and
+ * everything shifts left. Searching is exactly when that happens, so the
+ * interface moved under you at the one moment you were reading it. Reported
+ * as "screen width changes after you type and search, makes the interface
+ * unsturdy", which is the right description of the symptom.
+ *
+ * On macOS, overlay scrollbars hide this; on Windows and on any system set to
+ * always show scrollbars, it is plainly visible. The fix costs one line and
+ * nothing is lost by it being invisible here.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background-color: var(--cream);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg opacity='0.38'%3E%3Crect x='94.3' y='47.8' width='10' height='3.2' rx='1.6' fill='%23c9838a' transform='rotate(117 99.3 49.4)'/%3E%3Crect x='237.5' y='31.5' width='10' height='3.2' rx='1.6' fill='%23e8b4b8' transform='rotate(105 242.5 33.1)'/%3E%3Crect x='159.7' y='21.4' width='10' height='3.2' rx='1.6' fill='%236f8269' transform='rotate(102 164.7 23.0)'/%3E%3Crect x='182.6' y='172.3' width='10' height='3.2' rx='1.6' fill='%23e8b4b8' transform='rotate(11 187.6 173.9)'/%3E%3Crect x='115.2' y='285.6' width='10' height='3.2' rx='1.6' fill='%236f8269' transform='rotate(8 120.2 287.2)'/%3E%3Crect x='34.9' y='93.2' width='10' height='3.2' rx='1.6' fill='%236f8269' transform='rotate(147 39.9 94.8)'/%3E%3Crect x='30.7' y='168.9' width='10' height='3.2' rx='1.6' fill='%23c9838a' transform='rotate(34 35.7 170.5)'/%3E%3Crect x='91.5' y='173.0' width='10' height='3.2' rx='1.6' fill='%23c87f55' transform='rotate(82 96.5 174.6)'/%3E%3Crect x='228.3' y='240.1' width='10' height='3.2' rx='1.6' fill='%23c87f55' transform='rotate(61 233.3 241.7)'/%3E%3Crect x='273.1' y='140.9' width='10' height='3.2' rx='1.6' fill='%23c9838a' transform='rotate(120 278.1 142.5)'/%3E%3Crect x='211.6' y='93.6' width='10' height='3.2' rx='1.6' fill='%23e8c97a' transform='rotate(104 216.6 95.2)'/%3E%3Crect x='34.7' y='21.4' width='10' height='3.2' rx='1.6' fill='%236f8269' transform='rotate(138 39.7 23.0)'/%3E%3Crect x='4.5' y='243.8' width='10' height='3.2' rx='1.6' fill='%23c87f55' transform='rotate(33 9.5 245.4)'/%3E%3Crect x='275.5' y='203.3' width='10' height='3.2' rx='1.6' fill='%23e8b4b8' transform='rotate(93 280.5 204.9)'/%3E%3C/g%3E%3C/svg%3E");
