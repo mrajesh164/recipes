@@ -38,7 +38,21 @@ export interface RangePlotProps {
   format: (n: number) => string;
 }
 
-const BINS = 20;
+/**
+ * Bins scale with the number of recipes, by the square-root rule.
+ *
+ * A fixed count was a bug rather than a simplification. At 313 recipes 20 bins
+ * is about right; at the 10 snickerdoodles a dish-narrowed query produces, 20
+ * bins put 10 recipes in 20 slots and the two bins holding four of them
+ * rendered at full height, so the chart read as three marks and a gap. That is
+ * worse than the dot strip this replaced, which is the opposite of the point.
+ *
+ * sqrt(313) is 18, sqrt(10) is 4. Floor of 4 so there is always a shape, cap
+ * of 20 so a larger corpus does not turn into a comb.
+ */
+function binCount(n: number): number {
+  return Math.max(4, Math.min(20, Math.ceil(Math.sqrt(n))));
+}
 
 export function RangePlot({ label, hint, values, picked, format }: RangePlotProps) {
   if (values.length === 0) return null;
@@ -74,18 +88,24 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
   // line with two spikes rather than as a distribution. The chevrons beside
   // the axis labels already say how many sit outside, which is the honest
   // place for them.
-  const binOf = (v: number) => Math.floor(((v - lo) / span) * BINS);
   const inWindow = (v: number) => v >= lo && v <= hi;
+  const bins = binCount(values.filter(inWindow).length);
+  const binOf = (v: number) =>
+    Math.min(bins - 1, Math.max(0, Math.floor(((v - lo) / span) * bins)));
 
-  const counts = new Array<number>(BINS).fill(0);
+  const counts = new Array<number>(bins).fill(0);
   for (const v of values) {
     if (!inWindow(v)) continue;
-    counts[Math.min(BINS - 1, Math.max(0, binOf(v)))]! += 1;
+    counts[binOf(v)]! += 1;
   }
   const tallest = Math.max(...counts, 1);
-  const pickedBin = inWindow(picked)
-    ? Math.min(BINS - 1, Math.max(0, binOf(picked)))
-    : null;
+
+  // Clamped to the nearest edge rather than left unmarked. A pick outside the
+  // axis window used to highlight no bar at all, so the chart showed a spread
+  // with nothing marked on it and lost the only thing it is for. The exact
+  // value is in the sentence underneath either way, so an edge bar understates
+  // the position rather than misreporting it.
+  const pickedBin = binOf(picked);
 
   // The sentence is the part that does not need decoding. A reader who has
   // never seen this chart before still knows what "more butter than 68% of
