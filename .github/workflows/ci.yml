@@ -1,0 +1,68 @@
+# The same checks the pre-push hook runs, plus the tests it skips.
+#
+# The hook exists so a mistake is caught before it leaves the machine; this
+# exists so it is caught even when the hook is bypassed, which --no-verify and
+# the GitHub web editor both do. Neither replaces the other.
+#
+# Deliberately not running `next build`. The build reads the Supabase URL and
+# publishable key, so it would need those as repository variables, and a CI
+# that fails on its first run for a missing variable teaches people to ignore
+# CI. Worth adding later, with the variables set, as its own change.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to a branch makes the first run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22 is not optional: the tests and the corpus scripts run TypeScript
+      # directly through --experimental-strip-types, which lands in 22.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Cheapest check first: a leaked key costs more than a failed build.
+      # Kept identical to .githooks/pre-push on purpose. If one changes, change
+      # both, or the hook starts passing things CI rejects.
+      #
+      # This file is not excluded from its own scan. The patterns here each end
+      # in a character class, so the literals cannot match themselves, and
+      # excluding .github would have meant a key pasted into a workflow was the
+      # one place nothing was looking.
+      - name: Scan for credential shapes
+        run: |
+          SECRET_RE='(sk_live_[A-Za-z0-9]|sk_test_[A-Za-z0-9]|pk_live_[A-Za-z0-9]|sb_secret_[A-Za-z0-9]|eyJ[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.|-----BEGIN [A-Z ]*PRIVATE KEY)'
+          if git grep -nIE "$SECRET_RE" -- ':!*.example' ':!.githooks/*'; then
+            echo "::error::The lines above have the shape of a credential."
+            exit 1
+          fi
+          echo "no credential shapes found"
+
+      - name: Refuse a tracked .env
+        run: |
+          if git ls-files --error-unmatch .env .env.local >/dev/null 2>&1; then
+            echo "::error::An .env file is tracked by git."
+            exit 1
+          fi
+          echo "no .env tracked"
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
