@@ -2,7 +2,7 @@
 
 import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { RangePlot } from "./RangePlot";
+import { RangePlot, positionOf } from "./RangePlot";
 
 /**
  * The evidence behind a recommendation, matched to what was actually asked.
@@ -49,6 +49,51 @@ export function WhyThisOne({
   const grams = (n: number) => `${Math.round(n * 100)} g`;
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 
+  /**
+   * One ratio, not three.
+   *
+   * Three stacked plots asked a reader to compare three things before learning
+   * anything, and two of them are usually beside the point: a cookie that won
+   * "chewy" won it on butter, and its sugar ratio sitting mid-range is not the
+   * reason. The lead is whichever ratio this recipe is furthest from the
+   * middle on, because that is the one with something to say. The other two
+   * are a click away rather than gone, which is the same bargain the effort
+   * reasons already strike.
+   */
+  const plots = mine
+    ? [
+        {
+          label: "Butter per 100 g flour",
+          hint: "more = chewier",
+          values: withRatios.map((r) => r.scores.ratios!.fatPerFlour),
+          picked: mine.fatPerFlour,
+          format: grams,
+        },
+        {
+          label: "Brown sugar",
+          hint: "more = chewier, softer",
+          values: withRatios.map((r) => r.scores.ratios!.brownShare),
+          picked: mine.brownShare,
+          format: pct,
+        },
+        {
+          label: "Sugar per 100 g flour",
+          hint: "more = crispier",
+          values: withRatios.map((r) => r.scores.ratios!.sugarPerFlour),
+          picked: mine.sugarPerFlour,
+          format: grams,
+        },
+      ]
+    : [];
+
+  const ranked = [...plots].sort(
+    (a, b) =>
+      Math.abs(positionOf(b.values, b.picked) - 50) -
+      Math.abs(positionOf(a.values, a.picked) - 50),
+  );
+  const lead = ranked[0];
+  const rest = ranked.slice(1);
+
   return (
     <div>
       {heading && (
@@ -59,29 +104,25 @@ export function WhyThisOne({
 
       {askedEffort && prefs && <EffortReasons recipe={recipe} prefs={prefs} />}
 
-      {showRatios && mine && (
-        <div className={askedEffort ? "mt-4 divide-y divide-line-soft" : "mt-1 divide-y divide-line-soft"}>
-          <RangePlot
-            label="Butter per 100 g flour"
-            hint="more = chewier"
-            values={withRatios.map((r) => r.scores.ratios!.fatPerFlour)}
-            picked={mine.fatPerFlour}
-            format={grams}
-          />
-          <RangePlot
-            label="Brown sugar"
-              hint="more = chewier, softer"
-            values={withRatios.map((r) => r.scores.ratios!.brownShare)}
-            picked={mine.brownShare}
-            format={pct}
-          />
-          <RangePlot
-            label="Sugar per 100 g flour"
-              hint="more = crispier"
-            values={withRatios.map((r) => r.scores.ratios!.sugarPerFlour)}
-            picked={mine.sugarPerFlour}
-            format={grams}
-          />
+      {showRatios && lead && (
+        <div className={askedEffort ? "mt-3" : "mt-1"}>
+          <RangePlot {...lead} />
+
+          <details className="group mt-1 border-t border-line-soft">
+            <summary
+              className="-mx-2 cursor-pointer list-none rounded-lg px-2 py-2.5 text-xs
+                         font-semibold text-clay-deep hover:bg-cream-deep
+                         [&::-webkit-details-marker]:hidden"
+            >
+              <span className="group-open:hidden">Show the other two ratios</span>
+              <span className="hidden group-open:inline">Hide them</span>
+            </summary>
+            <div className="divide-y divide-line-soft">
+              {rest.map((pl) => (
+                <RangePlot key={pl.label} {...pl} />
+              ))}
+            </div>
+          </details>
         </div>
       )}
     </div>
