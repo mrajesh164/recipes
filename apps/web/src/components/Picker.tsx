@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Recommendation } from "./Recommendation";
@@ -13,6 +13,7 @@ import type { ScoredRecipe } from "@/lib/recipes";
 import { BookmarkIcon } from "./icons";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
+import { readUnknownWords, type Inference } from "@/lib/semantic";
 
 /**
  * Pick a texture, get one recipe, then browse the rest if you want to.
@@ -42,7 +43,49 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   // cursor. Nothing happens now until you finish and press Enter.
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
-  const interpretation = interpret(query);
+
+  /**
+   * Words the vocabulary did not know, read as the nearest thing it does.
+   *
+   * Only runs when the keyword and misspelling tiers both came up empty, so a
+   * query made of words the box already knows never loads the model and never
+   * waits. See lib/semantic.ts for why the result is shown rather than applied
+   * silently.
+   */
+  const [inferences, setInferences] = useState<Inference[]>([]);
+  const [reading, setReading] = useState(false);
+
+  useEffect(() => {
+    setInferences([]);
+    const first = interpret(query);
+    if (query.trim() === "" || first.unrecognised.length === 0) return;
+
+    let cancelled = false;
+    setReading(true);
+    readUnknownWords(first.unrecognised)
+      .then((found) => {
+        if (!cancelled) setInferences(found);
+      })
+      // A failed model load must not break the search. The keyword tiers have
+      // already produced an answer; this one only ever adds to it.
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setReading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
+
+  // Substituting and re-interpreting, rather than scoring the inference
+  // separately. An inferred word takes the weights its match already carries,
+  // so there is one scoring path and the rest of the app cannot tell which
+  // tier answered.
+  const resolved = inferences.reduce(
+    (q, i) => q.replace(new RegExp(`\\b${i.typed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"), i.meant),
+    query,
+  );
+  const interpretation = interpret(resolved);
   const asked = query.trim().length > 0 && !interpretation.empty;
 
   // Naming a dish removes candidates rather than reordering them, so the
@@ -123,6 +166,8 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         interpretation={interpretation}
         count={recipes.length}
         poolCount={pool.length}
+        inferences={inferences}
+        reading={reading}
       />
 
       {/* Nothing asked yet: offer the two places to go, rather than a screen
@@ -268,6 +313,8 @@ function Reading({
   interpretation: i,
   count,
   poolCount,
+  inferences,
+  reading,
 }: {
   query: string;
   interpretation: Interpretation;
@@ -275,6 +322,10 @@ function Reading({
   count: number;
   /** How many recipes survived the dish filter. */
   poolCount: number;
+  /** Words read as something else, shown so a wrong read is correctable. */
+  inferences: Inference[];
+  /** The model is still loading or still thinking. */
+  reading: boolean;
 }) {
   if (query.trim().length === 0) {
     // Was "Or just scroll. Everything is below." -- written when a grid of
@@ -285,6 +336,17 @@ function Reading({
       <p className="mt-6 text-base text-ink">
         <span className="font-bold">{count}</span> recipes in the jar. Say the
         word and I&apos;ll pick one.
+      </p>
+    );
+  }
+
+  if (i.empty && reading) {
+    return (
+      <p className="mt-6 text-sm text-ink-soft">
+        Reading that&hellip;{" "}
+        <span className="text-ink-faint">
+          working out what those words mean, the first time takes a moment
+        </span>
       </p>
     );
   }
@@ -315,6 +377,19 @@ function Reading({
           </span>
         ))}
       </p>
+      {inferences.length > 0 && (
+        <p className="mt-1 text-ink-soft">
+          {inferences.map((inf, n) => (
+            <span key={inf.typed}>
+              {n > 0 && ", "}
+              read <span className="italic">{inf.typed}</span> as{" "}
+              <span className="font-semibold text-ink">{inf.meant}</span>
+            </span>
+          ))}
+          .
+        </p>
+      )}
+
       {i.dishes.length > 0 && (
         <p className="mt-1 text-ink-soft">
           Looking at <span className="font-semibold text-ink">{poolCount}</span>{" "}
