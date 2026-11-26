@@ -267,7 +267,7 @@
 <div class="band"><h3>Slices 1 to 4</h3><em>the design pass, where the grade is</em></div>
 
 <div class="item">
-  <h4><span class="num">1</span> The cheap structural fixes <span class="tag t-ta">TA</span> <span class="st st-part">two of three</span></h4>
+  <h4><span class="num">1</span> The cheap structural fixes <span class="tag t-ta">TA</span> <span class="st st-done">done</span></h4>
   <p class="done-note"><b>Where it got to.</b> scrollbar-gutter stops the layout shifting when results appear. All three outbound links carry a square-with-arrow. The duplicated title is deliberately still open: it is a decision about the header, and the header is better decided with the rest of the layout.</p>
   <p class="quiet">Roughly a day. Three reported complaints, each with a one-line cause.</p>
   <ul>
@@ -323,8 +323,8 @@
 <div class="band"><h3>Slices 5 to 6</h3><em>after the surface is coherent</em></div>
 
 <div class="item">
-  <h4><span class="num">5</span> A search box that recognises anything <span class="tag t-ta">TA</span> <span class="st st-part">two of three</span></h4>
-  <p class="done-note"><b>Where it got to.</b> Three tiers, each running only when the one before it finds nothing: the keyword matcher, a misspelling check, and a 22 MB embedding model that runs in the browser and is only fetched when a word is genuinely unknown. An unknown word is read as the nearest phrase the vocabulary already knows and inherits its weights, so nothing new is scored. Above 0.60 it is applied and shown as "read stodgy as fudgy"; between 0.40 and 0.60 it is offered as a question with the nearest three as buttons, which is what turned "I couldn't read anything in that" into something you can act on. Acting on negation rather than dropping it is the piece still open.</p>
+  <h4><span class="num">5</span> A search box that recognises anything <span class="tag t-ta">TA</span> <span class="st st-done">done</span></h4>
+  <p class="done-note"><b>Where it got to.</b> Three tiers, each running only when the one before it finds nothing: the keyword matcher, a misspelling check, and a 22 MB embedding model that runs in the browser and is only fetched when a word is genuinely unknown. An unknown word is read as the nearest phrase the vocabulary already knows and inherits its weights, so nothing new is scored. Above 0.60 it is applied and shown as "read stodgy as fudgy"; between 0.40 and 0.60 it is offered as a question with the nearest three as buttons, which is what turned "I couldn't read anything in that" into something you can act on. Negation is acted on rather than dropped: "not cakey" removes the recipes that lead with cakey, 123 of 325 remaining, rather than trying to rank away from a texture whose opposite is two other textures.</p>
   <p>Three parts, in this order.</p>
   <ul>
     <li><b>Widen the vocabulary.</b> v1 reports what it dropped, which is honest, but being told a word was ignored is not the same as being understood.</li>
