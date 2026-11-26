@@ -60,6 +60,13 @@ export interface Interpretation {
   unrecognised: string[];
   /** Texture words that were negated, so dropped rather than inverted. */
   refused: string[];
+  /**
+   * Near-misses: a word that was not understood, paired with the vocabulary
+   * word it is probably a misspelling of. The interface offers these rather
+   * than applying them, because guessing silently is the thing this module
+   * exists not to do.
+   */
+  suggestions: { typed: string; meant: string }[];
   /** Nothing at all was understood. */
   empty: boolean;
 }
@@ -300,6 +307,71 @@ const BOOST = 1.3;
  */
 const NEGATORS = ["not", "no", "non", "isnt", "aint", "never", "anti"];
 
+/* ------------------------------------------------------------ near misses -- */
+
+/**
+ * Edit distance, capped. Anything further apart than `max` is not a typo and
+ * the exact number stops mattering, so the rows bail early.
+ */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const v = Math.min(prev[j]! + 1, row[j - 1]! + 1, prev[j - 1]! + cost);
+      row.push(v);
+      if (v < best) best = v;
+    }
+    if (best > max) return max + 1;
+    prev = row;
+  }
+  return prev[b.length]!;
+}
+
+/**
+ * Every single word the vocabulary knows, for matching misspellings against.
+ *
+ * Single words only. A typo in a phrase is still a typo in one of its words,
+ * and comparing "chewey" against "thick and chewy" as a whole string finds
+ * nothing useful.
+ */
+const SINGLE_WORDS: readonly string[] = [
+  ...new Set(
+    [
+      ...TEXTURE_WORDS.map(([p]) => p),
+      ...PREF_WORDS.map(([p]) => p),
+      ...DISH_WORDS.map(([p]) => p),
+    ].filter((p) => !/[\s-]/.test(p)),
+  ),
+];
+
+/**
+ * The vocabulary word an unrecognised word is probably a misspelling of.
+ *
+ * Tight on purpose. One edit for a short word, two for a long one, and nothing
+ * for a word of three characters or fewer, where one edit reaches half the
+ * dictionary. "chewey" finds chewy; "nutty" finds nothing, which is correct,
+ * because nutty is a real word this app genuinely does not model.
+ */
+export function nearestWord(word: string): string | null {
+  if (word.length < 4) return null;
+  const max = word.length <= 5 ? 1 : 2;
+  let best: string | null = null;
+  let bestDistance = max + 1;
+  for (const candidate of SINGLE_WORDS) {
+    if (candidate === word) return null;
+    const d = editDistance(word, candidate, max);
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = candidate;
+    }
+  }
+  return bestDistance <= max ? best : null;
+}
+
 /* -------------------------------------------------------------- matching -- */
 
 const ESCAPE = /[.*+?^${}()|[\]\\]/g;
@@ -465,10 +537,15 @@ export function interpret(input: string): Interpretation {
     .filter((w) => w.length > 2 && !STOP.has(w) && !INTENSIFIERS.has(w));
 
   const empty = understood.length === 0;
+  const unique = [...new Set(unrecognised)];
+
+  const suggestions = unique
+    .map((typed) => ({ typed, meant: nearestWord(typed) }))
+    .filter((s): s is { typed: string; meant: string } => s.meant !== null);
 
   return {
-    textures, prefs, dishes, understood, refused,
-    unrecognised: [...new Set(unrecognised)],
+    textures, prefs, dishes, understood, refused, suggestions,
+    unrecognised: unique,
     empty,
   };
 }
