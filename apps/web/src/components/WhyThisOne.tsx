@@ -47,7 +47,17 @@ export function WhyThisOne({
   const withRatios = all.filter((r) => r.scores.ratios !== null);
   const mine = recipe.scores.ratios;
   const grams = (n: number) => `${Math.round(n * 100)} g`;
-  const pct = (n: number) => `${Math.round(n * 100)}%`;
+
+  /**
+   * The denominator is in the string, not assumed.
+   *
+   * The other two ratios carry theirs in the label: "Butter per 100 g flour",
+   * and then "132 g" needs no explanation. Brown sugar had the label "Brown
+   * sugar" and the value "79%", which left the obvious question unanswered,
+   * 79% of what. It is 79% of the sugar in the recipe, and the only place that
+   * fact can live is next to the number.
+   */
+  const shareOfSugar = (n: number) => `${Math.round(n * 100)}% of the sugar`;
 
   /**
    * One ratio, not three.
@@ -82,7 +92,7 @@ export function WhyThisOne({
           hint: "more = chewier, softer",
           values: withRatios.map((r) => r.scores.ratios!.brownShare),
           picked: mine.brownShare,
-          format: pct,
+          format: shareOfSugar,
           poolNoun,
         },
         {
