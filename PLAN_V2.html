@@ -114,6 +114,16 @@
   .t-ta { color: var(--accent); background: var(--accent-soft); }
   .t-peer { color: var(--pick); background: var(--pick-soft); }
   .t-mine { color: var(--ink-faint); background: transparent; border: 1px solid var(--line); }
+
+  /* Status, kept visually quieter than the source tags: it says where the work
+     is, not what the work is. */
+  .st { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700;
+        border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .st-done { color: var(--pick); background: var(--pick-soft); }
+  .st-part { color: var(--accent); background: var(--accent-soft); }
+  .st-todo { color: var(--ink-faint); background: transparent; border: 1px dashed var(--line); }
+  .done-note { margin: 8px 0 0; font-size: 14px; color: var(--ink-faint); }
+  .done-note b { color: var(--ink-soft); font-weight: 600; }
   .item p { margin: 0 0 7px; font-size: 15.5px; color: var(--ink-soft); }
   .item p:last-child { margin-bottom: 0; }
   .item p b { color: var(--ink); font-weight: 600; }
@@ -246,7 +256,8 @@
 <div class="band"><h3>Slice 0</h3><em>before any of the work</em></div>
 
 <div class="item">
-  <h4><span class="num">0</span> Set the workflow up first <span class="tag t-mine">mine</span></h4>
+  <h4><span class="num">0</span> Set the workflow up first <span class="tag t-mine">mine</span> <span class="st st-done">done</span></h4>
+  <p class="done-note"><b>Where it got to.</b> CI runs the secret scan, the typecheck and the tests on every push and pull request, and is green. Issue and pull request templates are in. Agent review is a step in the pull request template, run locally rather than as a paid CI action.</p>
   <p>GitHub issues as the unit of work, one per slice. A GitHub Actions workflow running on every pull request. Pull requests rather than pushes to main. An agent review on each pull request before it merges.</p>
   <p><b>Why this is first and not last.</b> Retrofitting it after the work gains nothing. Issues written after the fact are documentation, not a unit of work, and a pipeline added at the end has never caught anything. Put it in before slice 1 and the seven slices that follow all flow through it, which means the process is demonstrated rather than described.</p>
   <p><b>The CI config is already written.</b> <code>.githooks/pre-push</code> runs a credential-shape scan and a typecheck today. The Actions workflow transcribes those two steps and adds the 132 tests. This is a transcription of checks that already exist, not an invention, which is most of why it is a cheap first slice rather than an expensive one.</p>
@@ -256,7 +267,8 @@
 <div class="band"><h3>Slices 1 to 4</h3><em>the design pass, where the grade is</em></div>
 
 <div class="item">
-  <h4><span class="num">1</span> The cheap structural fixes <span class="tag t-ta">TA</span></h4>
+  <h4><span class="num">1</span> The cheap structural fixes <span class="tag t-ta">TA</span> <span class="st st-part">two of three</span></h4>
+  <p class="done-note"><b>Where it got to.</b> scrollbar-gutter stops the layout shifting when results appear. All three outbound links carry a square-with-arrow. The duplicated title is deliberately still open: it is a decision about the header, and the header is better decided with the rest of the layout.</p>
   <p class="quiet">Roughly a day. Three reported complaints, each with a one-line cause.</p>
   <ul>
     <li><b>The name twice.</b> &ldquo;The Perfect Batch&rdquo; renders as the header logo at <code>apps/web/src/app/layout.tsx:51</code> and again as the page <code>&lt;h1&gt;</code> at <code>apps/web/src/app/page.tsx:17</code>. This slice ends the duplication. Slice 3 decides what the surviving line says.</li>
@@ -267,7 +279,8 @@
 </div>
 
 <div class="item">
-  <h4><span class="num">2</span> A design system, written down <span class="tag t-ta">TA</span></h4>
+  <h4><span class="num">2</span> A design system, written down <span class="tag t-ta">TA</span> <span class="st st-part">three of four</span></h4>
+  <p class="done-note"><b>Where it got to.</b> Seven-step type scale, with all three page titles unified at one size. One icon source with a shared geometry. The texture is off every working surface and lives in the header band only. The spacing and radii scale is the piece still open.</p>
   <p>This is the TA&rsquo;s &ldquo;normalize the icons&rdquo; and &ldquo;white background, texture only in certain areas&rdquo; taken as one job, because they are one job: both are rules about what the surface is allowed to do.</p>
   <ul>
     <li><b>A type scale and a spacing scale</b>, as custom properties, with a fixed number of steps, so that a later slice cannot invent a fourteenth size.</li>
@@ -279,7 +292,8 @@
 </div>
 
 <div class="item">
-  <h4><span class="num">3</span> A hierarchy pass on the three views <span class="tag t-ta">TA</span></h4>
+  <h4><span class="num">3</span> A hierarchy pass on the three views <span class="tag t-ta">TA</span> <span class="st st-part">three of four</span></h4>
+  <p class="done-note"><b>Where it got to.</b> One shared action row in the same position on all four recipe surfaces. Browse names its sort order and lets it be changed. Saved is rebuilt as rows with the action in a fixed footer. The title decision is the same one carried over from slice 1.</p>
   <p>Home and recommendation, saved, browse. For each view, name the one primary thing, then place the actions consistently and in the same spot across all three. This is the answer to &ldquo;it is confusing where to look&rdquo; and to &ldquo;Open recipe gets lost&rdquo;.</p>
   <ul>
     <li><b>Home.</b> The recommendation is primary, the reasons panel is second, and the free-text box keeps the front door. The submitted plan already settled that last point and it is not reopened here.</li>
@@ -291,7 +305,8 @@
 </div>
 
 <div class="item">
-  <h4><span class="num">4</span> Make the plots readable <span class="tag t-ta">TA</span></h4>
+  <h4><span class="num">4</span> Make the plots readable <span class="tag t-ta">TA</span> <span class="st st-done">done, and live</span></h4>
+  <p class="done-note"><b>Where it got to.</b> Four attempts: dots, then a histogram, then a position track, then the wording. What shipped is the ratio and its value on one line, a track filled to where it sits, and one sentence counted in tenths. One ratio leads and the other two are a click away.</p>
   <p>The TA says the lines with dots are confusing. This is the hardest item on the list, and it is hard for an uncomfortable reason: the dot plots are the best idea in the product and they are apparently not reading. The evidence panel is the whole difference between this and a search engine, so if it does not land, the thing that makes the app worth building does not land.</p>
   <p>Options worth naming, roughly cheapest first. One or two of them, not all five.</p>
   <ul>
@@ -308,7 +323,7 @@
 <div class="band"><h3>Slices 5 to 6</h3><em>after the surface is coherent</em></div>
 
 <div class="item">
-  <h4><span class="num">5</span> A search box that recognises anything <span class="tag t-ta">TA</span></h4>
+  <h4><span class="num">5</span> A search box that recognises anything <span class="tag t-ta">TA</span> <span class="st st-todo">not started</span></h4>
   <p>Three parts, in this order.</p>
   <ul>
     <li><b>Widen the vocabulary.</b> v1 reports what it dropped, which is honest, but being told a word was ignored is not the same as being understood.</li>
@@ -326,7 +341,7 @@
 </div>
 
 <div class="item">
-  <h4><span class="num">6</span> The feature requests <span class="tag t-peer">peers</span></h4>
+  <h4><span class="num">6</span> The feature requests <span class="tag t-peer">peers</span> <span class="st st-todo">not started</span></h4>
   <p>Held until slices 2 and 3 have said where controls live, because each of these adds a control to the surface the feedback already calls scattered.</p>
   <table class="wins">
     <tr><td>Pantry and ingredients</td><td><span>Already in the submitted plan as &ldquo;Tell it what you have&rdquo;, first in its <b>Add next</b> band. Peers arrived at it independently. That convergence is the useful signal here: the strongest unprompted request is also the one already planned, so it leads this slice.</span></td></tr>
@@ -343,7 +358,7 @@
 <div class="band"><h3>Slice 7</h3><em>parked</em></div>
 
 <div class="item">
-  <h4><span class="num">7</span> Live search beyond the corpus <span class="tag t-mine">mine</span></h4>
+  <h4><span class="num">7</span> Live search beyond the corpus <span class="tag t-mine">mine</span> <span class="st st-todo">parked</span></h4>
   <p>Searching the web at request time rather than a fixed set of 325. Parked, unchanged from the submitted plan.</p>
   <p><b>What it would cost:</b> every number in this app rests on 94% of ingredient lines converting to grams, 3,396 of 3,632, over a corpus that was harvested and checked. Trusting an arbitrary page&rsquo;s structured data at request time gives that up, and a recommendation with unverified measurements behind it is worse than a smaller library.</p>
 </div>
