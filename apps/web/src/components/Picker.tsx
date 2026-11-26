@@ -13,7 +13,7 @@ import type { ScoredRecipe } from "@/lib/recipes";
 import { BookmarkIcon } from "./icons";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
-import { readUnknownWords, type Inference } from "@/lib/semantic";
+import { readUnknownWords, type Guess, type Inference } from "@/lib/semantic";
 
 /**
  * Pick a texture, get one recipe, then browse the rest if you want to.
@@ -53,10 +53,12 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
    * silently.
    */
   const [inferences, setInferences] = useState<Inference[]>([]);
+  const [guesses, setGuesses] = useState<Guess[]>([]);
   const [reading, setReading] = useState(false);
 
   useEffect(() => {
     setInferences([]);
+    setGuesses([]);
     const first = interpret(query);
     if (query.trim() === "" || first.unrecognised.length === 0) return;
 
@@ -64,7 +66,9 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
     setReading(true);
     readUnknownWords(first.unrecognised)
       .then((found) => {
-        if (!cancelled) setInferences(found);
+        if (cancelled) return;
+        setInferences(found.inferences);
+        setGuesses(found.guesses);
       })
       // A failed model load must not break the search. The keyword tiers have
       // already produced an answer; this one only ever adds to it.
@@ -167,7 +171,12 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         count={recipes.length}
         poolCount={pool.length}
         inferences={inferences}
+        guesses={guesses}
         reading={reading}
+        onTry={(phrase) => {
+          setDraft(phrase);
+          setQuery(phrase);
+        }}
       />
 
       {/* Nothing asked yet: offer the two places to go, rather than a screen
@@ -314,7 +323,9 @@ function Reading({
   count,
   poolCount,
   inferences,
+  guesses,
   reading,
+  onTry,
 }: {
   query: string;
   interpretation: Interpretation;
@@ -324,8 +335,12 @@ function Reading({
   poolCount: number;
   /** Words read as something else, shown so a wrong read is correctable. */
   inferences: Inference[];
+  /** Words too uncertain to read, offered as a question instead. */
+  guesses: Guess[];
   /** The model is still loading or still thinking. */
   reading: boolean;
+  /** Search one of the offered words instead. */
+  onTry: (phrase: string) => void;
 }) {
   if (query.trim().length === 0) {
     // Was "Or just scroll. Everything is below." -- written when a grid of
@@ -354,14 +369,49 @@ function Reading({
   if (i.empty) {
     return (
       <div className="mt-6 rounded-2xl border-2 border-pink bg-paper px-5 py-4">
-        <p className="text-sm font-semibold">
-          I couldn&apos;t read anything in that.
-        </p>
-        <p className="mt-1 text-sm text-ink-soft">
-          Try a texture (chewy, cakey, extra crispy, thin, fudgy), a kind
-          (oatmeal, peanut butter, snickerdoodle) or how much work you want
-          (quick, no mixer).
-        </p>
+        {guesses.length > 0 ? (
+          <>
+            {/* Not a dead end. The words that were too uncertain to act on are
+                still the best lead available, so they are offered as a
+                question rather than thrown away. */}
+            <p className="text-sm font-semibold">
+              I&apos;m not sure about{" "}
+              {guesses.map((g, n) => (
+                <span key={g.typed}>
+                  {n > 0 && (n === guesses.length - 1 ? " or " : ", ")}
+                  <span className="italic">{g.typed}</span>
+                </span>
+              ))}
+              . Did you mean one of these?
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {[...new Set(guesses.flatMap((g) => g.options))].map((option) => (
+                <li key={option}>
+                  <button
+                    type="button"
+                    onClick={() => onTry(option)}
+                    className="rounded-full border border-line bg-paper px-3 py-2 text-xs
+                               font-semibold text-ink-soft transition-colors
+                               hover:border-pink-deep hover:text-ink"
+                  >
+                    {option}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold">
+              I couldn&apos;t read anything in that.
+            </p>
+            <p className="mt-1 text-sm text-ink-soft">
+              Try a texture (chewy, cakey, extra crispy, thin, fudgy), a kind
+              (oatmeal, peanut butter, snickerdoodle) or how much work you want
+              (quick, no mixer).
+            </p>
+          </>
+        )}
       </div>
     );
   }

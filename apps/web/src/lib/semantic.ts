@@ -26,7 +26,31 @@
  * decoration, it is the thing that makes an imperfect matcher acceptable.
  */
 
-const THRESHOLD = 0.55;
+/**
+ * Confident enough to read the word as its match without asking.
+ *
+ * Raised from 0.55 after seeing what 0.55 let through: "tuesday" matched "same
+ * day" at 0.558 and was applied, so typing a day of the week silently became a
+ * request for something quick. At 0.60 that becomes a question instead.
+ *
+ * Being conservative here got cheap once near-misses became offers. A demoted
+ * word is not lost, it is asked about, so the cost of a high bar is one click
+ * and the cost of a low one is a confident wrong answer. "melty" at 0.618 and
+ * "gooier" at 0.728 still clear it; "shatters" at 0.554 and "underdone" at
+ * 0.583 are now offered rather than assumed, which is the right trade.
+ */
+const CONFIDENT = 0.6;
+
+/**
+ * Close enough to be worth offering, not close enough to assume.
+ *
+ * "homey" tops out at 0.519 against doughy and "cozy" at 0.503 against
+ * pillowy. Refusing those is right, they are not reliable readings. But
+ * refusing them and then saying "I couldn't read anything in that" is a dead
+ * end, and a dead end is the thing the TA's note was actually about. The same
+ * numbers that are too weak to act on are strong enough to ask about.
+ */
+const WORTH_ASKING = 0.40;
 
 type Loaded = {
   embed: (s: string) => Promise<number[]>;
@@ -69,6 +93,20 @@ export interface Inference {
   meant: string;
 }
 
+export interface Guess {
+  /** What they typed. */
+  typed: string;
+  /** The nearest few phrases, best first. Offered, never applied. */
+  options: string[];
+}
+
+export interface Reading {
+  /** Confident enough to apply, and shown as applied. */
+  inferences: Inference[];
+  /** Not confident enough to apply. Offered as a question. */
+  guesses: Guess[];
+}
+
 /**
  * Read unknown words as the nearest thing the vocabulary knows.
  *
@@ -76,20 +114,36 @@ export interface Inference {
  * stays unrecognised, which is the honest answer and the one the interface
  * already knows how to say.
  */
-export async function readUnknownWords(words: string[]): Promise<Inference[]> {
-  if (words.length === 0) return [];
+export async function readUnknownWords(words: string[]): Promise<Reading> {
+  if (words.length === 0) return { inferences: [], guesses: [] };
   const { embed, vectors } = await load();
   const known = Object.entries(vectors);
 
-  const out: Inference[] = [];
+  const inferences: Inference[] = [];
+  const guesses: Guess[] = [];
+
   for (const word of words) {
     const v = await embed(word);
-    let best: { phrase: string; sim: number } | null = null;
-    for (const [phrase, pv] of known) {
-      const sim = cosine(v, pv);
-      if (!best || sim > best.sim) best = { phrase, sim };
+    const ranked = known
+      .map(([phrase, pv]) => ({ phrase, sim: cosine(v, pv) }))
+      .sort((a, b) => b.sim - a.sim);
+
+    const best = ranked[0];
+    if (!best) continue;
+
+    if (best.sim >= CONFIDENT) {
+      inferences.push({ typed: word, meant: best.phrase });
+      continue;
     }
-    if (best && best.sim >= THRESHOLD) out.push({ typed: word, meant: best.phrase });
+
+    // Three at most. A list of ten guesses is its own kind of dead end, and
+    // anything past the third is noticeably worse than the first.
+    const options = ranked
+      .filter((r) => r.sim >= WORTH_ASKING)
+      .slice(0, 3)
+      .map((r) => r.phrase);
+    if (options.length > 0) guesses.push({ typed: word, options });
   }
-  return out;
+
+  return { inferences, guesses };
 }
