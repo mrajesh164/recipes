@@ -447,20 +447,20 @@ function Reading({
         </p>
       )}
 
-      {/* A negated word is dropped rather than inverted, so it has to be said
-          out loud -- "not cakey" quietly doing nothing is the same silent
-          failure as a word that was never understood. */}
+      {/* A negation is acted on now, so it is reported as an action rather
+          than as an apology. It used to say "I can rank toward a texture but
+          not away from one", which was true when the word was being dropped
+          and became a lie the moment it was not. */}
       {i.refused.length > 0 && (
-        <p className="mt-1 text-ink-faint">
-          I can rank <span className="italic">toward</span> a texture but not
-          away from one, so{" "}
+        <p className="mt-1 text-ink-soft">
+          Left out the ones that are mainly{" "}
           {i.refused.map((w, n) => (
             <span key={w}>
-              {n > 0 && (n === i.refused.length - 1 ? " and " : ", ")}
-              <span className="italic">not {w}</span>
+              {n > 0 && (n === i.refused.length - 1 ? " or " : ", ")}
+              <span className="font-semibold text-ink">{w}</span>
             </span>
-          ))}{" "}
-          {i.refused.length === 1 ? "was" : "were"} left out.
+          ))}
+          .
         </p>
       )}
 

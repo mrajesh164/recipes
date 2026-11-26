@@ -173,17 +173,46 @@ test("two dishes widen rather than conflict", () => {
   assert.deepEqual(i.dishes, ["oatmeal", "peanut butter"]);
 });
 
-test("candidatesFor filters, and never empties the corpus", () => {
+const row = (dish: string | null, chewy: number, cakey: number, crispy: number) => ({
+  dish_type: dish,
+  scores: { chewy, cakey, crispy },
+});
+
+test("candidatesFor filters by dish, and never empties the corpus", () => {
   const rows = [
-    { dish_type: "oatmeal" },
-    { dish_type: "chocolate chip" },
-    { dish_type: null },
+    row("oatmeal", 0.8, 0.2, 0.1),
+    row("chocolate chip", 0.2, 0.8, 0.1),
+    row(null, 0.3, 0.3, 0.9),
   ];
-  assert.deepEqual(candidatesFor(rows, interpret("oatmeal")), [{ dish_type: "oatmeal" }]);
+  assert.deepEqual(candidatesFor(rows, interpret("oatmeal")), [rows[0]]);
   // No dish named: everything stays.
   assert.equal(candidatesFor(rows, interpret("chewy")).length, 3);
   // A dish the corpus has none of must not return nothing at all.
-  assert.equal(candidatesFor([{ dish_type: "sugar" }], interpret("oatmeal")).length, 1);
+  assert.equal(candidatesFor([row("sugar", 0.5, 0.5, 0.5)], interpret("oatmeal")).length, 1);
+});
+
+test("a negated texture removes the recipes that lead with it", () => {
+  const rows = [
+    row(null, 0.9, 0.2, 0.1), // mainly chewy
+    row(null, 0.2, 0.9, 0.1), // mainly cakey
+    row(null, 0.1, 0.2, 0.9), // mainly crispy
+  ];
+  const kept = candidatesFor(rows, interpret("not cakey"));
+  assert.equal(kept.length, 2);
+  assert.ok(!kept.includes(rows[1]!));
+});
+
+test("an exclusion that would empty the list is not applied", () => {
+  const onlyCakey = [row(null, 0.2, 0.9, 0.1)];
+  // An empty result is never a better answer than a weaker one.
+  assert.equal(candidatesFor(onlyCakey, interpret("not cakey")).length, 1);
+});
+
+test("a negation on its own is understood", () => {
+  const i = interpret("not cakey");
+  assert.deepEqual(i.excluded, ["cakey"]);
+  assert.equal(i.empty, false);
+  assert.equal(i.textures.cakey, 0);
 });
 
 /* ---------------------------------------------- inflections and modifiers */
@@ -226,7 +255,6 @@ test("a negated texture is dropped rather than inverted", () => {
   const i = interpret("not cakey");
   assert.equal(i.textures.cakey, 0);
   assert.deepEqual(i.refused, ["cakey"]);
-  assert.equal(i.empty, true);
 });
 
 test("negation survives a filler word", () => {

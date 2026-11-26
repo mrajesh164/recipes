@@ -58,7 +58,14 @@ export interface Interpretation {
   understood: string[];
   /** Words that meant nothing here. Shown so the gap is visible. */
   unrecognised: string[];
-  /** Texture words that were negated, so dropped rather than inverted. */
+  /**
+   * Textures ruled out. "not cakey" removes the cookies that are mainly
+   * cakey rather than trying to rank away from cakey, which cannot be done:
+   * the opposite of cakey is two different textures and inverting the score
+   * would pick a denser cookie and a crispier one with equal confidence.
+   */
+  excluded: Texture[];
+  /** The words that produced those exclusions, in the user's own words. */
   refused: string[];
   /**
    * Near-misses: a word that was not understood, paired with the vocabulary
@@ -296,14 +303,20 @@ const INTENSIFIERS = new Set([
 const BOOST = 1.3;
 
 /**
- * Negation, handled by refusing the word rather than inverting it.
+ * Negation, handled as an exclusion over the candidates.
  *
- * "not cakey" previously read as *cakey*, because "not" sat in the stop-list
- * and was thrown away -- the one failure mode this whole module exists to
- * avoid. Inverting it properly is harder than it looks (the opposite of cakey
- * is two different textures), so a negated word is dropped and reported as
- * dropped. Saying "I read 'not cakey' and ignored it" is worse than
- * understanding it and far better than quietly doing the opposite.
+ * "not cakey" first read as *cakey*, because "not" sat in the stop-list and
+ * was thrown away, which is the one failure mode this module exists to avoid.
+ * Then it was refused: understood, dropped, and reported as dropped. Honest,
+ * and a dead end for a reasonable request.
+ *
+ * It now removes candidates. Not a direction in the ranking, because there is
+ * no such direction: the opposite of cakey is two different textures, and
+ * inverting the score would pick a denser cookie and a crispier one with equal
+ * confidence. A recipe is dropped when the negated texture is the one it
+ * scores highest on, which needs no threshold and can be said in a sentence.
+ * On this corpus "not cakey" removes 202 of 325, which is a lot, and is what
+ * the phrase means.
  */
 const NEGATORS = ["not", "no", "non", "isnt", "aint", "never", "anti"];
 
@@ -536,15 +549,25 @@ export function interpret(input: string): Interpretation {
     .map((w) => w.trim())
     .filter((w) => w.length > 2 && !STOP.has(w) && !INTENSIFIERS.has(w));
 
-  const empty = understood.length === 0;
+  // A negation on its own is understood. It says which cookies you do not
+  // want, which is less than a texture but is not nothing, and the empty
+  // state should not claim otherwise.
+  const empty = understood.length === 0 && refused.length === 0;
   const unique = [...new Set(unrecognised)];
+
+  const excluded = [...new Set(refused.map((phrase) => {
+    const weights = TEXTURE_WORDS.find(([p]) => p === phrase)?.[1] ?? {};
+    const top = (Object.entries(weights) as [Texture, number][])
+      .sort((a, b) => b[1] - a[1])[0];
+    return top?.[0] ?? null;
+  }).filter((t): t is Texture => t !== null))];
 
   const suggestions = unique
     .map((typed) => ({ typed, meant: nearestWord(typed) }))
     .filter((s): s is { typed: string; meant: string } => s.meant !== null);
 
   return {
-    textures, prefs, dishes, understood, refused, suggestions,
+    textures, prefs, dishes, understood, refused, excluded, suggestions,
     unrecognised: unique,
     empty,
   };
@@ -568,14 +591,35 @@ export function dominantTexture(i: Interpretation): Texture | null {
  * the corpus has never heard of, leaves everything in -- an empty result is
  * never the right answer to a word this app failed to understand.
  */
-export function candidatesFor<T extends { dish_type: string | null }>(
-  recipes: T[],
-  i: Interpretation,
-): T[] {
-  if (i.dishes.length === 0) return recipes;
-  const wanted = new Set<string>(i.dishes);
-  const kept = recipes.filter((r) => r.dish_type !== null && wanted.has(r.dish_type));
-  return kept.length > 0 ? kept : recipes;
+export function candidatesFor<
+  T extends {
+    dish_type: string | null;
+    scores: { chewy: number; cakey: number; crispy: number };
+  },
+>(recipes: T[], i: Interpretation): T[] {
+  let kept = recipes;
+
+  if (i.dishes.length > 0) {
+    const wanted = new Set<string>(i.dishes);
+    const byDish = kept.filter((r) => r.dish_type !== null && wanted.has(r.dish_type));
+    // A dish the corpus has none of must not empty the list.
+    if (byDish.length > 0) kept = byDish;
+  }
+
+  if (i.excluded.length > 0) {
+    const out = new Set<Texture>(i.excluded);
+    const byTexture = kept.filter((r) => {
+      const top = (["chewy", "cakey", "crispy"] as Texture[]).reduce((a, b) =>
+        r.scores[b] > r.scores[a] ? b : a,
+      );
+      return !out.has(top);
+    });
+    // Same rule: an exclusion that removes everything has told us nothing
+    // useful, and an empty result is never a better answer than a weaker one.
+    if (byTexture.length > 0) kept = byTexture;
+  }
+
+  return kept;
 }
 
 export interface Rankable {
