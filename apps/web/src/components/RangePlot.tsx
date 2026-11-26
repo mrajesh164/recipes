@@ -33,15 +33,31 @@ export interface RangePlotProps {
   picked: number;
   /** How to render a value for a person. */
   format: (n: number) => string;
+  /** "oatmeal recipes", or just "recipes" when the pool is mixed. */
+  poolNoun: string;
 }
 
-/** 0-100 to a phrase. Five bands: more would be false precision. */
-function band(share: number): string {
-  if (share >= 90) return "near the top";
-  if (share >= 70) return "on the high side";
-  if (share >= 30) return "middle of the range";
-  if (share >= 10) return "on the low side";
-  return "near the bottom";
+/**
+ * A percentile as a whole sentence, counted in tenths.
+ *
+ * "79th percentile" and "on the high side" were both wrong, for opposite
+ * reasons: the first asks for statistics, the second says nothing you can
+ * check. "More than 8 in 10 oatmeal recipes" is what a person actually wants
+ * and can hold in their head.
+ *
+ * The whole phrase is built here rather than a fragment glued after "more
+ * than", because that construction produced "more than almost none recipes" at
+ * the bottom of the range. A recipe with no brown sugar in it is not "more
+ * than" anything; it is less than almost all of them, and the sentence has to
+ * be able to say so.
+ */
+function positionPhrase(share: number, noun: string): string {
+  if (share >= 95) return `more than almost all ${noun}`;
+  if (share <= 5) return `less than almost all ${noun}`;
+  if (share >= 45 && share <= 55) return `about average for ${noun}`;
+  return share > 55
+    ? `more than ${Math.round(share / 10)} in 10 ${noun}`
+    : `less than ${Math.round((100 - share) / 10)} in 10 ${noun}`;
 }
 
 /** How far along its range this value sits, 0-100. */
@@ -51,7 +67,14 @@ export function positionOf(values: number[], picked: number): number {
   return Math.round((below / values.length) * 100);
 }
 
-export function RangePlot({ label, hint, values, picked, format }: RangePlotProps) {
+export function RangePlot({
+  label,
+  hint,
+  values,
+  picked,
+  format,
+  poolNoun,
+}: RangePlotProps) {
   if (values.length === 0) return null;
 
   const allSame = values.every((v) => v === values[0]);
@@ -60,7 +83,9 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
       <div className="py-2.5">
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-sm font-semibold">{label}</span>
-          <span className="text-xs text-ink-faint">all the same, {format(picked)}</span>
+          <span className="text-xs text-ink-faint">
+            all the same, {format(picked)}
+          </span>
         </div>
       </div>
     );
@@ -70,16 +95,25 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
 
   return (
     <div className="py-2.5">
+      {/* The recipe's own value belongs to the label, not under the bar.
+ 
+          It sat under the bar before and the two were read as one thing: for
+          brown sugar the value is itself a percentage, 79% of the sugar, and
+          the bar was filled to the percentile, 81%. Two unrelated quantities,
+          near-identical numbers, stacked. "What does 79% mean" was the right
+          question and the honest answer was "one of two things". Attaching the
+          value to the name leaves the bar alone with the sentence that
+          describes it. */}
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-semibold">{label}</span>
+        <span className="text-sm font-semibold">
+          {label}{" "}
+          <span className="tabular-nums text-clay-deep">{format(picked)}</span>
+        </span>
         <span className="text-xs italic text-ink-faint">{hint}</span>
       </div>
 
-      {/* The exact percentile goes in the title rather than on screen. It is
-          the sort of thing one reader in twenty wants and the other nineteen
-          have to read past. */}
       <div
-        className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-cream-deep"
+        className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-cream-deep"
         title={`Higher than ${share}% of them`}
       >
         <div
@@ -88,10 +122,7 @@ export function RangePlot({ label, hint, values, picked, format }: RangePlotProp
         />
       </div>
 
-      <p className="mt-2 text-sm">
-        <span className="font-bold tabular-nums text-clay-deep">{format(picked)}</span>
-        <span className="text-ink-soft"> &middot; {band(share)}</span>
-      </p>
+      <p className="mt-2 text-sm text-ink-soft">{positionPhrase(share, poolNoun)}</p>
     </div>
   );
 }
