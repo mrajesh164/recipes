@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.10.1",
+    "@huggingface/transformers": "^4.3.2",
     "@recipes/core": "*",
     "@supabase/supabase-js": "^2",
     "next": "16.4.6",
