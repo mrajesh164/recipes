@@ -1,7 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   classifyDish, categoryOf, titleKeywordsFor, titleIsExcluded, wrongShapeFor, usesAPreparedMix,
+  DISHES,
 } from "./dish.ts";
 
 test("names the dish a url is about", () => {
@@ -143,4 +147,35 @@ test("two forms is still ambiguous, and so are two flavours", () => {
   assert.equal(classifyDish("banana bread muffins"), null);
   assert.equal(classifyDish("oatmeal chocolate chip cookies"), null);
   assert.equal(classifyDish("peanut butter chocolate chip cookies"), null);
+});
+
+// --- the database has to agree about which dishes exist --------------------
+
+test("the dish_type check constraint lists exactly the DishType union", () => {
+  // The bug this catches, having happened once: dish_type was constrained to
+  // the five cookie flavours, so every brownie, muffin, bread and scone was
+  // rejected on insert -- most of the corpus, failing with a constraint error
+  // rather than anything that reads as a data problem. The constraint is
+  // worth keeping; it only has to stay in step with the code.
+  const dir = dirname(fileURLToPath(import.meta.url));
+  const migrations = join(dir, "..", "..", "..", "supabase", "migrations");
+  const latest = readdirSync(migrations)
+    .filter((f) => f.endsWith(".sql") && readFileSync(join(migrations, f), "utf8")
+      .includes("recipes_dish_type_check"))
+    .sort()
+    .pop();
+  assert.ok(latest, "no migration defines recipes_dish_type_check");
+
+  const sql = readFileSync(join(migrations, latest), "utf8");
+  const body = /check \(dish_type in \(([\s\S]*?)\)\)/.exec(sql)?.[1];
+  assert.ok(body, "could not read the constraint's dish list");
+
+  const inSql = new Set([...body.matchAll(/'([^']+)'/g)].map((m) => m[1]!));
+  const inCode = new Set(DISHES.map((d) => d.type));
+
+  assert.deepEqual(
+    [...inSql].sort(),
+    [...inCode].sort(),
+    "the migration and DISHES disagree about which dish types exist",
+  );
 });
