@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { fetchAllCached } from "./fetch.ts";
+import { fetchAllCached, interleaveByHost, hostOf } from "./fetch.ts";
 import { extractRecipe, titleMatches } from "./extract.ts";
 import { upgradeImages } from "./images.ts";
 import {
@@ -58,11 +58,15 @@ function identity(u: string): string {
 
 const requested = readUrls();
 // Deduplicate before spending a request on it.
-const urls = [...new Map(requested.map((u) => [identity(u), u])).values()];
-if (urls.length !== requested.length) {
-  console.log(`(${requested.length - urls.length} duplicate urls in urls.txt, skipped)`);
+const deduped = [...new Map(requested.map((u) => [identity(u), u])).values()];
+if (deduped.length !== requested.length) {
+  console.log(`(${requested.length - deduped.length} duplicate urls in urls.txt, skipped)`);
 }
-console.log(`fetching ${urls.length} urls, one at a time...\n`);
+// Grouped by site is the order the sweeps emit; round-robin is the order that
+// lets one host's politeness gap elapse while another host is being fetched.
+const urls = interleaveByHost(deduped);
+const hostCount = new Set(urls.map(hostOf)).size;
+console.log(`fetching ${urls.length} urls across ${hostCount} hosts, one at a time...\n`);
 
 // --refresh ignores the on-disk cache and pulls every page down again.
 const results = await fetchAllCached(urls, join(PKG, "out", "cache"), {

@@ -57,6 +57,42 @@ export async function fetchAll(urls: string[], gapMs = 1200): Promise<FetchResul
   return out;
 }
 
+/** The host, without www., as the unit politeness is actually owed to. */
+export function hostOf(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+}
+
+/**
+ * Round-robin the queue across hosts, so consecutive requests land on
+ * different sites.
+ *
+ * The queue arrives grouped: every URL from one site, then every URL from the
+ * next, because that is the order the sitemap sweeps produced them in. Fetched
+ * in that order, a per-host gap cannot overlap with anything -- each wait for
+ * site A is dead time that no request to site B is filling. Interleaved, the
+ * gap one host is serving runs down while other hosts are being fetched, so
+ * the crawl is bounded by response time rather than by politeness, and no site
+ * is hit any harder.
+ */
+export function interleaveByHost(urls: string[]): string[] {
+  const queues = new Map<string, string[]>();
+  for (const u of urls) {
+    const h = hostOf(u);
+    const q = queues.get(h);
+    if (q) q.push(u);
+    else queues.set(h, [u]);
+  }
+  const lists = [...queues.values()];
+  const out: string[] = [];
+  for (let i = 0; out.length < urls.length; i++) {
+    for (const list of lists) {
+      const u = list[i];
+      if (u !== undefined) out.push(u);
+    }
+  }
+  return out;
+}
+
 // ------------------------------------------------------------- caching --
 
 /**
@@ -76,6 +112,7 @@ export async function fetchAllCached(
   cacheDir: string,
   opts: { refresh?: boolean; gapMs?: number } = {},
 ): Promise<FetchResult[]> {
+  // gapMs is per host, not global. See the wait below.
   const { refresh = false, gapMs = 1200 } = opts;
   const { mkdirSync, readFileSync, writeFileSync, existsSync } = await import("node:fs");
   const { join } = await import("node:path");
@@ -86,6 +123,8 @@ export async function fetchAllCached(
     join(cacheDir, `${createHash("sha1").update(u).digest("hex")}.json`);
 
   const out: FetchResult[] = [];
+  /** When each host was last asked for something, so the gap is owed per site. */
+  const lastHitAt = new Map<string, number>();
   let fetched = 0;
   for (const url of urls) {
     const file = pathFor(url);
@@ -97,9 +136,17 @@ export async function fetchAllCached(
         // A corrupt cache entry is not worth a crash -- refetch it.
       }
     }
-    // Only sleep before a request that is actually going out. A cache hit
-    // costs nobody anything and should not cost 1.2 seconds either.
-    if (fetched > 0) await new Promise((r) => setTimeout(r, gapMs));
+    // Only sleep before a request that is actually going out, and only for
+    // as long as this particular host is still owed. A cache hit costs nobody
+    // anything and should not cost 1.2 seconds either -- and neither should a
+    // request to a site that has not been touched yet. The gap was previously
+    // global, which waited just as long between two different sites as
+    // between two pages of the same one; with the corpus spread over ~30
+    // sites that is most of the run spent waiting on nobody's behalf.
+    const h = hostOf(url);
+    const since = Date.now() - (lastHitAt.get(h) ?? -Infinity);
+    if (since < gapMs) await new Promise((r) => setTimeout(r, gapMs - since));
+    lastHitAt.set(h, Date.now());
     const res = await fetchPage(url);
     fetched++;
     out.push(res);
