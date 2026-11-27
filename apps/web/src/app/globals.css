@@ -69,7 +69,13 @@
  *   lg      18   a lead line, a card title
  *   xl      22   a section heading inside a view
  *   2xl     28   a page title. All three pages now use this one.
- *   display fluid, 40 to 64. The wordmark on the home page, nothing else.
+ *   display fluid, 40 to 64. Page titles, in the script face.
+ *
+ * That last one changed. It was the wordmark only, and page titles were set in
+ * the body face so the script stayed a signature used once. Then the wordmark
+ * left the header for a "Home" pill, which freed the script face to be the
+ * page-title face instead, and the rule is now the simpler one: every page
+ * titles itself in script at display size, and nothing else uses either.
  */
 @theme {
   --text-*: initial;
