@@ -37,7 +37,12 @@ export type DishName =
   | "oatmeal"
   | "peanut butter"
   | "sugar"
-  | "snickerdoodle";
+  | "snickerdoodle"
+  | "brownie"
+  | "blondie"
+  | "muffin"
+  | "banana bread"
+  | "scone";
 
 export interface Preferences {
   /** No chilling, short bake. */
@@ -254,6 +259,23 @@ const DISH_WORDS: ReadonlyArray<readonly [string, DishName]> = [
   ["plain", "sugar"],
   ["vanilla", "sugar"],
   ["sugar", "sugar"],
+
+  // Beyond cookies. "brownie" has to come before the bare "chocolate" above
+  // would ever be reached for it, which it does: the list is matched in order
+  // and a brownie page says brownie.
+  ["brownies", "brownie"],
+  ["brownie", "brownie"],
+  ["fudgy brownie", "brownie"],
+  ["blondies", "blondie"],
+  ["blondie", "blondie"],
+  ["muffins", "muffin"],
+  ["muffin", "muffin"],
+  ["banana bread", "banana bread"],
+  ["bananabread", "banana bread"],
+  ["quick bread", "banana bread"],
+  ["loaf", "banana bread"],
+  ["scones", "scone"],
+  ["scone", "scone"],
 ];
 
 /**
