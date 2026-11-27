@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { NavLinks } from "@/components/NavLinks";
+import { NavHome, NavLinks } from "@/components/NavLinks";
 import { Geist, Geist_Mono, Dancing_Script } from "next/font/google";
 import {
   ClerkProvider,
@@ -50,12 +50,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <div className="scallop" aria-hidden />
 
             <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
-            <Link
-              href="/"
-              className="font-script text-xl font-bold leading-none text-clay-deep hover:text-clay sm:text-2xl"
-            >
-              The Perfect Batch
-            </Link>
+            {/* Its own boundary. usePathname is a dynamic read, and with
+                Cache Components a dynamic read outside a boundary fails the
+                prerender of every statically rendered route, which here meant
+                /sign-in. The fallback reserves the pill's size so the header
+                does not jump when it resolves. */}
+            <Suspense fallback={<span className="h-9 w-[4.8rem] rounded-full bg-cream-deep" aria-hidden />}>
+              <NavHome />
+            </Suspense>
 
             {/* Auth state is runtime data, and Cache Components will not
                 prerender a route that reads it outside a boundary -- it fails

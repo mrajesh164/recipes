@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Recommendation } from "./Recommendation";
 import { asRankable } from "@/lib/rankable";
 import {
@@ -10,7 +9,6 @@ import {
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { BookmarkIcon } from "./icons";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
 import { readUnknownWords, type Guess, type Inference } from "@/lib/semantic";
@@ -112,15 +110,18 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 
   return (
     <div>
-      <label htmlFor="q" className="block font-semibold">
-        What are you after?
-      </label>
+      {/* The page's h1, not a field label. This page is the search, so the
+          question it asks is the heading, and labelling the box separately
+          would say it twice. */}
+      <h1 className="font-script text-display font-bold text-clay-deep">
+        <label htmlFor="q">What are you after?</label>
+      </h1>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           setQuery(draft);
         }}
-        className="mt-3 flex gap-2"
+        className="mt-6 flex gap-2"
       >
         <input
           id="q"
@@ -178,10 +179,6 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           setQuery(phrase);
         }}
       />
-
-      {/* Nothing asked yet: offer the two places to go, rather than a screen
-          of background. */}
-      {query.trim() === "" && <Shortcuts recipes={recipes} />}
 
       {best && (
         <Recommendation
@@ -482,84 +479,6 @@ function Reading({
         </p>
       )}
     </div>
-  );
-}
-
-/**
- * Where to go when you have not asked for anything yet.
- *
- * This replaced a panel comparing three recipes' butter ratios. The idea was
- * to show the project's premise -- that recipes disagree -- but the percentile
- * picks included a giant single cookie, so "same cookie, nearly twice the
- * butter" read as a contradiction rather than an argument. The evidence
- * belongs beside a recommendation, where there is a recipe to explain; on an
- * empty page it was a chart asking to be studied before anything was asked.
- *
- * So: the two places you can actually go, as photographs rather than as the
- * small text links in the header.
- */
-function Shortcuts({ recipes }: { recipes: ScoredRecipe[] }) {
-  // Deterministic, so the tile does not reshuffle on every render. Sorted by
-  // id rather than picked at random for the same reason.
-  const photos = recipes
-    .filter((r) => r.image_url !== null)
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .slice(0, 4);
-
-  if (photos.length < 4) return null;
-
-  return (
-    <section className="mt-10 grid gap-4 md:grid-cols-[1.6fr_1fr]">
-      <Link
-        href="/recipes"
-        className="group overflow-hidden rounded-3xl border-2 border-line bg-paper
-                   transition-colors hover:border-pink-deep"
-      >
-        <div className="grid grid-cols-4">
-          {photos.map((r) => (
-            <div key={r.id} className="relative aspect-square">
-              <Image
-                src={r.image_url!}
-                alt=""
-                fill
-                sizes="(max-width: 768px) 25vw, 120px"
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="p-5">
-          <h2 className="text-lg font-bold tracking-tight group-hover:text-clay-deep">
-            All recipes
-          </h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Scroll all {recipes.length}, or filter by name.
-          </p>
-        </div>
-      </Link>
-
-      {/* No photograph here on purpose. Any cookie put on this tile would look
-          like something you had already saved, and on a new account that is a
-          promise the page cannot keep. */}
-      <Link
-        href="/saved"
-        className="group flex flex-col justify-between overflow-hidden rounded-3xl border-2
-                   border-line bg-cream-deep p-5 transition-colors hover:border-pink-deep"
-      >
-        {/* A drawn mark rather than an emoji: the colour emoji ships Apple's
-            palette, which is nothing like this one, and it reads as a sticker
-            dropped on the page. */}
-        <BookmarkIcon className="h-9 w-9 text-clay-deep" />
-        <span className="mt-8">
-          <span className="block text-lg font-bold tracking-tight group-hover:text-clay-deep">
-            Saved
-          </span>
-          <span className="mt-1 block text-sm text-ink-soft">
-            The ones you kept.
-          </span>
-        </span>
-      </Link>
-    </section>
   );
 }
 

@@ -19,38 +19,47 @@ import { usePathname } from "next/navigation";
  * describes the site to someone who already has a model of the site; "Find a
  * recipe" describes the thing you came to do.
  */
-const LINKS = [
-  { href: "/", label: "Find a recipe" },
-  { href: "/recipes", label: "All recipes" },
-  { href: "/saved", label: "Saved" },
-] as const;
+/** One pill, so Home and the other three cannot look like different things. */
+function Pill({ href, label, here }: { href: string; label: string; here: boolean }) {
+  return (
+    <Link
+      href={href}
+      // aria-current is the part a screen reader uses. The fill is the part
+      // everyone else uses. Both say the same thing.
+      aria-current={here ? "page" : undefined}
+      className={[
+        "whitespace-nowrap rounded-full border px-3 py-2 text-sm font-semibold",
+        "transition-colors sm:px-4",
+        here
+          ? "border-clay-deep bg-clay-deep text-paper"
+          : "border-line bg-paper text-ink hover:border-pink-deep hover:bg-cream-deep",
+      ].join(" ")}
+    >
+      {label}
+    </Link>
+  );
+}
+
+/**
+ * The left-hand slot, where the script wordmark used to be.
+ *
+ * A wordmark that goes home is a convention most people know, but it was the
+ * odd one out next to explicit pills, and it meant the name was on screen
+ * twice on the page that already says it in display type. "Home" is a word,
+ * and a word is unambiguously a thing you can click.
+ */
+export function NavHome() {
+  const pathname = usePathname();
+  return <Pill href="/" label="Home" here={pathname === "/"} />;
+}
 
 export function NavLinks() {
   const pathname = usePathname();
-
   return (
     <>
-      {LINKS.map(({ href, label }) => {
-        const here = pathname === href;
-        return (
-          <Link
-            key={href}
-            href={href}
-            // aria-current is the part a screen reader uses. The fill is the
-            // part everyone else uses. Both say the same thing.
-            aria-current={here ? "page" : undefined}
-            className={[
-              "whitespace-nowrap rounded-full border px-3 py-2 text-sm font-semibold",
-              "transition-colors sm:px-4",
-              here
-                ? "border-clay-deep bg-clay-deep text-paper"
-                : "border-line bg-paper text-ink hover:border-pink-deep hover:bg-cream-deep",
-            ].join(" ")}
-          >
-            {label}
-          </Link>
-        );
-      })}
+      <Pill href="/find" label="Find a recipe" here={pathname === "/find"} />
+      <Pill href="/recipes" label="All recipes" here={pathname === "/recipes"} />
+      <Pill href="/saved" label="Saved" here={pathname === "/saved"} />
     </>
   );
 }

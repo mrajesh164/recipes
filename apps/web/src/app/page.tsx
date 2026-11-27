@@ -1,9 +1,22 @@
 import { Suspense } from "react";
 import { Show } from "@clerk/nextjs";
 import { getRecipes } from "@/lib/recipes";
-import { Picker } from "@/components/Picker";
 import { Example } from "@/components/Example";
+import { FeatureCards } from "@/components/FeatureCards";
 
+/**
+ * The front door, and the only page that says the name.
+ *
+ * The search used to live here, which meant this page had to be both the
+ * explanation and the tool, and the name appeared twice because the header
+ * wordmark said it as well. The tool moved to /find and the wordmark became a
+ * "Home" link, so the name is said once, here, at full size.
+ *
+ * This page stays public. proxy.ts protects everything except "/" and the
+ * sign-in routes, so a visitor can read what the app does and see a real
+ * recommendation before being asked for an account, and the task itself is
+ * still behind the gate.
+ */
 export default async function Page() {
   const recipes = await getRecipes();
 
@@ -11,59 +24,39 @@ export default async function Page() {
     <>
       <div className="scallop" aria-hidden />
 
-      {/* w-full and flex-1, matching /recipes and /saved.
- 
-            Without w-full this sized to its content, because body is a flex
-            column and a flex item does that by default. So the page was narrow
-            with just a search box on it and jumped to the full 5xl the moment a
-            recommendation appeared, which is the width changing after you
-            type. The other two pages always had w-full; this one did not, and
-            that difference was the bug. */}
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-12">
-        <header className="max-w-2xl">
+        <header className="max-w-3xl">
           <h1 className="font-script text-display font-bold text-clay-deep">
             The Perfect Batch
           </h1>
+          <p className="mt-5 text-lg text-ink-soft">
+            Every cookie recipe is a little different, on purpose. This weighs{" "}
+            {recipes.length} of them in grams so they can be compared at all,
+            and picks the one you asked for.
+          </p>
         </header>
 
-        {/* Which half to draw is decided here, on the server, rather than by
-            useAuth() in the browser.
- 
-            It used to be the client's call, and the cost was the whole page:
-            <main> arrived holding 178 bytes -- the title and nothing else --
-            and a new visitor looked at an empty page until the bundle hydrated
-            and Clerk answered. The pitch they were waiting for does not depend
-            on who they are, so there was nothing to wait for.
- 
-            The task stays behind sign-in. That is the point of the split: a
-            visitor gets the real thing to look at immediately, and an account
-            is what lets them drive it. */}
-        <div className="mt-12">
-          <Suspense fallback={<PageSkeleton />}>
-            <Show when="signed-out">
+        <FeatureCards recipes={recipes} />
+
+        {/* A visitor gets a real recommendation to look at before signing up,
+            rendered by the same component the tool uses so the demo cannot
+            drift from the thing it demonstrates. */}
+        <Suspense fallback={<ExampleSkeleton />}>
+          <Show when="signed-out">
+            <div className="mt-14">
               <Example recipes={recipes} />
-            </Show>
-            <Show when="signed-in">
-              <Picker recipes={recipes} />
-            </Show>
-          </Suspense>
-        </div>
+            </div>
+          </Show>
+        </Suspense>
       </main>
     </>
   );
 }
 
-/**
- * Holds the shape of the page while Clerk resolves, so the layout does not
- * jump once it does. Auth is runtime data and Cache Components will not
- * prerender a route that reads it outside a boundary, so the boundary is
- * required here rather than optional.
- */
-function PageSkeleton() {
+function ExampleSkeleton() {
   return (
-    <div className="animate-pulse">
+    <div className="mt-14 animate-pulse">
       <div className="h-7 w-72 rounded-lg bg-cream-deep" />
-      <div className="mt-5 h-16 w-full rounded-2xl bg-cream-deep" />
       <div className="mt-6 h-56 w-full rounded-3xl bg-cream-deep" />
     </div>
   );
