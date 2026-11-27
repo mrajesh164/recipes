@@ -179,3 +179,19 @@ test("the dish_type check constraint lists exactly the DishType union", () => {
     "the migration and DISHES disagree about which dish types exist",
   );
 });
+
+test("a form is not made to call itself by its category's name", () => {
+  // A blondie's category is brownie, so appending the category noun demanded
+  // that a page titled "Blondies" also say "brownie". 87 of 104 blondies were
+  // dropped for it. Every other form's category noun was its own name, which
+  // is why nothing else showed the bug.
+  assert.deepEqual(titleKeywordsFor("blondie"), ["blondie"]);
+  assert.ok(!titleKeywordsFor("blondie").includes("brownie"));
+});
+
+test("a flavour still has to say what form it is", () => {
+  // The guard that must not be lost: "Chocolate Chip" alone could be a cake.
+  assert.ok(titleKeywordsFor("chocolate chip").includes("cookie"));
+  assert.ok(titleKeywordsFor("oatmeal").includes("cookie"));
+  assert.ok(titleKeywordsFor("sugar").includes("cookie"));
+});

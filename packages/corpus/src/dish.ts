@@ -261,7 +261,16 @@ export function titleKeywordsFor(type: DishType): string[] {
   const dish = DISHES.find((d) => d.type === type);
   // A page that does not call itself the thing we asked for is not the page we
   // asked for. This used to hard-code "cookie" because everything was one.
-  return [...(dish?.title ?? []), CATEGORY_NOUN[categoryOf(type)]];
+  //
+  // The category noun is only added for a flavour. A flavour needs it -- a
+  // page titled "Chocolate Chip" something has to say "cookie" somewhere or it
+  // could be a cake, which is the Apricot Banana Bread guard. A form already
+  // names itself, and for every form but one the category noun happened to be
+  // the same word, so adding it looked harmless. The exception was blondie,
+  // whose category is brownie: it demanded a page titled "Blondies" also call
+  // itself a brownie, and 87 of 104 blondies were thrown away for it.
+  const own = dish?.title ?? [];
+  return dish?.kind === "flavour" ? [...own, CATEGORY_NOUN[categoryOf(type)]] : [...own];
 }
 
 /**
