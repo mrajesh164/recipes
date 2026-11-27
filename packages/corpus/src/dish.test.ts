@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  classifyDish, titleKeywordsFor, titleIsExcluded, wrongShapeFor, usesAPreparedMix,
+  classifyDish, categoryOf, titleKeywordsFor, titleIsExcluded, wrongShapeFor, usesAPreparedMix,
 } from "./dish.ts";
 
 test("names the dish a url is about", () => {
@@ -109,4 +109,38 @@ test("but flour and butter are not a prepared mix", () => {
     usesAPreparedMix(["2 cups all-purpose flour", "1 cup butter, softened", "2 large eggs"]),
     null,
   );
+});
+
+// --- form vs flavour -------------------------------------------------------
+
+test("a form decides the dish however many flavours came with it", () => {
+  // These were dropped as ambiguous before forms and flavours were told
+  // apart. Only four URLs in the current sweeps are affected -- the rule
+  // matters for being right rather than for the count, and the count will
+  // grow as sites are added.
+  assert.equal(classifyDish("chocolate chip muffins"), "muffin");
+  assert.equal(classifyDish("banana chocolate chip muffins"), "muffin");
+  assert.equal(classifyDish("peanut butter brownies"), "brownie");
+  assert.equal(classifyDish("chocolate chip scones"), "scone");
+  assert.equal(classifyDish("chocolate chip banana bread"), "banana bread");
+});
+
+test("a loaf with chips in it is not a cookie", () => {
+  // The misfiling that mattered: the flavour matched, the form did not exist,
+  // so a quick bread was scored against the chocolate chip cookie window.
+  assert.equal(classifyDish("chocolate chip pumpkin bread"), "pumpkin bread");
+  assert.equal(categoryOf("pumpkin bread"), "quick bread");
+  assert.equal(categoryOf("zucchini bread"), "quick bread");
+});
+
+test("the quick breads the sweeps look for all have a dish", () => {
+  for (const t of ["banana bread", "pumpkin bread", "zucchini bread"]) {
+    assert.equal(classifyDish(t), t, `${t} should classify as itself`);
+  }
+});
+
+test("two forms is still ambiguous, and so are two flavours", () => {
+  assert.equal(classifyDish("banana bread muffins"), null);
+  assert.equal(classifyDish("oatmeal chocolate chip cookies"), null);
+  assert.equal(classifyDish("peanut butter chocolate chip cookies"), null);
 });

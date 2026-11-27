@@ -152,7 +152,9 @@ export type Category = "cookie" | "brownie" | "muffin" | "quick bread" | "scone"
 
 export type DishType =
   | "chocolate chip" | "oatmeal" | "peanut butter" | "sugar" | "snickerdoodle"
-  | "brownie" | "blondie" | "muffin" | "banana bread" | "scone";
+  | "brownie" | "blondie" | "muffin"
+  | "banana bread" | "pumpkin bread" | "zucchini bread"
+  | "scone";
 
 /**
  * A corpus row: what extract.ts could read off the page, plus which dish we
@@ -170,6 +172,14 @@ interface Dish {
   type: DishType;
   /** Which form it takes, which decides its exclusions and its shape rules. */
   category: Category;
+  /**
+   * Whether the name describes the shape of the thing or what is in it.
+   *
+   * This is what makes "chocolate chip muffin" readable. A form is the thing
+   * itself; a flavour only says what was added to it. Two flavours in one
+   * title is genuine ambiguity, a form and a flavour is not.
+   */
+  kind: "form" | "flavour";
   /** Recognises the dish in a URL slug (hyphenated) or a title (spaced). */
   slug: RegExp;
   /**
@@ -184,19 +194,23 @@ interface Dish {
  * chocolate chip cookie made with brown sugar is not read as a sugar cookie.
  */
 export const DISHES: readonly Dish[] = [
-  { type: "chocolate chip", category: "cookie", slug: /chocolate[-\s]chip|choc[-\s]chip/i, title: ["chocolate", "chip"] },
-  { type: "snickerdoodle", category: "cookie", slug: /snickerdoodle/i, title: ["snickerdoodle"] },
-  { type: "peanut butter", category: "cookie", slug: /peanut[-\s]butter/i, title: ["peanut butter"] },
-  { type: "oatmeal", category: "cookie", slug: /oatmeal|\boat[-\s]/i, title: ["oat"] },
-  { type: "sugar", category: "cookie", slug: /sugar[-\s]cookie/i, title: ["sugar"] },
+  // Flavours. Each of these is a cookie that differs by what is in it, which
+  // is why two of them in one title means neither set owns the recipe.
+  { type: "chocolate chip", category: "cookie", kind: "flavour", slug: /chocolate[-\s]chip|choc[-\s]chip/i, title: ["chocolate", "chip"] },
+  { type: "snickerdoodle", category: "cookie", kind: "flavour", slug: /snickerdoodle/i, title: ["snickerdoodle"] },
+  { type: "peanut butter", category: "cookie", kind: "flavour", slug: /peanut[-\s]butter/i, title: ["peanut butter"] },
+  { type: "oatmeal", category: "cookie", kind: "flavour", slug: /oatmeal|\boat[-\s]/i, title: ["oat"] },
+  { type: "sugar", category: "cookie", kind: "flavour", slug: /sugar[-\s]cookie/i, title: ["sugar"] },
 
-  // Beyond cookies. The category is the form, which decides what the ratios
-  // are compared against; the dish is what the thing is called.
-  { type: "brownie", category: "brownie", slug: /brownie/i, title: ["brownie"] },
-  { type: "blondie", category: "brownie", slug: /blondie/i, title: ["blondie"] },
-  { type: "muffin", category: "muffin", slug: /muffin/i, title: ["muffin"] },
-  { type: "banana bread", category: "quick bread", slug: /banana[-\s]bread/i, title: ["banana", "bread"] },
-  { type: "scone", category: "scone", slug: /scone/i, title: ["scone"] },
+  // Forms. The category is the form, which decides what the ratios are
+  // compared against; the dish is what the thing is called.
+  { type: "brownie", category: "brownie", kind: "form", slug: /brownie/i, title: ["brownie"] },
+  { type: "blondie", category: "brownie", kind: "form", slug: /blondie/i, title: ["blondie"] },
+  { type: "muffin", category: "muffin", kind: "form", slug: /muffin/i, title: ["muffin"] },
+  { type: "banana bread", category: "quick bread", kind: "form", slug: /banana[-\s]bread/i, title: ["banana", "bread"] },
+  { type: "pumpkin bread", category: "quick bread", kind: "form", slug: /pumpkin[-\s]bread/i, title: ["pumpkin", "bread"] },
+  { type: "zucchini bread", category: "quick bread", kind: "form", slug: /zucchini[-\s]bread/i, title: ["zucchini", "bread"] },
+  { type: "scone", category: "scone", kind: "form", slug: /scone/i, title: ["scone"] },
 ];
 
 /**
@@ -210,6 +224,22 @@ export const DISHES: readonly Dish[] = [
  */
 export function classifyDish(text: string): DishType | null {
   const hits = DISHES.filter((d) => d.slug.test(text));
+
+  // A form names the thing; a flavour only names what is in it. When exactly
+  // one form is present it decides, however many flavours came with it:
+  // "chocolate chip muffin" is a muffin, and "peanut butter brownies" are
+  // brownies. Treating those as ambiguous dropped them, and -- worse --
+  // "chocolate chip pumpkin bread" matched the flavour alone and was filed as
+  // a cookie, so a loaf was scored against cookie ratios.
+  const forms = hits.filter((d) => d.kind === "form");
+  if (forms.length === 1) return forms[0]!.type;
+
+  // Two forms is real ambiguity about the shape, and shape is the thing being
+  // compared: "banana bread muffins" belongs to neither window.
+  if (forms.length > 1) return null;
+
+  // No form named, so this is a cookie described by what is in it, and the
+  // original rule stands: one flavour owns it, two means neither does.
   return hits.length === 1 ? hits[0]!.type : null;
 }
 
