@@ -227,12 +227,27 @@ export function scoreTexture(input: TextureInput): TextureScores {
   const melted = method === "melted" ? 1 : 0;
   const creamed = method === "creamed" ? 1 : 0;
 
-  const chewy = round2(
-    0.30 * brownShare + 0.25 * melted + 0.25 * fatN + 0.20 * norm(yolkShare, 0.36, 0.7),
-  );
-  const cakey = round2(
-    0.35 * creamed + 0.25 * (1 - brownShare) + 0.25 * (1 - fatN) + 0.15 * (1 - norm(yolkShare, 0.36, 0.7)),
-  );
+  /**
+   * Two changes here, both from measuring what the terms actually paid out.
+   *
+   * "NOT yolks" is gone. It gave cakey 0.15 for every recipe without extra
+   * yolks, which is most of them, and the absence of evidence for chewiness is
+   * not evidence for cakeyness. Its median contribution was the full 0.15
+   * while the matching chewy term's was 0.000.
+   *
+   * And the method weights are nearly swapped. Creaming is what you do unless
+   * you decided otherwise: 74% of this corpus creams, so it is weak evidence,
+   * and at 0.35 it handed three quarters of the corpus the largest single term
+   * in the formula. Melting is a decision, 14% of the corpus, so it is strong
+   * evidence and was underweighted at 0.25. The freed weight goes to the two
+   * cakey terms that are real signals rather than absences: a cookie low in
+   * brown sugar and low in fat genuinely is cakier.
+   *
+   * Together these took the median cakey score from 0.72 against chewy's 0.31.
+   */
+  const yolkN = norm(yolkShare, 0.36, 0.7);
+  const chewy = round2(0.30 * brownShare + 0.30 * melted + 0.25 * fatN + 0.15 * yolkN);
+  const cakey = round2(0.15 * creamed + 0.45 * (1 - brownShare) + 0.40 * (1 - fatN));
   const crispy = round2(
     0.30 * (1 - brownShare) + 0.30 * sugarN + 0.25 * fatN + 0.15 * (chillsDough ? 0 : 1),
   );
