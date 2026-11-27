@@ -65,19 +65,25 @@ export function RangePlot({
     );
   }
 
-  const share = positionOf(values, picked);
+  // The bar is a value scale now, not a percentile.
+  //
+  // It was filled to the percentile and carried a sentence saying so. With the
+  // sentence gone the fill meant nothing on its own: 63 g showed as 8% full and
+  // there was no way to tell what 8% of what. Labelling the two ends fixes that
+  // with no prose at all, but only if the fill agrees with the labels, so the
+  // scale is linear between them. 63 g between 47 and 151 is 15% along, which
+  // is a different number from its percentile and the honest one to draw under
+  // endpoints that say 47 and 151.
+  const sorted = [...values].sort((a, b) => a - b);
+  const at = (q: number) =>
+    sorted[Math.min(sorted.length - 1, Math.max(0, Math.floor(q * (sorted.length - 1))))]!;
+  const lo = sorted.length >= 20 ? at(0.05) : sorted[0]!;
+  const hi = sorted.length >= 20 ? at(0.95) : sorted[sorted.length - 1]!;
+  const along =
+    hi === lo ? 0 : Math.max(0, Math.min(100, ((picked - lo) / (hi - lo)) * 100));
 
   return (
     <div className="py-2.5">
-      {/* The recipe's own value belongs to the label, not under the bar.
- 
-          It sat under the bar before and the two were read as one thing: for
-          brown sugar the value is itself a percentage, 79% of the sugar, and
-          the bar was filled to the percentile, 81%. Two unrelated quantities,
-          near-identical numbers, stacked. "What does 79% mean" was the right
-          question and the honest answer was "one of two things". Attaching the
-          value to the name leaves the bar alone with the sentence that
-          describes it. */}
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-semibold">
           {label}{" "}
@@ -86,16 +92,19 @@ export function RangePlot({
         <span className="text-xs italic text-ink-faint">{hint}</span>
       </div>
 
-      <div
-        className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-cream-deep"
-        title={`Higher than ${share}% of them`}
-      >
+      <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-cream-deep">
         <div
           className="h-full rounded-full bg-clay-deep"
-          style={{ width: `${Math.max(2, share)}%` }}
+          style={{ width: `${Math.max(2, along)}%` }}
         />
       </div>
 
+      {/* The two ends of the scale. This is what makes the fill mean something:
+          without them a filled bar is a quantity of nothing in particular. */}
+      <div className="mt-1 flex justify-between text-xs tabular-nums text-ink-faint">
+        <span>{format(lo)}</span>
+        <span>{format(hi)}</span>
+      </div>
     </div>
   );
 }
