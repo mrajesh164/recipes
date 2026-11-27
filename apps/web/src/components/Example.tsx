@@ -19,6 +19,23 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
     (a, b) => matchScore(asRankable(b), demo) - matchScore(asRankable(a), demo),
   )[0];
 
+  /**
+   * The corpus minus its ingredient lists.
+   *
+   * This page is public and renders a real recommendation, which needs the
+   * rest of the corpus to say where the picked recipe sits -- but only its
+   * ratios, and those are already scored. The plots read scores.ratios and
+   * nothing else; the only ingredient list anybody reads is the picked
+   * recipe's, and that arrives whole as `recipe`.
+   *
+   * WhyThisOne is a client component, so whatever reaches it is serialised
+   * into the page. Passing the corpus intact put all 16,956 ingredient rows on
+   * the wire and made this landing page 4.6 MB -- for a visitor who has not
+   * signed in and may never scroll past the hero. At 325 recipes it was 1.1 MB
+   * and nobody noticed.
+   */
+  const distribution = recipes.map((r) => ({ ...r, ingredients: [] }));
+
   return (
     <div>
       <div className="rounded-3xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
@@ -49,7 +66,7 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
         <Recommendation
           recipe={best}
           want="chewy"
-          all={recipes}
+          all={distribution}
           query="chewy"
           interpretation={demo}
           compact
