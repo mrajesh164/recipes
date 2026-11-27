@@ -15,36 +15,91 @@ export interface Window {
   sugar: readonly [number, number];
 }
 
-export const OVERALL_WINDOW: Window = {"n":313,"fat":[0.54,1.26],"sugar":[0.83,1.78]};
+export const OVERALL_WINDOW: Window = {"n":1343,"fat":[0.29,1.49],"sugar":[0.28,2.63]};
 
 export const DISH_WINDOWS: Readonly<Record<string, Window>> = {
-  "chocolate chip": {
-    "n": 156,
+  "muffin": {
+    "n": 379,
     "fat": [
-      0.5,
+      0.22,
+      0.67
+    ],
+    "sugar": [
+      0.07,
+      1.27
+    ]
+  },
+  "brownie": {
+    "n": 251,
+    "fat": [
+      0.76,
+      2.84
+    ],
+    "sugar": [
+      1.27,
+      4.79
+    ]
+  },
+  "chocolate chip": {
+    "n": 183,
+    "fat": [
+      0.47,
       0.95
     ],
     "sugar": [
-      0.79,
+      0.76,
       1.42
     ]
   },
+  "scone": {
+    "n": 153,
+    "fat": [
+      0.12,
+      0.57
+    ],
+    "sugar": [
+      0.03,
+      0.86
+    ]
+  },
+  "banana bread": {
+    "n": 110,
+    "fat": [
+      0.27,
+      0.83
+    ],
+    "sugar": [
+      0.45,
+      1.62
+    ]
+  },
+  "blondie": {
+    "n": 85,
+    "fat": [
+      0.47,
+      1.14
+    ],
+    "sugar": [
+      1.11,
+      2.37
+    ]
+  },
   "oatmeal": {
-    "n": 71,
+    "n": 77,
     "fat": [
       0.63,
       1.26
     ],
     "sugar": [
       0.98,
-      2.17
+      2.08
     ]
   },
   "peanut butter": {
-    "n": 46,
+    "n": 55,
     "fat": [
-      0.69,
-      1.72
+      0.71,
+      1.68
     ],
     "sugar": [
       0.98,
@@ -52,14 +107,14 @@ export const DISH_WINDOWS: Readonly<Record<string, Window>> = {
     ]
   },
   "sugar": {
-    "n": 30,
+    "n": 38,
     "fat": [
-      0.47,
-      1
+      0.38,
+      0.95
     ],
     "sugar": [
-      0.58,
-      1.66
+      0.62,
+      1.65
     ]
   },
   "snickerdoodle": {
@@ -71,6 +126,17 @@ export const DISH_WINDOWS: Readonly<Record<string, Window>> = {
     "sugar": [
       0.9,
       1.2
+    ]
+  },
+  "pumpkin bread": {
+    "n": 2,
+    "fat": [
+      0.35,
+      0.35
+    ],
+    "sugar": [
+      0.84,
+      0.84
     ]
   }
 };
