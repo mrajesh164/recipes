@@ -26,15 +26,17 @@
  */
 
 import { fetchPage } from "./fetch.ts";
-import { EXCLUDE, classifyDish } from "./dish.ts";
+import { exclusionsFor, classifyDish, type Category } from "./dish.ts";
 
 interface Source {
   name: string;
+  /** Which category this sweep is looking for. Decides what it rules out. */
+  category: Category;
   sitemap: string;
   /** All must appear in the URL. */
   include: string[];
   /** Any one of these disqualifies it. */
-  exclude: string[];
+  exclude: readonly string[];
 }
 
 /**
@@ -53,34 +55,34 @@ const NOT_A_RECIPE_PAGE = [
 const SOURCES: Source[] = [
   // Confirmed answering an automated request, with schema.org Recipe on the
   // page, on 17 Nov.
-  { name: "King Arthur Baking", sitemap: "https://www.kingarthurbaking.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: EXCLUDE },
-  { name: "Love and Lemons", sitemap: "https://www.loveandlemons.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Taste of Home", sitemap: "https://www.tasteofhome.com/sitemap_index.xml", include: ["/recipes/", "cookie"], exclude: EXCLUDE },
-  { name: "Averie Cooks", sitemap: "https://www.averiecooks.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Broma Bakery", sitemap: "https://bromabakery.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "The Kitchn", sitemap: "https://www.thekitchn.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Once Upon a Chef", sitemap: "https://www.onceuponachef.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "RecipeTin Eats", sitemap: "https://www.recipetineats.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Natasha's Kitchen", sitemap: "https://natashaskitchen.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "BBC Good Food", sitemap: "https://www.bbcgoodfood.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Inspired Taste", sitemap: "https://www.inspiredtaste.net/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Epicurious", sitemap: "https://www.epicurious.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: EXCLUDE },
+  { name: "King Arthur Baking", category: "cookie", sitemap: "https://www.kingarthurbaking.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Love and Lemons", category: "cookie", sitemap: "https://www.loveandlemons.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Taste of Home", category: "cookie", sitemap: "https://www.tasteofhome.com/sitemap_index.xml", include: ["/recipes/", "cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Averie Cooks", category: "cookie", sitemap: "https://www.averiecooks.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Broma Bakery", category: "cookie", sitemap: "https://bromabakery.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "The Kitchn", category: "cookie", sitemap: "https://www.thekitchn.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Once Upon a Chef", category: "cookie", sitemap: "https://www.onceuponachef.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "RecipeTin Eats", category: "cookie", sitemap: "https://www.recipetineats.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Natasha's Kitchen", category: "cookie", sitemap: "https://natashaskitchen.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "BBC Good Food", category: "cookie", sitemap: "https://www.bbcgoodfood.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Inspired Taste", category: "cookie", sitemap: "https://www.inspiredtaste.net/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Epicurious", category: "cookie", sitemap: "https://www.epicurious.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: exclusionsFor("cookie") },
 
   // Second batch, probed 17 Nov after the first twelve came up short of 200.
-  { name: "Bake or Break", sitemap: "https://bakeorbreak.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Tasty", sitemap: "https://tasty.co/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Land O'Lakes", sitemap: "https://www.landolakes.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "My Baking Addiction", sitemap: "https://www.mybakingaddiction.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Joy the Baker", sitemap: "https://joythebaker.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Live Well Bake Often", sitemap: "https://www.livewellbakeoften.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Baked by Rachel", sitemap: "https://www.bakedbyrachel.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Barefeet in the Kitchen", sitemap: "https://barefeetinthekitchen.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Spend With Pennies", sitemap: "https://www.spendwithpennies.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Tutti Dolci", sitemap: "https://tutti-dolci.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Betty Crocker", sitemap: "https://www.bettycrocker.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Pillsbury", sitemap: "https://www.pillsbury.com/sitemap.xml", include: ["cookie"], exclude: EXCLUDE },
-  { name: "Bon Appetit", sitemap: "https://www.bonappetit.com/sitemap.xml", include: ["/recipe", "cookie"], exclude: EXCLUDE },
-  { name: "Salty Side Dish", sitemap: "https://www.saltysidedish.com/sitemap_index.xml", include: ["cookie"], exclude: EXCLUDE },
+  { name: "Bake or Break", category: "cookie", sitemap: "https://bakeorbreak.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Tasty", category: "cookie", sitemap: "https://tasty.co/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Land O'Lakes", category: "cookie", sitemap: "https://www.landolakes.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "My Baking Addiction", category: "cookie", sitemap: "https://www.mybakingaddiction.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Joy the Baker", category: "cookie", sitemap: "https://joythebaker.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Live Well Bake Often", category: "cookie", sitemap: "https://www.livewellbakeoften.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Baked by Rachel", category: "cookie", sitemap: "https://www.bakedbyrachel.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Barefeet in the Kitchen", category: "cookie", sitemap: "https://barefeetinthekitchen.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Spend With Pennies", category: "cookie", sitemap: "https://www.spendwithpennies.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Tutti Dolci", category: "cookie", sitemap: "https://tutti-dolci.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Betty Crocker", category: "cookie", sitemap: "https://www.bettycrocker.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Pillsbury", category: "cookie", sitemap: "https://www.pillsbury.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Bon Appetit", category: "cookie", sitemap: "https://www.bonappetit.com/sitemap.xml", include: ["/recipe", "cookie"], exclude: exclusionsFor("cookie") },
+  { name: "Salty Side Dish", category: "cookie", sitemap: "https://www.saltysidedish.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
 
   // Probed and rejected, kept here so the next person does not re-probe them:
   //   403 to every request, full browser headers included --

@@ -18,7 +18,7 @@ import { fetchAllCached } from "./fetch.ts";
 import { extractRecipe, titleMatches } from "./extract.ts";
 import { upgradeImages } from "./images.ts";
 import {
-  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie, usesAPreparedMix,
+  classifyDish, titleKeywordsFor, titleIsExcluded, wrongShapeFor, categoryOf, usesAPreparedMix,
   type CorpusRecipe,
 } from "./dish.ts";
 
@@ -135,16 +135,17 @@ const outcomes: Outcome[] = results.map((r) => {
   }
   // A slug can be kinder than the recipe: /chocolate-chip-cookies/ that turns
   // out to be "...Cookie Bars" is still a bar.
-  const banned = titleIsExcluded(recipe.title);
+  const category = categoryOf(dishType);
+  const banned = titleIsExcluded(recipe.title, category);
   if (banned) {
     return { url: r.url, ok: false, reason: `title says "${banned}": "${recipe.title}"` };
   }
 
   // The title said cookie. Do the instructions describe one that was dropped
   // off a spoon, or one that was rolled out and cut?
-  const shaped = notADropCookie(recipe.instructionsText);
+  const shaped = wrongShapeFor(category, recipe.instructionsText);
   if (shaped) {
-    return { url: r.url, ok: false, reason: `not a drop cookie ("${shaped}"): "${recipe.title}"` };
+    return { url: r.url, ok: false, reason: `wrong shape for a ${category} ("${shaped}"): "${recipe.title}"` };
   }
 
   return { url: r.url, ok: true, recipe: { ...recipe, dishType } };

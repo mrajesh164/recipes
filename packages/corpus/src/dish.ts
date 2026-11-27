@@ -73,7 +73,57 @@ export const CONFOUNDING = [
   "lactation", "breakfast", "avocado", "cauliflower", "beet",
 ];
 
-export const EXCLUDE = [...NOT_THE_SAME_DISH, ...SUBSTITUTES_THE_RATIOS, ...CONFOUNDING];
+/**
+ * True whatever is being baked.
+ *
+ * Two kinds. Things made *of* a baked good rather than things that are one, and
+ * things that replace the very ingredients the scoring reads. Neither depends
+ * on the category: a gluten-free brownie is as unreadable as a gluten-free
+ * cookie, and a cookie-butter latte is no more a muffin than it is a cookie.
+ */
+export const ALWAYS_EXCLUDE = [
+  ...SUBSTITUTES_THE_RATIOS,
+  "martini", "cocktail", "latte", "smoothie", "milkshake", "shake",
+  "lasagna", "parfait", "trifle", "sundae", "bark", "dip", "pudding",
+  "mousse", "dough-bites", "edible", "in-a-mug", "mug", "pops",
+  "icing", "frosting", "buttercream", "ganache", "cake-mix", "truffle",
+];
+
+/**
+ * What disqualifies a recipe from one category in particular.
+ *
+ * This used to be one list called NOT_THE_SAME_DISH, which worked while
+ * everything here was a drop cookie: "muffin", "scone", "brownie" and "bread"
+ * were all simply wrong. They are categories of their own now, so the same
+ * word has to be an exclusion for cookies and the name of the thing for
+ * muffins. A single list cannot hold both.
+ *
+ * Each category lists the *other* categories' words plus whatever is shaped or
+ * finished the wrong way for it.
+ */
+export const CATEGORY_EXCLUDE: Readonly<Record<Category, readonly string[]>> = {
+  cookie: [
+    ...NOT_THE_SAME_DISH.filter(
+      (w) => !["martini","cocktail","latte","smoothie","milkshake","shake","lasagna",
+               "parfait","trifle","sundae","bark","dip","pudding","mousse",
+               "dough-bites","edible","in-a-mug","mug","pops","icing","frosting",
+               "buttercream","ganache","cake-mix","truffle"].includes(w),
+    ),
+    ...CONFOUNDING,
+  ],
+};
+
+/** Everything that rules a recipe out of the category it was filed under. */
+export function exclusionsFor(category: Category): readonly string[] {
+  return [...ALWAYS_EXCLUDE, ...(CATEGORY_EXCLUDE[category] ?? [])];
+}
+
+/**
+ * The kind of baked thing, which decides what the ratios are compared against
+ * and what counts as the wrong shape. A dish is a flavour; a category is a
+ * form.
+ */
+export type Category = "cookie";
 
 export type DishType =
   | "chocolate chip" | "oatmeal" | "peanut butter" | "sugar" | "snickerdoodle";
@@ -92,6 +142,8 @@ export interface CorpusRecipe extends ExtractedRecipe {
 
 interface Dish {
   type: DishType;
+  /** Which form it takes, which decides its exclusions and its shape rules. */
+  category: Category;
   /** Recognises the dish in a URL slug (hyphenated) or a title (spaced). */
   slug: RegExp;
   /**
@@ -106,11 +158,11 @@ interface Dish {
  * chocolate chip cookie made with brown sugar is not read as a sugar cookie.
  */
 export const DISHES: readonly Dish[] = [
-  { type: "chocolate chip", slug: /chocolate[-\s]chip|choc[-\s]chip/i, title: ["chocolate", "chip"] },
-  { type: "snickerdoodle", slug: /snickerdoodle/i, title: ["snickerdoodle"] },
-  { type: "peanut butter", slug: /peanut[-\s]butter/i, title: ["peanut butter"] },
-  { type: "oatmeal", slug: /oatmeal|\boat[-\s]/i, title: ["oat"] },
-  { type: "sugar", slug: /sugar[-\s]cookie/i, title: ["sugar"] },
+  { type: "chocolate chip", category: "cookie", slug: /chocolate[-\s]chip|choc[-\s]chip/i, title: ["chocolate", "chip"] },
+  { type: "snickerdoodle", category: "cookie", slug: /snickerdoodle/i, title: ["snickerdoodle"] },
+  { type: "peanut butter", category: "cookie", slug: /peanut[-\s]butter/i, title: ["peanut butter"] },
+  { type: "oatmeal", category: "cookie", slug: /oatmeal|\boat[-\s]/i, title: ["oat"] },
+  { type: "sugar", category: "cookie", slug: /sugar[-\s]cookie/i, title: ["sugar"] },
 ];
 
 /**
@@ -128,11 +180,20 @@ export function classifyDish(text: string): DishType | null {
 }
 
 /** The title keywords a page must contain to be believed, for a given dish. */
+export function categoryOf(type: DishType): Category {
+  return DISHES.find((d) => d.type === type)?.category ?? "cookie";
+}
+
+/** The word a page has to use about itself, per category. */
+const CATEGORY_NOUN: Readonly<Record<Category, string>> = {
+  cookie: "cookie",
+};
+
 export function titleKeywordsFor(type: DishType): string[] {
   const dish = DISHES.find((d) => d.type === type);
-  // Every recipe in this corpus is a cookie, whatever else it is. A page that
-  // does not say so in its own title is not the page we asked for.
-  return [...(dish?.title ?? []), "cookie"];
+  // A page that does not call itself the thing we asked for is not the page we
+  // asked for. This used to hard-code "cookie" because everything was one.
+  return [...(dish?.title ?? []), CATEGORY_NOUN[categoryOf(type)]];
 }
 
 /**
@@ -144,14 +205,14 @@ export function titleKeywordsFor(type: DishType): string[] {
  * no promise. The title is what the page claims to be, so it gets the same
  * exclusion list the URL got.
  */
-export function titleIsExcluded(title: string): string | null {
+export function titleIsExcluded(title: string, category: Category): string | null {
   // Hyphens on both sides become spaces first. The lists are written
   // slug-style ("gluten-free", "cut-out") and titles are written prose-style
   // ("Gluten-Free", "Cut Out") -- and sometimes the other way round. Matching
   // the two shapes against each other is how "Gluten-Free Chocolate Chip
   // Cookies" passed a filter that exists to catch exactly that.
   const t = title.toLowerCase().replace(/[-_]+/g, " ");
-  for (const word of EXCLUDE) {
+  for (const word of exclusionsFor(category)) {
     const plain = word.replace(/-/g, " ");
     // Boundaries at BOTH ends, with the plural allowed explicitly.
     //
@@ -196,8 +257,16 @@ const NOT_DROPPED = [
   /\bline (?:a |the )?\d+\s*(?:x|by|×)\s*\d+[- ]?(?:inch )?\s*(?:baking )?(?:pan|dish|tin)\b/i,
 ];
 
-/** Why this is not a drop cookie, or null if nothing says it isn't. */
-export function notADropCookie(instructions: string): string | null {
+/**
+ * Why this is the wrong shape for its category, or null if nothing says it is.
+ *
+ * Only cookies have a shape rule so far, and it is a strict one: a drop cookie
+ * is scooped, so a rolling pin or a piping bag means something else. Those
+ * rules are exactly wrong for the categories coming next, which is why they are
+ * keyed by category rather than applied to everything.
+ */
+export function wrongShapeFor(category: Category, instructions: string): string | null {
+  if (category !== "cookie") return null;
   for (const re of NOT_DROPPED) {
     const m = instructions.match(re);
     if (m) return m[0].toLowerCase();

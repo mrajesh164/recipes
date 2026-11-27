@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  classifyDish, titleKeywordsFor, titleIsExcluded, notADropCookie, usesAPreparedMix,
+  classifyDish, titleKeywordsFor, titleIsExcluded, wrongShapeFor, usesAPreparedMix,
 } from "./dish.ts";
 
 test("names the dish a url is about", () => {
@@ -35,29 +35,29 @@ test("every dish must still say cookie in its own title", () => {
 });
 
 test("a title can disqualify a page the url made look fine", () => {
-  assert.equal(titleIsExcluded("Chewy Chocolate Chip Cookie Bars"), "bars");
-  assert.equal(titleIsExcluded("Gluten-Free Chocolate Chip Cookies"), "gluten free");
-  assert.equal(titleIsExcluded("Vegan Chocolate Chip Cookies"), "vegan");
+  assert.equal(titleIsExcluded("Chewy Chocolate Chip Cookie Bars", "cookie"), "bars");
+  assert.equal(titleIsExcluded("Gluten-Free Chocolate Chip Cookies", "cookie"), "gluten free");
+  assert.equal(titleIsExcluded("Vegan Chocolate Chip Cookies", "cookie"), "vegan");
 });
 
 test("the exclusion list stops at word boundaries at both ends", () => {
   // "tart" must not fire on "cream of tartar" -- a snickerdoodle recipe that
   // advertises leaving it out is a real title, and it is not a tart.
-  assert.equal(titleIsExcluded("Snickerdoodles Without Cream of Tartar"), null);
+  assert.equal(titleIsExcluded("Snickerdoodles Without Cream of Tartar", "cookie"), null);
   // "pie" must not fire on "pieces".
-  assert.equal(titleIsExcluded("Chocolate Chip Cookies with Toffee Pieces"), null);
+  assert.equal(titleIsExcluded("Chocolate Chip Cookies with Toffee Pieces", "cookie"), null);
   // but the plural still counts
-  assert.equal(titleIsExcluded("Pumpkin Pies"), "pie");
-  assert.equal(titleIsExcluded("Lemon Bar"), "bars");
+  assert.equal(titleIsExcluded("Pumpkin Pies", "cookie"), "pie");
+  assert.equal(titleIsExcluded("Lemon Bar", "cookie"), "bars");
 });
 
 test("and does not fire on words that merely start the same", () => {
   // "brown butter" is not a brownie, and these are the real titles in the
   // corpus -- a greedy substring match drops them.
-  assert.equal(titleIsExcluded("Joy's Brown Butter Chocolate Chip Cookies with Pecans"), null);
-  assert.equal(titleIsExcluded("Crunchy Whole Grain Chocolate Chip Cookies"), null);
-  assert.equal(titleIsExcluded("Supersized, Super-Soft Chocolate Chip Cookies"), null);
-  assert.equal(titleIsExcluded("Best Chocolate Chip Cookies"), null);
+  assert.equal(titleIsExcluded("Joy's Brown Butter Chocolate Chip Cookies with Pecans", "cookie"), null);
+  assert.equal(titleIsExcluded("Crunchy Whole Grain Chocolate Chip Cookies", "cookie"), null);
+  assert.equal(titleIsExcluded("Supersized, Super-Soft Chocolate Chip Cookies", "cookie"), null);
+  assert.equal(titleIsExcluded("Best Chocolate Chip Cookies", "cookie"), null);
 });
 
 test("the instructions get a vote on whether it is a drop cookie", () => {
@@ -65,26 +65,26 @@ test("the instructions get a vote on whether it is a drop cookie", () => {
   // shaping in their titles, and both turned out to be rolled, cut and iced
   // -- a stiffer, drier dough answering a different question.
   assert.equal(
-    notADropCookie("Chill the dough, then roll out on a floured surface and cut into shapes."),
+    wrongShapeFor("cookie", "Chill the dough, then roll out on a floured surface and cut into shapes."),
     "roll out",
   );
-  assert.equal(notADropCookie("Cut out the cookies with a cookie cutter."), "cookie cutter");
-  assert.ok(notADropCookie("Press into a 9x13 pan and bake."));
+  assert.equal(wrongShapeFor("cookie", "Cut out the cookies with a cookie cutter."), "cookie cutter");
+  assert.ok(wrongShapeFor("cookie", "Press into a 9x13 pan and bake."));
 });
 
 test("rolling dough into balls is still a drop cookie", () => {
   // The distinction the filter has to get right: this is the normal way to
   // portion a chocolate chip cookie and must not be read as rolling it out.
   assert.equal(
-    notADropCookie("Roll the dough into balls and place on the baking sheet."),
+    wrongShapeFor("cookie", "Roll the dough into balls and place on the baking sheet."),
     null,
   );
   assert.equal(
-    notADropCookie("Drop by rounded tablespoonfuls onto ungreased baking sheets."),
+    wrongShapeFor("cookie", "Drop by rounded tablespoonfuls onto ungreased baking sheets."),
     null,
   );
   assert.equal(
-    notADropCookie("Scoop the dough into 2-tablespoon balls, roll in cinnamon sugar."),
+    wrongShapeFor("cookie", "Scoop the dough into 2-tablespoon balls, roll in cinnamon sugar."),
     null,
   );
 });
@@ -92,8 +92,8 @@ test("rolling dough into balls is still a drop cookie", () => {
 test("a lined baking sheet is not a lined pan", () => {
   // A half sheet is 13x18. An earlier version of this rule matched any
   // "line a 13 x ..." and threw out the corpus's own Tate's copycat.
-  assert.equal(notADropCookie("Line a 13 x 18 inch baking sheet with parchment."), null);
-  assert.ok(notADropCookie("Line a 9 x 13 inch pan with parchment paper."));
+  assert.equal(wrongShapeFor("cookie", "Line a 13 x 18 inch baking sheet with parchment."), null);
+  assert.ok(wrongShapeFor("cookie", "Line a 9 x 13 inch pan with parchment paper."));
 });
 
 test("a recipe built on a pouch of mix states no ratio", () => {
