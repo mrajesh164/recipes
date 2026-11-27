@@ -15,17 +15,17 @@ export interface Window {
   sugar: readonly [number, number];
 }
 
-export const OVERALL_WINDOW: Window = {"n":1343,"fat":[0.29,1.49],"sugar":[0.28,2.63]};
+export const OVERALL_WINDOW: Window = {"n":1329,"fat":[0.31,1.5],"sugar":[0.29,2.64]};
 
 export const DISH_WINDOWS: Readonly<Record<string, Window>> = {
   "muffin": {
-    "n": 379,
+    "n": 365,
     "fat": [
-      0.22,
-      0.67
+      0.24,
+      0.68
     ],
     "sugar": [
-      0.07,
+      0.33,
       1.27
     ]
   },
