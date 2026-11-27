@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NavLinks } from "@/components/NavLinks";
 import { Geist, Geist_Mono, Dancing_Script } from "next/font/google";
 import {
   ClerkProvider,
@@ -67,12 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Suspense fallback={<span className="h-10" aria-hidden />}>
               <Show when="signed-in">
                 {/* Secondary to the task on the home page, deliberately. */}
-                <Link href="/recipes" className="rounded-full border border-line bg-paper whitespace-nowrap px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep sm:px-4">
-                  All recipes
-                </Link>
-                <Link href="/saved" className="rounded-full border border-line bg-paper whitespace-nowrap px-3 py-2 text-sm font-semibold text-ink transition-colors hover:border-pink-deep hover:bg-cream-deep sm:px-4">
-                  Saved
-                </Link>
+                <NavLinks />
                 <UserButton />
               </Show>
 
