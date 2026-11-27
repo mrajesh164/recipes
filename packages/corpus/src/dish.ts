@@ -87,6 +87,8 @@ export const ALWAYS_EXCLUDE = [
   "lasagna", "parfait", "trifle", "sundae", "bark", "dip", "pudding",
   "mousse", "dough-bites", "edible", "in-a-mug", "mug", "pops",
   "icing", "frosting", "buttercream", "ganache", "cake-mix", "truffle",
+  // Not a baked good in the sense anything here is comparable to.
+  "pizza",
 ];
 
 /**
@@ -133,7 +135,11 @@ export const CATEGORY_EXCLUDE: Readonly<Record<Category, readonly string[]>> = {
   // "pumpkin" are contaminants in a cookie and the name of the thing in a
   // quick bread.
   brownie: [...otherForms("brownie"), "cheesecake", "pie", "cake", "trifle", "batter", "frosting"],
-  muffin: [...otherForms("muffin"), "cupcake", "cake", "top only", "mix"],
+  // "english" and "yeast" for the same reason quick bread excludes yeast: an
+  // English muffin is a griddled yeast dough, not a muffin in the sense this
+  // app compares. 17 of them were sitting in the muffin pool with a bread's
+  // ratios, dragging the low end of the muffin window down with them.
+  muffin: [...otherForms("muffin"), "cupcake", "cake", "top only", "mix", "english", "yeast"],
   "quick bread": [...otherForms("quick bread"), "cake", "yeast", "sourdough", "sandwich"],
   scone: [...otherForms("scone"), "biscuit", "cake", "shortcake"],
 };
