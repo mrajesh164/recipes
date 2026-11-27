@@ -2,6 +2,7 @@
 
 import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
+import type { RatioDistribution } from "@/lib/ratios";
 import { RangePlot, positionOf } from "./RangePlot";
 
 /**
@@ -19,13 +20,18 @@ import { RangePlot, positionOf } from "./RangePlot";
 
 export function WhyThisOne({
   recipe,
-  all,
+  distribution,
   interpretation,
   want,
   heading = true,
 }: {
   recipe: ScoredRecipe;
-  all: ScoredRecipe[];
+  /**
+   * Three arrays of numbers, not the corpus. This is a client component, so
+   * anything here is serialised into the page; the plots never needed more
+   * than the ratios, and the corpus is 1,385 rows of everything else.
+   */
+  distribution: RatioDistribution;
   /** Null in the dialog, where nothing was asked -- then ratios are the default. */
   interpretation: Interpretation | null;
   want: Texture | null;
@@ -37,7 +43,6 @@ export function WhyThisOne({
   // With no query at all (the dialog), the ratios are the interesting thing.
   const showRatios = askedTexture || !askedEffort;
 
-  const withRatios = all.filter((r) => r.scores.ratios !== null);
   const mine = recipe.scores.ratios;
   const grams = (n: number) => `${Math.round(n * 100)} g`;
 
@@ -68,21 +73,21 @@ export function WhyThisOne({
         {
           label: "Butter per 100 g flour",
           hint: "more = chewier",
-          values: withRatios.map((r) => r.scores.ratios!.fatPerFlour),
+          values: distribution.fatPerFlour,
           picked: mine.fatPerFlour,
           format: grams,
         },
         {
           label: "Brown sugar",
           hint: "more = chewier, softer",
-          values: withRatios.map((r) => r.scores.ratios!.brownShare),
+          values: distribution.brownShare,
           picked: mine.brownShare,
           format: shareOfSugar,
         },
         {
           label: "Sugar per 100 g flour",
           hint: "more = crispier",
-          values: withRatios.map((r) => r.scores.ratios!.sugarPerFlour),
+          values: distribution.sugarPerFlour,
           picked: mine.sugarPerFlour,
           format: grams,
         },

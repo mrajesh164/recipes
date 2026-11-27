@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
+import { ratioDistribution } from "@/lib/ratios";
 
 /**
  * A recipe opened in place, under the thing you clicked.
@@ -83,7 +84,7 @@ export function RecipeDetail({
             <div className="mt-1">
               <WhyThisOne
                 recipe={recipe}
-                all={peers}
+                distribution={ratioDistribution(peers)}
                 interpretation={null}
                 want={null}
                 heading={false}

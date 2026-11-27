@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
+import type { RatioDistribution } from "@/lib/ratios";
 import { WhyThisOne } from "./WhyThisOne";
 import { RecipeActions } from "./RecipeActions";
 
@@ -17,7 +18,7 @@ import { RecipeActions } from "./RecipeActions";
 export function Recommendation({
   recipe,
   want,
-  all,
+  distribution,
   query,
   interpretation,
   compact = false,
@@ -25,7 +26,7 @@ export function Recommendation({
   recipe: ScoredRecipe;
   /** Null when the query was only about effort, e.g. "quick". */
   want: Texture | null;
-  all: ScoredRecipe[];
+  distribution: RatioDistribution;
   /** Stored with the save: a better reminder than the title alone. */
   query: string;
   /** Drives which evidence is shown. Null in the signed-out example. */
@@ -33,7 +34,6 @@ export function Recommendation({
   /** The signed-out example: a preview, not the real thing. */
   compact?: boolean;
 }) {
-  const withRatios = all.filter((r) => r.scores.ratios !== null);
   const mine = recipe.scores.ratios;
 
   const grams = (n: number) => `${Math.round(n * 100)} g`;
@@ -127,7 +127,7 @@ export function Recommendation({
                 worse than no demo. */}
             <WhyThisOne
               recipe={recipe}
-              all={all}
+              distribution={distribution}
               interpretation={interpretation}
               want={want}
             />

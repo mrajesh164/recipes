@@ -1,6 +1,7 @@
 import { SignUpButton } from "@clerk/nextjs";
 import { interpret, matchScore } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
+import { ratioDistribution } from "@/lib/ratios";
 import { asRankable } from "@/lib/rankable";
 import { Recommendation } from "./Recommendation";
 
@@ -20,21 +21,15 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
   )[0];
 
   /**
-   * The corpus minus its ingredient lists.
+   * Three arrays of numbers, not 1,385 recipes.
    *
    * This page is public and renders a real recommendation, which needs the
    * rest of the corpus to say where the picked recipe sits -- but only its
-   * ratios, and those are already scored. The plots read scores.ratios and
-   * nothing else; the only ingredient list anybody reads is the picked
-   * recipe's, and that arrives whole as `recipe`.
-   *
-   * WhyThisOne is a client component, so whatever reaches it is serialised
-   * into the page. Passing the corpus intact put all 16,956 ingredient rows on
-   * the wire and made this landing page 4.6 MB -- for a visitor who has not
-   * signed in and may never scroll past the hero. At 325 recipes it was 1.1 MB
-   * and nobody noticed.
+   * ratios. Emptying each recipe's ingredient list got this page from 4.6 MB
+   * to 1.5 MB; sending the ratios alone and nothing else gets it to a few
+   * hundred kilobytes, because the 1,385 rows of metadata go too.
    */
-  const distribution = recipes.map((r) => ({ ...r, ingredients: [] }));
+  const distribution = ratioDistribution(recipes);
 
   return (
     <div>
@@ -66,7 +61,7 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
         <Recommendation
           recipe={best}
           want="chewy"
-          all={distribution}
+          distribution={distribution}
           query="chewy"
           interpretation={demo}
           compact

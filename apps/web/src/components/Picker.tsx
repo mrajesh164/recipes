@@ -11,6 +11,7 @@ import {
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
+import { ratioDistribution, type RatioDistribution } from "@/lib/ratios";
 import { readUnknownWords, type Guess, type Inference } from "@/lib/semantic";
 
 /**
@@ -96,6 +97,15 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   // where the pick sits among 325 cookies of five different kinds would be
   // answering a wider question than the one asked.
   const pool = candidatesFor(recipes, interpretation);
+
+  // Once per render, not once per row. Every WhyThisOne below plots against
+  // the same pool, so deriving the arrays inside each of them repeated the
+  // same pass over ~1,400 recipes for every result on screen -- five passes
+  // where one does.
+  //
+  // Not memoised: pool is a new array on every render, so a useMemo keyed on
+  // it would recompute every time anyway and only look like it cached.
+  const distribution = ratioDistribution(pool);
 
   const ranked = asked
     ? [...pool].sort(
@@ -184,7 +194,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         <Recommendation
           recipe={best}
           want={want}
-          all={pool}
+          distribution={distribution}
           query={query}
           interpretation={interpretation}
         />
@@ -193,7 +203,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
       {asked && ranked.length > 1 && (
         <CloseMatches
           matches={ranked.slice(1, 5)}
-          all={pool}
+          distribution={distribution}
           interpretation={interpretation}
           want={want}
         />
@@ -220,12 +230,13 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
  */
 function CloseMatches({
   matches,
-  all,
+  distribution,
   interpretation,
   want,
 }: {
   matches: ScoredRecipe[];
-  all: ScoredRecipe[];
+  /** Computed once by the caller, not per row -- see lib/ratios.ts. */
+  distribution: RatioDistribution;
   /** The same query the pick was judged on, so a runner-up answers it too. */
   interpretation: Interpretation;
   want: Texture | null;
@@ -295,7 +306,7 @@ function CloseMatches({
                     it's close" over the top was a label on labelled things. */}
                 <WhyThisOne
                   recipe={r}
-                  all={all}
+                  distribution={distribution}
                   interpretation={interpretation}
                   want={want}
                   heading={false}
