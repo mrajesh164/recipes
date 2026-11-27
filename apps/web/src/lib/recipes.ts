@@ -97,6 +97,10 @@ export async function getRecipes(): Promise<ScoredRecipe[]> {
         ingredients: recipe.ingredients.map(toParsed),
         method: recipe.method,
         chillsDough: recipe.chills_dough,
+        // Decides which range the ratios are scored against. Without it every
+        // recipe is measured against the whole corpus, and a chocolate chip
+        // cookie is held to a ceiling that belongs to peanut butter.
+        dishType: recipe.dish_type,
       }),
     };
   });

@@ -16,6 +16,7 @@
  */
 
 import type { ParsedIngredient } from "./units.ts";
+import { DISH_WINDOWS, OVERALL_WINDOW, type Window } from "./windows.ts";
 
 export type Texture = "chewy" | "cakey" | "crispy";
 export type Method = "melted" | "creamed" | "other";
@@ -62,6 +63,58 @@ export interface TextureInput {
   ingredients: ParsedIngredient[];
   method: Method | null;
   chillsDough: boolean;
+  /**
+   * Which kind of thing this is. Decides the range the ratios are scored
+   * against; see windowFor. Omitted means the whole corpus, which is what the
+   * pipeline uses before a dish has been classified.
+   */
+  dishType?: string | null;
+}
+
+/**
+ * How much a category's own window is trusted, in recipes.
+ *
+ * A category with K recipes is trusted half its own way and half the corpus's.
+ * 30 puts chocolate chip at 84% its own, oatmeal 70%, peanut butter 61%, sugar
+ * 50%, snickerdoodle 25%, which matches how stable each one measured: relative
+ * to its own span, the ceiling moves 0.4% for chocolate chip and 13% for sugar
+ * when you resample half of it.
+ */
+const TRUST = 30;
+
+/**
+ * The range this recipe's ratios are scored across.
+ *
+ * One global window was wrong in a way that showed: measured over everything it
+ * is 0.54 to 1.26 of fat per flour, but chocolate chip actually runs 0.50 to
+ * 0.95 and peanut butter 0.69 to 1.72. So a chocolate chip recipe could never
+ * reach a high fat score, because the ceiling it was measured against belonged
+ * to a different cookie.
+ *
+ * Per-category windows alone are not the answer either: a 10th-to-90th
+ * percentile taken over ten snickerdoodles is mostly noise. So a category's
+ * window is shrunk toward the corpus-wide one in proportion to how many
+ * recipes it was measured over, which needs no threshold and improves on its
+ * own as the corpus grows.
+ *
+ * The levers themselves do not change. More fat per flour still means chewier
+ * everywhere; this only decides what counts as "more" for the kind of thing
+ * you are baking, which is the part that is not universal.
+ */
+function windowFor(dishType: string | null | undefined): Window {
+  const own = dishType ? DISH_WINDOWS[dishType] : undefined;
+  if (!own) return OVERALL_WINDOW;
+
+  const w = own.n / (own.n + TRUST);
+  const blend = (a: number, b: number) => w * a + (1 - w) * b;
+  return {
+    n: own.n,
+    fat: [blend(own.fat[0], OVERALL_WINDOW.fat[0]), blend(own.fat[1], OVERALL_WINDOW.fat[1])],
+    sugar: [
+      blend(own.sugar[0], OVERALL_WINDOW.sugar[0]),
+      blend(own.sugar[1], OVERALL_WINDOW.sugar[1]),
+    ],
+  };
 }
 
 /** Clamp v into 0-1 across the range lo..hi. */
@@ -138,7 +191,7 @@ const FAT_EQUIVALENT: Record<string, number> = {
 // whatever the dough is.
 
 export function scoreTexture(input: TextureInput): TextureScores {
-  const { ingredients, method, chillsDough } = input;
+  const { ingredients, method, chillsDough, dishType } = input;
 
   const flour = gramsOf(ingredients, FLOURS);
   const fat = fatEquivalentGrams(ingredients);
@@ -163,31 +216,13 @@ export function scoreTexture(input: TextureInput): TextureScores {
   // reads above that baseline.
   const yolkShare = egg > 0 ? (yolk + wholeEgg * 0.36) / egg : 0.36;
 
-  // The 10th-90th percentile of the actual corpus, measured rather than
-  // guessed: 325 recipes across five drop cookies, 313 of which state a ratio.
-  //
-  // These were 0.45-0.95 and 0.55-1.15, taken from thirteen chocolate chip
-  // cookies. Against the real distribution those ceilings sat at roughly the
-  // 62nd and 51st percentile, so 38% of recipes maxed out the fat score and
-  // half maxed out the sugar score -- above the ceiling the scoring could not
-  // tell 0.95 from 2.30. That is how a recipe sitting in the low third of the
-  // butter range came to win a "chewy" query: its fat score was pinned at
-  // maximum while the plot beside it showed otherwise.
-  //
-  // The fat ceiling then moved again, 1.54 to 1.26, when peanut butter stopped
-  // being counted as pure fat and peanut butter chips, M&Ms and cookie butter
-  // stopped being counted as peanut butter. That is the rule this comment
-  // keeps asking for: the windows are a property of the data, so changing what
-  // goes into the data means measuring them again. The corpus maximum came
-  // down with it, 3.78 to 2.52, and the recipes claiming more than twice their
-  // flour in fat went from 22 to 4 -- the four being genuinely peanut-butter-
-  // heavy recipes with very little flour, which is a real ratio rather than a
-  // parsing artefact.
-  //
-  // The sugar window did not move at all, which is the check that the change
-  // touched only what it was meant to.
-  const fatN = norm(fatRatio, 0.54, 1.26);
-  const sugarN = norm(sugarRatio, 0.82, 1.77);
+  // The window comes from windows.ts, measured over the corpus, shrunk toward
+  // the corpus-wide one for a thin category. See windowFor. It used to be two
+  // hard-coded pairs here, re-measured by hand each time the corpus moved,
+  // which is how they came to be wrong twice.
+  const window = windowFor(dishType);
+  const fatN = norm(fatRatio, window.fat[0], window.fat[1]);
+  const sugarN = norm(sugarRatio, window.sugar[0], window.sugar[1]);
 
   const melted = method === "melted" ? 1 : 0;
   const creamed = method === "creamed" ? 1 : 0;
