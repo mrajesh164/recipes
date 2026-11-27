@@ -31,7 +31,7 @@ export default async function Page() {
             than as scatter. The surface rule still holds: this is the front
             door, there is nothing here to read closely except one paragraph,
             and the texture stops at the rule, above everything that is. */}
-        <header className="sprinkled-field -mx-6 px-6 pb-10 pt-4">
+        <header className="sprinkled-field -mx-6 px-6 pb-12 pt-8">
           <h1 className="font-script text-hero font-bold text-clay-deep">
             The Perfect Batch
           </h1>
