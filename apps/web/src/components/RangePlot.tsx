@@ -33,31 +33,6 @@ export interface RangePlotProps {
   picked: number;
   /** How to render a value for a person. */
   format: (n: number) => string;
-  /** "oatmeal recipes", or just "recipes" when the pool is mixed. */
-  poolNoun: string;
-}
-
-/**
- * A percentile as a whole sentence, counted in tenths.
- *
- * "79th percentile" and "on the high side" were both wrong, for opposite
- * reasons: the first asks for statistics, the second says nothing you can
- * check. "More than 8 in 10 oatmeal recipes" is what a person actually wants
- * and can hold in their head.
- *
- * The whole phrase is built here rather than a fragment glued after "more
- * than", because that construction produced "more than almost none recipes" at
- * the bottom of the range. A recipe with no brown sugar in it is not "more
- * than" anything; it is less than almost all of them, and the sentence has to
- * be able to say so.
- */
-function positionPhrase(share: number, noun: string): string {
-  if (share >= 95) return `more than almost all ${noun}`;
-  if (share <= 5) return `less than almost all ${noun}`;
-  if (share >= 45 && share <= 55) return `about average for ${noun}`;
-  return share > 55
-    ? `more than ${Math.round(share / 10)} in 10 ${noun}`
-    : `less than ${Math.round((100 - share) / 10)} in 10 ${noun}`;
 }
 
 /** How far along its range this value sits, 0-100. */
@@ -73,7 +48,6 @@ export function RangePlot({
   values,
   picked,
   format,
-  poolNoun,
 }: RangePlotProps) {
   if (values.length === 0) return null;
 
@@ -122,7 +96,6 @@ export function RangePlot({
         />
       </div>
 
-      <p className="mt-2 text-sm text-ink-soft">{positionPhrase(share, poolNoun)}</p>
     </div>
   );
 }

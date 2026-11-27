@@ -70,13 +70,6 @@ export function WhyThisOne({
    * are a click away rather than gone, which is the same bargain the effort
    * reasons already strike.
    */
-  // Name what the comparison is against, when it is one kind of thing. The
-  // pool is dish-filtered whenever a dish was named, so "more than 8 in 10
-  // oatmeal recipes" is usually available and is far more concrete than "of
-  // them", which was the old wording and answered nothing.
-  const dishes = new Set(withRatios.map((r) => r.dish_type).filter(Boolean));
-  const poolNoun = dishes.size === 1 ? `${[...dishes][0]} recipes` : "recipes";
-
   const plots = mine
     ? [
         {
@@ -85,7 +78,6 @@ export function WhyThisOne({
           values: withRatios.map((r) => r.scores.ratios!.fatPerFlour),
           picked: mine.fatPerFlour,
           format: grams,
-          poolNoun,
         },
         {
           label: "Brown sugar",
@@ -93,7 +85,6 @@ export function WhyThisOne({
           values: withRatios.map((r) => r.scores.ratios!.brownShare),
           picked: mine.brownShare,
           format: shareOfSugar,
-          poolNoun,
         },
         {
           label: "Sugar per 100 g flour",
@@ -101,7 +92,6 @@ export function WhyThisOne({
           values: withRatios.map((r) => r.scores.ratios!.sugarPerFlour),
           picked: mine.sugarPerFlour,
           format: grams,
-          poolNoun,
         },
       ]
     : [];
