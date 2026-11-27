@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { CompareDialog } from "./CompareDialog";
+import { RecipeDetail } from "./RecipeDetail";
 import { RecipeActions } from "./RecipeActions";
 
 export interface SavedItem {
@@ -30,7 +30,7 @@ export function SavedGrid({
   /** The corpus, for the plots to compare against. */
   all: ScoredRecipe[];
 }) {
-  const [compare, setCompare] = useState<ScoredRecipe | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
 
   return (
     <div>
@@ -52,7 +52,7 @@ export function SavedGrid({
               {item.recipe.image_url && (
                 <button
                   type="button"
-                  onClick={() => setCompare(item.recipe)}
+                  onClick={() => setOpen(open === item.id ? null : item.id)}
                   aria-label={`See the ratios for ${item.recipe.title}`}
                   className="group relative h-24 w-24 flex-none overflow-hidden rounded-xl"
                 >
@@ -89,17 +89,26 @@ export function SavedGrid({
               <RecipeActions recipe={item.recipe} savedFor={item.savedFor ?? undefined} />
               <button
                 type="button"
-                onClick={() => setCompare(item.recipe)}
+                onClick={() => setOpen(open === item.id ? null : item.id)}
                 className="rounded-full px-3 py-2 text-xs font-semibold text-clay-deep hover:bg-cream-deep"
               >
-                See the ratios
+                {open === item.id ? "Hide the ratios" : "See the ratios"}
               </button>
             </div>
+
+            {open === item.id && (
+              <div className="border-t border-line-soft p-4">
+                <RecipeDetail
+                  recipe={item.recipe}
+                  all={all}
+                  onClose={() => setOpen(null)}
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>
 
-      <CompareDialog recipe={compare} all={all} onClose={() => setCompare(null)} />
     </div>
   );
 }

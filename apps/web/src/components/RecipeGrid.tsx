@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
-import { CompareDialog } from "./CompareDialog";
+import { RecipeDetail } from "./RecipeDetail";
 
 /**
  * Every recipe, for the people who want to browse.
@@ -46,7 +46,7 @@ const SORTS = {
 type SortKey = keyof typeof SORTS;
 
 export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
-  const [compare, setCompare] = useState<ScoredRecipe | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [sort, setSort] = useState<SortKey>("title");
 
@@ -59,6 +59,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
       )
     : recipes;
   const shown = [...matched].sort(SORTS[sort].compare);
+  const openRecipe = shown.find((r) => r.id === open) ?? null;
 
   return (
     <div>
@@ -119,9 +120,11 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           <li key={r.id}>
             <button
               type="button"
-              onClick={() => setCompare(r)}
+              onClick={() => setOpen(open === r.id ? null : r.id)}
+              aria-expanded={open === r.id}
               className="group block h-full w-full overflow-hidden rounded-2xl border border-line
-                         bg-paper text-left transition-colors hover:border-pink-deep"
+                         bg-paper text-left transition-colors hover:border-pink-deep
+                         aria-expanded:border-clay-deep"
             >
               {r.image_url && (
                 <div className="relative aspect-[4/3]">
@@ -152,7 +155,13 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         ))}
       </ul>
 
-      <CompareDialog recipe={compare} all={recipes} onClose={() => setCompare(null)} />
+      {/* Under the grid rather than over it. A modal covered the very list
+          you were comparing against. */}
+      {openRecipe && (
+        <div className="mt-5">
+          <RecipeDetail recipe={openRecipe} all={recipes} onClose={() => setOpen(null)} />
+        </div>
+      )}
     </div>
   );
 }
