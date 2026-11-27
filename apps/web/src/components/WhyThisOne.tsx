@@ -23,7 +23,6 @@ export function WhyThisOne({
   interpretation,
   want,
   heading = true,
-  label,
 }: {
   recipe: ScoredRecipe;
   all: ScoredRecipe[];
@@ -31,12 +30,6 @@ export function WhyThisOne({
   interpretation: Interpretation | null;
   want: Texture | null;
   heading?: boolean;
-  /**
-   * Overrides the heading text. A runner-up is not "this one", so the close
-   * matches say "Why it's close" instead -- same evidence, honest about which
-   * recipe was actually picked.
-   */
-  label?: string;
 }) {
   const prefs = interpretation?.prefs;
   const askedEffort = Boolean(prefs?.quick || prefs?.easy || prefs?.popular);
@@ -108,7 +101,7 @@ export function WhyThisOne({
     <div>
       {heading && (
         <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
-          {label ?? "Why this one"}
+          Why this one
         </h3>
       )}
 

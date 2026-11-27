@@ -293,12 +293,15 @@ function CloseMatches({
                   <RecipeActions recipe={r} />
                 </div>
 
+                {/* No heading. The row above already names the recipe and
+                    the plot labels say what they are, so a small-caps "Why
+                    it's close" over the top was a label on labelled things. */}
                 <WhyThisOne
                   recipe={r}
                   all={all}
                   interpretation={interpretation}
                   want={want}
-                  label="Why it's close"
+                  heading={false}
                 />
               </div>
             </details>
