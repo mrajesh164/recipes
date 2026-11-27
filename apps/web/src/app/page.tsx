@@ -24,14 +24,20 @@ export default async function Page() {
     <>
       <div className="scallop" aria-hidden />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-12">
-        {/* The whole top section carries the texture, down to the rule.
+      {/* The textured band is its own full-bleed element, outside <main>.
  
-            It was a strip behind the title only, which read as a band rather
-            than as scatter. The surface rule still holds: this is the front
-            door, there is nothing here to read closely except one paragraph,
-            and the texture stops at the rule, above everything that is. */}
-        <header className="sprinkled-field -mx-6 px-6 pb-12 pt-8">
+          It used to be a child of <main> with -mx-6 to break out sideways,
+          which could not work: <main> is a centred max-w-5xl box with px-6 and
+          pt-12, so the band inherited a 48px cream strip above it and, on any
+          viewport wider than the measure, cream down both sides. That is a
+          bare border around the title on all four sides, and no change to the
+          tile can reach it -- the gap is outside the element the tile paints.
+          Here the band spans the viewport and sits flush under the scallop,
+          and the measure is restored by an inner centred box, so the padding
+          that keeps the title off the edges is inside the texture rather than
+          carved out of it. */}
+      <div className="sprinkled-field">
+        <div className="mx-auto w-full max-w-5xl px-6 pb-12 pt-10">
           <h1 className="font-script text-hero font-bold text-clay-deep">
             The Perfect Batch
           </h1>
@@ -41,8 +47,10 @@ export default async function Page() {
             {recipes.length} of them in grams so they can be compared at all,
             and picks the one you asked for.
           </p>
-        </header>
+        </div>
+      </div>
 
+      <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24">
         <div className="dotted-rule" aria-hidden />
 
         <FeatureCards recipes={recipes} />
