@@ -64,7 +64,30 @@ export async function getRecipes(): Promise<ScoredRecipe[]> {
   "use cache";
   cacheLife("hours");
 
-  const { data, error } = await supabaseRead()
+  // Read in pages. PostgREST caps a response at 1,000 rows regardless of what
+  // is asked for, and the cap is silent: the request succeeds, the error is
+  // null, and the rows past the cap simply are not there. At 325 recipes this
+  // was invisible. At 1,402 it dropped 402 of them -- and because the rows come
+  // back ordered by title, it dropped them alphabetically, so the corpus ended
+  // at roughly "T" and every scone, muffin and brownie named after that was
+  // gone from search, from /recipes and from the counts.
+  const PAGE = 1000;
+  const rows: unknown[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await fetchPage(from, from + PAGE - 1);
+    if (error) throw new Error(`Supabase: ${error.message}`);
+    const page = data ?? [];
+    rows.push(...page);
+    // A short page is the last page. Asking for more than the cap allows does
+    // not raise, so the length of what came back is the only signal there is.
+    if (page.length < PAGE) break;
+  }
+
+  return rows.map(score);
+}
+
+function fetchPage(from: number, to: number) {
+  return supabaseRead()
     .from("recipes")
     // Explicit columns, not `*`. `*` drags raw_jsonld along -- the whole
     // structured-data blob per recipe -- and since the corpus ships to the
@@ -77,31 +100,33 @@ export async function getRecipes(): Promise<ScoredRecipe[]> {
       "id, source_url, source_name, title, yield_count, rating, rating_count, method, bake_temp_f, bake_minutes, chills_dough, hand_entered, image_url, dish_type, ingredients(position, raw_text, canonical_name, grams, grams_source, display_qty, display_unit)",
     )
     .order("title")
-    .order("position", { referencedTable: "ingredients" });
+    .order("id")
+    .order("position", { referencedTable: "ingredients" })
+    .range(from, to);
+}
 
-  if (error) throw new Error(`Supabase: ${error.message}`);
-
-  // Scored here, not stored. The corpus is small enough that this is free,
-  // and it means a change to the weights can never leave stale numbers in a
-  // table -- which would be wrong silently, the worst way to be wrong.
-  return (data ?? []).map((r) => {
-    const recipe = r as Recipe;
-    // Four sources publish "//host/path" with no scheme. Next treats a leading
-    // // as a local path and refuses to optimise it.
-    if (recipe.image_url?.startsWith("//")) {
-      recipe.image_url = `https:${recipe.image_url}`;
-    }
-    return {
-      ...recipe,
-      scores: scoreTexture({
-        ingredients: recipe.ingredients.map(toParsed),
-        method: recipe.method,
-        chillsDough: recipe.chills_dough,
-        // Decides which range the ratios are scored against. Without it every
-        // recipe is measured against the whole corpus, and a chocolate chip
-        // cookie is held to a ceiling that belongs to peanut butter.
-        dishType: recipe.dish_type,
-      }),
-    };
-  });
+/**
+ * Scored here, not stored. The corpus is small enough that this is free, and
+ * it means a change to the weights can never leave stale numbers in a table --
+ * which would be wrong silently, the worst way to be wrong.
+ */
+function score(r: unknown): ScoredRecipe {
+  const recipe = r as Recipe;
+  // Four sources publish "//host/path" with no scheme. Next treats a leading
+  // // as a local path and refuses to optimise it.
+  if (recipe.image_url?.startsWith("//")) {
+    recipe.image_url = `https:${recipe.image_url}`;
+  }
+  return {
+    ...recipe,
+    scores: scoreTexture({
+      ingredients: recipe.ingredients.map(toParsed),
+      method: recipe.method,
+      chillsDough: recipe.chills_dough,
+      // Decides which range the ratios are scored against. Without it every
+      // recipe is measured against the whole corpus, and a chocolate chip
+      // cookie is held to a ceiling that belongs to peanut butter.
+      dishType: recipe.dish_type,
+    }),
+  };
 }
