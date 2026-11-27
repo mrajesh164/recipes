@@ -191,21 +191,23 @@ test("candidatesFor filters by dish, and never empties the corpus", () => {
   assert.equal(candidatesFor([row("sugar", 0.5, 0.5, 0.5)], interpret("oatmeal")).length, 1);
 });
 
-test("a negated texture removes the recipes that lead with it", () => {
-  const rows = [
-    row(null, 0.9, 0.2, 0.1), // mainly chewy
-    row(null, 0.2, 0.9, 0.1), // mainly cakey
-    row(null, 0.1, 0.2, 0.9), // mainly crispy
-  ];
+test("a negated texture drops the recipes that rank highest on it", () => {
+  // Nine recipes, cakey ascending. "not cakey" should take the top third off
+  // that ranking, which is the three cakiest, and leave the rest alone. It
+  // used to compare textures against each other and drop whatever "led" with
+  // cakey, a comparison the scores do not support.
+  const rows = Array.from({ length: 9 }, (_, n) => row(null, 0.5, n / 10, 0.5));
   const kept = candidatesFor(rows, interpret("not cakey"));
-  assert.equal(kept.length, 2);
-  assert.ok(!kept.includes(rows[1]!));
+  assert.equal(kept.length, 6);
+  for (const dropped of rows.slice(6)) assert.ok(!kept.includes(dropped));
+  for (const stays of rows.slice(0, 6)) assert.ok(kept.includes(stays));
 });
 
-test("an exclusion that would empty the list is not applied", () => {
-  const onlyCakey = [row(null, 0.2, 0.9, 0.1)];
-  // An empty result is never a better answer than a weaker one.
-  assert.equal(candidatesFor(onlyCakey, interpret("not cakey")).length, 1);
+test("a negation leaves a small pool alone", () => {
+  // Taking a third off five recipes is not a filter, it is a cull. An almost
+  // right answer beats a nearly empty list.
+  const rows = Array.from({ length: 5 }, (_, n) => row(null, 0.5, n / 10, 0.5));
+  assert.equal(candidatesFor(rows, interpret("not cakey")).length, 5);
 });
 
 test("a negation on its own is understood", () => {

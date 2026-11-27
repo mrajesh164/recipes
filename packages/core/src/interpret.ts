@@ -607,16 +607,29 @@ export function candidatesFor<
   }
 
   if (i.excluded.length > 0) {
-    const out = new Set<Texture>(i.excluded);
-    const byTexture = kept.filter((r) => {
-      const top = (["chewy", "cakey", "crispy"] as Texture[]).reduce((a, b) =>
-        r.scores[b] > r.scores[a] ? b : a,
-      );
-      return !out.has(top);
-    });
-    // Same rule: an exclusion that removes everything has told us nothing
-    // useful, and an empty result is never a better answer than a weaker one.
-    if (byTexture.length > 0) kept = byTexture;
+    // Excluded by rank within that texture, not by comparing textures.
+    //
+    // This used to drop a recipe when the negated texture was the one it
+    // scored highest on, which reads naturally and is not a comparison these
+    // scores support: texture.ts says plainly that they are not probabilities
+    // and that they rank recipes against each other *within* a corpus. Across
+    // textures they are not on one scale. Measured, the median recipe scores
+    // 0.31 chewy and 0.72 cakey, because two of cakey's four terms pay out in
+    // full to a typical recipe, so "mainly cakey" meant 62% of the corpus and
+    // "not cakey" removed nearly two thirds of it for the wrong reason.
+    //
+    // Ranking inside one texture is exactly what the scores are for. "not
+    // cakey" now drops the third of the candidates that score highest on
+    // cakey, whatever that score happens to be worth.
+    const EXCLUDE_TOP = 1 / 3;
+    for (const texture of i.excluded) {
+      if (kept.length < 6) break;
+      const sorted = [...kept].sort((a, b) => b.scores[texture] - a.scores[texture]);
+      const cut = Math.floor(kept.length * EXCLUDE_TOP);
+      const dropped = new Set(sorted.slice(0, cut));
+      const remaining = kept.filter((r) => !dropped.has(r));
+      if (remaining.length > 0) kept = remaining;
+    }
   }
 
   return kept;
