@@ -122,6 +122,12 @@
   .st-done { color: var(--pick); background: var(--pick-soft); }
   .st-part { color: var(--accent); background: var(--accent-soft); }
   .st-todo { color: var(--ink-faint); background: transparent; border: 1px dashed var(--line); }
+  .check { list-style: none; margin: 12px 0 0; padding: 0; }
+  .check li { display: flex; gap: 10px; align-items: flex-start; padding: 4px 0; font-size: 15px; }
+  .check input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); flex: none; cursor: pointer; }
+  .check label { cursor: pointer; }
+  .check input:checked + label { color: var(--ink-faint); text-decoration: line-through; text-decoration-thickness: 1px; }
+
   .done-note { margin: 8px 0 0; font-size: 14px; color: var(--ink-faint); }
   .done-note b { color: var(--ink-soft); font-weight: 600; }
   .item p { margin: 0 0 7px; font-size: 15.5px; color: var(--ink-soft); }
@@ -257,7 +263,12 @@
 
 <div class="item">
   <h4><span class="num">0</span> Set the workflow up first <span class="tag t-mine">mine</span> <span class="st st-done">done</span></h4>
-  <p class="done-note"><b>Where it got to.</b> CI runs the secret scan, the typecheck and the tests on every push and pull request, and is green. Issue and pull request templates are in. Agent review is a step in the pull request template, run locally rather than as a paid CI action.</p>
+  <ul class="check">
+    <li><input type="checkbox" id="s0-0" checked><label for="s0-0">CI runs the secret scan, the typecheck and the tests, on push and on pull request</label></li>
+    <li><input type="checkbox" id="s0-1" checked><label for="s0-1">Issue template, one per vertical slice</label></li>
+    <li><input type="checkbox" id="s0-2" checked><label for="s0-2">Pull request template, including what was <em>not</em> checked</label></li>
+    <li><input type="checkbox" id="s0-3" checked><label for="s0-3">Agent review as a step in the template, run locally rather than as a paid CI action</label></li>
+  </ul>
   <p>GitHub issues as the unit of work, one per slice. A GitHub Actions workflow running on every pull request. Pull requests rather than pushes to main. An agent review on each pull request before it merges.</p>
   <p><b>Why this is first and not last.</b> Retrofitting it after the work gains nothing. Issues written after the fact are documentation, not a unit of work, and a pipeline added at the end has never caught anything. Put it in before slice 1 and the seven slices that follow all flow through it, which means the process is demonstrated rather than described.</p>
   <p><b>The CI config is already written.</b> <code>.githooks/pre-push</code> runs a credential-shape scan and a typecheck today. The Actions workflow transcribes those two steps and adds the 132 tests. This is a transcription of checks that already exist, not an invention, which is most of why it is a cheap first slice rather than an expensive one.</p>
@@ -268,7 +279,11 @@
 
 <div class="item">
   <h4><span class="num">1</span> The cheap structural fixes <span class="tag t-ta">TA</span> <span class="st st-done">done</span></h4>
-  <p class="done-note"><b>Where it got to.</b> scrollbar-gutter stops the layout shifting when results appear. All three outbound links carry a square-with-arrow. The duplicated title is deliberately still open: it is a decision about the header, and the header is better decided with the rest of the layout.</p>
+  <ul class="check">
+    <li><input type="checkbox" id="s1-0" checked><label for="s1-0"><code>scrollbar-gutter: stable</code>, so results no longer shift the layout</label></li>
+    <li><input type="checkbox" id="s1-1" checked><label for="s1-1">A square-with-an-arrow on all three outbound links</label></li>
+    <li><input type="checkbox" id="s1-2"><label for="s1-2">End the duplicated title. Parked as a header decision</label></li>
+  </ul>
   <p class="quiet">Roughly a day. Three reported complaints, each with a one-line cause.</p>
   <ul>
     <li><b>The name twice.</b> &ldquo;The Perfect Batch&rdquo; renders as the header logo at <code>apps/web/src/app/layout.tsx:51</code> and again as the page <code>&lt;h1&gt;</code> at <code>apps/web/src/app/page.tsx:17</code>. This slice ends the duplication. Slice 3 decides what the surviving line says.</li>
@@ -280,7 +295,12 @@
 
 <div class="item">
   <h4><span class="num">2</span> A design system, written down <span class="tag t-ta">TA</span> <span class="st st-part">three of four</span></h4>
-  <p class="done-note"><b>Where it got to.</b> Seven-step type scale, with all three page titles unified at one size. One icon source with a shared geometry. The texture is off every working surface and lives in the header band only. The spacing and radii scale is the piece still open.</p>
+  <ul class="check">
+    <li><input type="checkbox" id="s2-0" checked><label for="s2-0">A type scale of seven steps, with all three page titles unified</label></li>
+    <li><input type="checkbox" id="s2-1" checked><label for="s2-1">One icon source, one geometry, no inline svg left in a component</label></li>
+    <li><input type="checkbox" id="s2-2" checked><label for="s2-2">Surface rules written down, texture off every working surface</label></li>
+    <li><input type="checkbox" id="s2-3"><label for="s2-3">A spacing and radii scale. Five corner radii are still in use</label></li>
+  </ul>
   <p>This is the TA&rsquo;s &ldquo;normalize the icons&rdquo; and &ldquo;white background, texture only in certain areas&rdquo; taken as one job, because they are one job: both are rules about what the surface is allowed to do.</p>
   <ul>
     <li><b>A type scale and a spacing scale</b>, as custom properties, with a fixed number of steps, so that a later slice cannot invent a fourteenth size.</li>
@@ -293,7 +313,12 @@
 
 <div class="item">
   <h4><span class="num">3</span> A hierarchy pass on the three views <span class="tag t-ta">TA</span> <span class="st st-part">three of four</span></h4>
-  <p class="done-note"><b>Where it got to.</b> One shared action row in the same position on all four recipe surfaces. Browse names its sort order and lets it be changed. Saved is rebuilt as rows with the action in a fixed footer. The title decision is the same one carried over from slice 1.</p>
+  <ul class="check">
+    <li><input type="checkbox" id="s3-0" checked><label for="s3-0">One shared action row, in the same position on all four recipe surfaces</label></li>
+    <li><input type="checkbox" id="s3-1" checked><label for="s3-1">Browse names its sort order and lets it be changed</label></li>
+    <li><input type="checkbox" id="s3-2" checked><label for="s3-2">Saved rebuilt as rows, with the primary action in a fixed footer</label></li>
+    <li><input type="checkbox" id="s3-3"><label for="s3-3">Decide what the surviving title line says</label></li>
+  </ul>
   <p>Home and recommendation, saved, browse. For each view, name the one primary thing, then place the actions consistently and in the same spot across all three. This is the answer to &ldquo;it is confusing where to look&rdquo; and to &ldquo;Open recipe gets lost&rdquo;.</p>
   <ul>
     <li><b>Home.</b> The recommendation is primary, the reasons panel is second, and the free-text box keeps the front door. The submitted plan already settled that last point and it is not reopened here.</li>
@@ -306,6 +331,12 @@
 
 <div class="item">
   <h4><span class="num">4</span> Make the plots readable <span class="tag t-ta">TA</span> <span class="st st-done">done, and live</span></h4>
+  <ul class="check">
+    <li><input type="checkbox" id="s4-0" checked><label for="s4-0">Replace the 313-dot strip</label></li>
+    <li><input type="checkbox" id="s4-1" checked><label for="s4-1">Lead with the one ratio this recipe is furthest from the middle on</label></li>
+    <li><input type="checkbox" id="s4-2" checked><label for="s4-2">Say the position in words, counted in tenths</label></li>
+    <li><input type="checkbox" id="s4-3" checked><label for="s4-3">State what the percentage is a percentage of</label></li>
+  </ul>
   <p class="done-note"><b>Where it got to.</b> Four attempts: dots, then a histogram, then a position track, then the wording. What shipped is the ratio and its value on one line, a track filled to where it sits, and one sentence counted in tenths. One ratio leads and the other two are a click away.</p>
   <p>The TA says the lines with dots are confusing. This is the hardest item on the list, and it is hard for an uncomfortable reason: the dot plots are the best idea in the product and they are apparently not reading. The evidence panel is the whole difference between this and a search engine, so if it does not land, the thing that makes the app worth building does not land.</p>
   <p>Options worth naming, roughly cheapest first. One or two of them, not all five.</p>
@@ -324,6 +355,12 @@
 
 <div class="item">
   <h4><span class="num">5</span> A search box that recognises anything <span class="tag t-ta">TA</span> <span class="st st-done">done</span></h4>
+  <ul class="check">
+    <li><input type="checkbox" id="s5-0" checked><label for="s5-0">Catch misspellings of words already in the vocabulary</label></li>
+    <li><input type="checkbox" id="s5-1" checked><label for="s5-1">Read unknown words against the vocabulary, in the browser, loaded lazily</label></li>
+    <li><input type="checkbox" id="s5-2" checked><label for="s5-2">Offer the near-misses as a question instead of a dead end</label></li>
+    <li><input type="checkbox" id="s5-3" checked><label for="s5-3">Act on a negation instead of refusing it</label></li>
+  </ul>
   <p class="done-note"><b>Where it got to.</b> Three tiers, each running only when the one before it finds nothing: the keyword matcher, a misspelling check, and a 22 MB embedding model that runs in the browser and is only fetched when a word is genuinely unknown. An unknown word is read as the nearest phrase the vocabulary already knows and inherits its weights, so nothing new is scored. Above 0.60 it is applied and shown as "read stodgy as fudgy"; between 0.40 and 0.60 it is offered as a question with the nearest three as buttons, which is what turned "I couldn't read anything in that" into something you can act on. Negation is acted on rather than dropped: "not cakey" removes the recipes that lead with cakey, 123 of 325 remaining, rather than trying to rank away from a texture whose opposite is two other textures.</p>
   <p>Three parts, in this order.</p>
   <ul>
@@ -343,6 +380,16 @@
 
 <div class="item">
   <h4><span class="num">6</span> The feature requests <span class="tag t-peer">peers</span> <span class="st st-todo">not started</span></h4>
+  <ul class="check">
+    <li><input type="checkbox" id="s6-0"><label for="s6-0">Tell it what ingredients you have</label></li>
+    <li><input type="checkbox" id="s6-1"><label for="s6-1">Recommendations from what you have saved</label></li>
+    <li><input type="checkbox" id="s6-2"><label for="s6-2">A movable texture control, after the answer rather than instead of the box</label></li>
+    <li><input type="checkbox" id="s6-3"><label for="s6-3">Other baked goods, with per-category comparison pools</label></li>
+    <li><input type="checkbox" id="s6-4"><label for="s6-4">How long a recipe takes</label></li>
+    <li><input type="checkbox" id="s6-5"><label for="s6-5">Choose from several results rather than one</label></li>
+    <li><input type="checkbox" id="s6-6"><label for="s6-6">Record what you thought after baking it</label></li>
+    <li><input type="checkbox" id="s6-7"><label for="s6-7">Allergies and things to avoid</label></li>
+  </ul>
   <p>Held until slices 2 and 3 have said where controls live, because each of these adds a control to the surface the feedback already calls scattered.</p>
   <table class="wins">
     <tr><td>Pantry and ingredients</td><td><span>Already in the submitted plan as &ldquo;Tell it what you have&rdquo;, first in its <b>Add next</b> band. Peers arrived at it independently. That convergence is the useful signal here: the strongest unprompted request is also the one already planned, so it leads this slice.</span></td></tr>
@@ -360,6 +407,9 @@
 
 <div class="item">
   <h4><span class="num">7</span> Live search beyond the corpus <span class="tag t-mine">mine</span> <span class="st st-todo">parked</span></h4>
+  <ul class="check">
+    <li><input type="checkbox" id="s7-0"><label for="s7-0">Live search beyond the corpus. Parked: it gives up the 94% grams conversion</label></li>
+  </ul>
   <p>Searching the web at request time rather than a fixed set of 325. Parked, unchanged from the submitted plan.</p>
   <p><b>What it would cost:</b> every number in this app rests on 94% of ingredient lines converting to grams, 3,396 of 3,632, over a corpus that was harvested and checked. Trusting an arbitrary page&rsquo;s structured data at request time gives that up, and a recommendation with unverified measurements behind it is worse than a smaller library.</p>
 </div>
@@ -396,5 +446,15 @@
 </footer>
 
 </div>
+<script>
+  // The boxes are for working with, so they have to survive a reload. No
+  // dependency and no build step: the file is still one thing you can open.
+  for (const box of document.querySelectorAll('.check input')) {
+    const key = 'v2plan:' + box.id;
+    const saved = localStorage.getItem(key);
+    if (saved !== null) box.checked = saved === '1';
+    box.addEventListener('change', () => localStorage.setItem(key, box.checked ? '1' : '0'));
+  }
+</script>
 </body>
 </html>
