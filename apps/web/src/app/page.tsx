@@ -11,7 +11,15 @@ export default async function Page() {
     <>
       <div className="scallop" aria-hidden />
 
-      <main className="mx-auto max-w-5xl px-6 pb-24 pt-12">
+      {/* w-full and flex-1, matching /recipes and /saved.
+ 
+            Without w-full this sized to its content, because body is a flex
+            column and a flex item does that by default. So the page was narrow
+            with just a search box on it and jumped to the full 5xl the moment a
+            recommendation appeared, which is the width changing after you
+            type. The other two pages always had w-full; this one did not, and
+            that difference was the bug. */}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-12">
         <header className="max-w-2xl">
           <h1 className="font-script text-display font-bold text-clay-deep">
             The Perfect Batch
