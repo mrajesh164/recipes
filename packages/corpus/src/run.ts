@@ -135,7 +135,7 @@ const outcomes: Outcome[] = results.map((r) => {
   // The page answered, but with what? A Food.com cookie URL returned
   // "Apricot Banana Bread" during the spike.
   if (!titleMatches(recipe.title, titleKeywordsFor(dishType))) {
-    return { url: r.url, ok: false, reason: `title is not a ${dishType} cookie: "${recipe.title}"` };
+    return { url: r.url, ok: false, reason: `title is not a ${dishType}: "${recipe.title}"` };
   }
   // A slug can be kinder than the recipe: /chocolate-chip-cookies/ that turns
   // out to be "...Cookie Bars" is still a bar.
