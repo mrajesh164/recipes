@@ -134,15 +134,48 @@ if (failed > 0 && recipesWritten === 0) {
   process.exit(1);
 }
 
-const { data: existing, error: listErr } = await db
-  .from("recipes")
-  .select("id, source_url, title");
+/**
+ * Read the existing rows in pages.
+ *
+ * This select had no range, and PostgREST caps a response at 1,000 rows
+ * whatever is asked for -- silently: the request succeeds and error is null.
+ * So the prune only ever considered the first 1,000 rows in the table. With
+ * 1,402 rows it removed the 13 stale English muffins that fell inside the
+ * window and never learned about the other 4, which stayed in the database as
+ * muffins, reachable by search, while this script printed a clean finish.
+ *
+ * The same cap bit the app's own read of the corpus. It is worth assuming of
+ * any unbounded select here: the failure is invisible until the table outgrows
+ * the cap, and then it is a wrong answer rather than an error.
+ */
+const PAGE = 1000;
+const existing: { id: string; source_url: string; title: string }[] = [];
+let listErr: { message: string } | null = null;
+
+for (let from = 0; ; from += PAGE) {
+  const { data, error } = await db
+    .from("recipes")
+    .select("id, source_url, title")
+    // Ordered, because a page boundary in an unordered read can return a row
+    // twice and skip another -- and a skipped row here is one that never gets
+    // considered for deletion.
+    .order("id")
+    .range(from, from + PAGE - 1);
+  if (error) {
+    listErr = error;
+    break;
+  }
+  const page = (data ?? []) as typeof existing;
+  existing.push(...page);
+  if (page.length < PAGE) break;
+}
 
 if (listErr) {
   console.error(`  ! cleanup failed to list rows: ${listErr.message}`);
   failed++;
 } else {
-  const stale = (existing ?? []).filter((r) => !keep.has(r.source_url as string));
+  console.log(`\n  ${existing.length} rows in the table, ${keep.size} in the corpus`);
+  const stale = existing.filter((r) => !keep.has(r.source_url));
   for (let i = 0; i < stale.length; i += 100) {
     const batch = stale.slice(i, i + 100);
     const { error: delErr } = await db
