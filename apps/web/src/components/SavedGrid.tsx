@@ -98,10 +98,13 @@ export function SavedGrid({
 
             {open === item.id && (
               <div className="border-t border-line-soft p-4">
+                {/* The row above already carries the thumbnail, the title,
+                    the source and both actions. */}
                 <RecipeDetail
                   recipe={item.recipe}
                   all={all}
                   onClose={() => setOpen(null)}
+                  identify={false}
                 />
               </div>
             )}
