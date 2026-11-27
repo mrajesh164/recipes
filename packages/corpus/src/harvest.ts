@@ -52,51 +52,88 @@ const NOT_A_RECIPE_PAGE = [
   "cookie-recipes/", "/guide/", "/how-to/", "/video", "/class", "/learn/",
 ];
 
-const SOURCES: Source[] = [
-  // Confirmed answering an automated request, with schema.org Recipe on the
-  // page, on 17 Nov.
-  { name: "King Arthur Baking", category: "cookie", sitemap: "https://www.kingarthurbaking.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Love and Lemons", category: "cookie", sitemap: "https://www.loveandlemons.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Taste of Home", category: "cookie", sitemap: "https://www.tasteofhome.com/sitemap_index.xml", include: ["/recipes/", "cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Averie Cooks", category: "cookie", sitemap: "https://www.averiecooks.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Broma Bakery", category: "cookie", sitemap: "https://bromabakery.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "The Kitchn", category: "cookie", sitemap: "https://www.thekitchn.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Once Upon a Chef", category: "cookie", sitemap: "https://www.onceuponachef.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "RecipeTin Eats", category: "cookie", sitemap: "https://www.recipetineats.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Natasha's Kitchen", category: "cookie", sitemap: "https://natashaskitchen.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "BBC Good Food", category: "cookie", sitemap: "https://www.bbcgoodfood.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Inspired Taste", category: "cookie", sitemap: "https://www.inspiredtaste.net/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Epicurious", category: "cookie", sitemap: "https://www.epicurious.com/sitemap.xml", include: ["/recipes/", "cookie"], exclude: exclusionsFor("cookie") },
+/**
+ * A site, once. The categories are crossed with it below.
+ *
+ * This was 26 hand-written source lines, every one of them a cookie sweep with
+ * the same exclusion list pasted in. Five categories would have made it 130
+ * near-identical lines, and the thing a list that long hides is a typo in one
+ * of them.
+ */
+interface Site {
+  name: string;
+  sitemap: string;
+  /** Path fragments every URL on this site must contain. Usually none. */
+  path: readonly string[];
+}
 
-  // Second batch, probed 17 Nov after the first twelve came up short of 200.
-  { name: "Bake or Break", category: "cookie", sitemap: "https://bakeorbreak.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Tasty", category: "cookie", sitemap: "https://tasty.co/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Land O'Lakes", category: "cookie", sitemap: "https://www.landolakes.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "My Baking Addiction", category: "cookie", sitemap: "https://www.mybakingaddiction.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Joy the Baker", category: "cookie", sitemap: "https://joythebaker.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Live Well Bake Often", category: "cookie", sitemap: "https://www.livewellbakeoften.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Baked by Rachel", category: "cookie", sitemap: "https://www.bakedbyrachel.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Barefeet in the Kitchen", category: "cookie", sitemap: "https://barefeetinthekitchen.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Spend With Pennies", category: "cookie", sitemap: "https://www.spendwithpennies.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Tutti Dolci", category: "cookie", sitemap: "https://tutti-dolci.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Betty Crocker", category: "cookie", sitemap: "https://www.bettycrocker.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Pillsbury", category: "cookie", sitemap: "https://www.pillsbury.com/sitemap.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Bon Appetit", category: "cookie", sitemap: "https://www.bonappetit.com/sitemap.xml", include: ["/recipe", "cookie"], exclude: exclusionsFor("cookie") },
-  { name: "Salty Side Dish", category: "cookie", sitemap: "https://www.saltysidedish.com/sitemap_index.xml", include: ["cookie"], exclude: exclusionsFor("cookie") },
+const SITES: readonly Site[] = [
+  { name: "King Arthur Baking", sitemap: "https://www.kingarthurbaking.com/sitemap.xml", path: ["/recipes/"] },
+  { name: "Love and Lemons", sitemap: "https://www.loveandlemons.com/sitemap.xml", path: [] },
+  { name: "Taste of Home", sitemap: "https://www.tasteofhome.com/sitemap_index.xml", path: ["/recipes/"] },
+  { name: "Averie Cooks", sitemap: "https://www.averiecooks.com/sitemap_index.xml", path: [] },
+  { name: "Broma Bakery", sitemap: "https://bromabakery.com/sitemap_index.xml", path: [] },
+  { name: "The Kitchn", sitemap: "https://www.thekitchn.com/sitemap.xml", path: [] },
+  { name: "Once Upon a Chef", sitemap: "https://www.onceuponachef.com/sitemap.xml", path: [] },
+  { name: "RecipeTin Eats", sitemap: "https://www.recipetineats.com/sitemap_index.xml", path: [] },
+  { name: "Natasha's Kitchen", sitemap: "https://natashaskitchen.com/sitemap_index.xml", path: [] },
+  { name: "BBC Good Food", sitemap: "https://www.bbcgoodfood.com/sitemap.xml", path: [] },
+  { name: "Inspired Taste", sitemap: "https://www.inspiredtaste.net/sitemap.xml", path: [] },
+  { name: "Epicurious", sitemap: "https://www.epicurious.com/sitemap.xml", path: ["/recipes/"] },
+  { name: "Bake or Break", sitemap: "https://bakeorbreak.com/sitemap_index.xml", path: [] },
+  { name: "Tasty", sitemap: "https://tasty.co/sitemap.xml", path: [] },
+  { name: "Land O'Lakes", sitemap: "https://www.landolakes.com/sitemap.xml", path: [] },
+  { name: "My Baking Addiction", sitemap: "https://www.mybakingaddiction.com/sitemap_index.xml", path: [] },
+  { name: "Joy the Baker", sitemap: "https://joythebaker.com/sitemap_index.xml", path: [] },
+  { name: "Live Well Bake Often", sitemap: "https://www.livewellbakeoften.com/sitemap_index.xml", path: [] },
+  { name: "Baked by Rachel", sitemap: "https://www.bakedbyrachel.com/sitemap_index.xml", path: [] },
+  { name: "Barefeet in the Kitchen", sitemap: "https://barefeetinthekitchen.com/sitemap_index.xml", path: [] },
+  { name: "Spend With Pennies", sitemap: "https://www.spendwithpennies.com/sitemap_index.xml", path: [] },
+  { name: "Tutti Dolci", sitemap: "https://tutti-dolci.com/sitemap_index.xml", path: [] },
+  { name: "Betty Crocker", sitemap: "https://www.bettycrocker.com/sitemap.xml", path: [] },
+  { name: "Pillsbury", sitemap: "https://www.pillsbury.com/sitemap.xml", path: [] },
+  { name: "Bon Appetit", sitemap: "https://www.bonappetit.com/sitemap.xml", path: ["/recipe"] },
+  { name: "Salty Side Dish", sitemap: "https://www.saltysidedish.com/sitemap_index.xml", path: [] },
 
-  // Probed and rejected, kept here so the next person does not re-probe them:
-  //   403 to every request, full browser headers included --
-  //     davidlebovitz, beyondfrosting, completelydelicious, thestayathomechef,
-  //     shugarysweets, cookiedoughandovenmitt, ghirardelli (406),
-  //     allrecipes, seriouseats, simplyrecipes, sallysbakingaddiction,
-  //     preppykitchen, budgetbytes, cookieandkate, sugarspunrun,
-  //     joyfoodsunshine, bakingamoment, crazyforcrust, halfbakedharvest,
-  //     thefoodcharlatan, chelseasmessyapron, ambitiouskitchen,
-  //     lifeloveandsugar, modernhoney, twopeasandtheirpod
-  //   no sitemap, or 429 on robots.txt --
-  //     food52, bakerbynature, handletheheat, delish
-  //   Food.com: serves "Apricot Banana Bread" for a cookie URL. See urls.txt.
+  // Added for baked goods beyond cookies. Sitemaps confirmed answering an
+  // automated request on 27 Nov. Sally's Baking Addiction is the find here: it
+  // is baking-first rather than a general recipe site, so its sitemap is almost
+  // entirely in scope.
+  { name: "Sally's Baking Addiction", sitemap: "https://sallysbakingaddiction.com/sitemap_index.xml", path: [] },
+  { name: "Handle the Heat", sitemap: "https://handletheheat.com/sitemap_index.xml", path: [] },
+  { name: "Preppy Kitchen", sitemap: "https://preppykitchen.com/sitemap_index.xml", path: [] },
+  { name: "Joy the Baker", sitemap: "https://joythebaker.com/sitemap_index.xml", path: [] },
+  { name: "Bon Appetit", sitemap: "https://www.bonappetit.com/sitemap.xml", path: ["/recipe/"] },
 ];
+
+/**
+ * The URL words that name each form.
+ *
+ * One sweep per word rather than per category, because a URL filter is an AND:
+ * asking for "brownie" and "blondie" together would match neither. Quick bread
+ * is listed by its flavours, since no site puts "quick bread" in a slug.
+ */
+const CATEGORY_URL_WORDS: Readonly<Record<Category, readonly string[]>> = {
+  cookie: ["cookie"],
+  brownie: ["brownie", "blondie"],
+  muffin: ["muffin"],
+  "quick bread": ["banana-bread", "pumpkin-bread", "zucchini-bread"],
+  scone: ["scone"],
+};
+
+const SOURCES: Source[] = SITES.flatMap((site) =>
+  (Object.entries(CATEGORY_URL_WORDS) as [Category, readonly string[]][]).flatMap(
+    ([category, words]) =>
+      words.map((word) => ({
+        name: `${site.name} (${word})`,
+        category,
+        sitemap: site.sitemap,
+        include: [...site.path, word],
+        exclude: exclusionsFor(category),
+      })),
+  ),
+);
+
 
 const LOC = /<loc>([^<]*)<\/loc>/g;
 

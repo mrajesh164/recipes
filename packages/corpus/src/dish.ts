@@ -101,6 +101,22 @@ export const ALWAYS_EXCLUDE = [
  * Each category lists the *other* categories' words plus whatever is shaped or
  * finished the wrong way for it.
  */
+/** The nouns that name a form, so each category can rule out the others. */
+const FORM_WORDS: Readonly<Record<Category, readonly string[]>> = {
+  cookie: ["cookie"],
+  brownie: ["brownie", "blondie"],
+  muffin: ["muffin"],
+  "quick bread": ["bread", "loaf"],
+  scone: ["scone"],
+};
+
+/** Every form word except this category's own. */
+function otherForms(category: Category): string[] {
+  return Object.entries(FORM_WORDS)
+    .filter(([c]) => c !== category)
+    .flatMap(([, words]) => words);
+}
+
 export const CATEGORY_EXCLUDE: Readonly<Record<Category, readonly string[]>> = {
   cookie: [
     ...NOT_THE_SAME_DISH.filter(
@@ -111,6 +127,15 @@ export const CATEGORY_EXCLUDE: Readonly<Record<Category, readonly string[]>> = {
     ),
     ...CONFOUNDING,
   ],
+
+  // Each of these rules out the other forms, plus what is a different thing
+  // again within its own form. They do not inherit CONFOUNDING: "banana" and
+  // "pumpkin" are contaminants in a cookie and the name of the thing in a
+  // quick bread.
+  brownie: [...otherForms("brownie"), "cheesecake", "pie", "cake", "trifle", "batter", "frosting"],
+  muffin: [...otherForms("muffin"), "cupcake", "cake", "top only", "mix"],
+  "quick bread": [...otherForms("quick bread"), "cake", "yeast", "sourdough", "sandwich"],
+  scone: [...otherForms("scone"), "biscuit", "cake", "shortcake"],
 };
 
 /** Everything that rules a recipe out of the category it was filed under. */
@@ -123,10 +148,11 @@ export function exclusionsFor(category: Category): readonly string[] {
  * and what counts as the wrong shape. A dish is a flavour; a category is a
  * form.
  */
-export type Category = "cookie";
+export type Category = "cookie" | "brownie" | "muffin" | "quick bread" | "scone";
 
 export type DishType =
-  | "chocolate chip" | "oatmeal" | "peanut butter" | "sugar" | "snickerdoodle";
+  | "chocolate chip" | "oatmeal" | "peanut butter" | "sugar" | "snickerdoodle"
+  | "brownie" | "blondie" | "muffin" | "banana bread" | "scone";
 
 /**
  * A corpus row: what extract.ts could read off the page, plus which dish we
@@ -163,6 +189,14 @@ export const DISHES: readonly Dish[] = [
   { type: "peanut butter", category: "cookie", slug: /peanut[-\s]butter/i, title: ["peanut butter"] },
   { type: "oatmeal", category: "cookie", slug: /oatmeal|\boat[-\s]/i, title: ["oat"] },
   { type: "sugar", category: "cookie", slug: /sugar[-\s]cookie/i, title: ["sugar"] },
+
+  // Beyond cookies. The category is the form, which decides what the ratios
+  // are compared against; the dish is what the thing is called.
+  { type: "brownie", category: "brownie", slug: /brownie/i, title: ["brownie"] },
+  { type: "blondie", category: "brownie", slug: /blondie/i, title: ["blondie"] },
+  { type: "muffin", category: "muffin", slug: /muffin/i, title: ["muffin"] },
+  { type: "banana bread", category: "quick bread", slug: /banana[-\s]bread/i, title: ["banana", "bread"] },
+  { type: "scone", category: "scone", slug: /scone/i, title: ["scone"] },
 ];
 
 /**
@@ -187,6 +221,10 @@ export function categoryOf(type: DishType): Category {
 /** The word a page has to use about itself, per category. */
 const CATEGORY_NOUN: Readonly<Record<Category, string>> = {
   cookie: "cookie",
+  brownie: "brownie",
+  muffin: "muffin",
+  "quick bread": "bread",
+  scone: "scone",
 };
 
 export function titleKeywordsFor(type: DishType): string[] {
