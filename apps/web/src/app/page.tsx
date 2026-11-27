@@ -43,9 +43,8 @@ export default async function Page() {
           </h1>
 
           <p className="mt-6 max-w-3xl text-lg text-ink-soft">
-            Every cookie recipe is a little different, on purpose. This weighs{" "}
-            {recipes.length} of them in grams so they can be compared at all,
-            and picks the one you asked for.
+            Find a recipe you&rsquo;ll love. Say how you want it to turn out,
+            see why it fits, and save the ones worth baking again.
           </p>
         </div>
       </div>
