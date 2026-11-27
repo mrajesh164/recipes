@@ -42,7 +42,15 @@ export default async function Page() {
             The Perfect Batch
           </h1>
 
-          <p className="mt-6 max-w-3xl text-lg text-ink-soft">
+          {/* The paragraph gets its own quiet surface, the title does not.
+ 
+              That is the surface rule the rest of the app follows: texture
+              only where there is nothing to read closely. "The Perfect Batch"
+              is display-size script and reads cleanly straight over the
+              scatter; this sentence is body-size, and sprinkles were crossing
+              the letterforms. Same paper and border-2 as the cards below, so
+              it reads as part of the system rather than a patch. */}
+          <p className="mt-6 inline-block max-w-3xl rounded-2xl border-2 border-line bg-paper px-6 py-5 text-lg text-ink-soft">
             Find a recipe you&rsquo;ll love. Say how you want it to turn out,
             see why it fits, and save the ones worth baking again.
           </p>
