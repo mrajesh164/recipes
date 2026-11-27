@@ -70,6 +70,12 @@
  *   xl      22   a section heading inside a view
  *   2xl     28   a page title. All three pages now use this one.
  *   display fluid, 40 to 64. Page titles, in the script face.
+ *   hero    fluid, 52 to 92. The landing page's name, and nothing else.
+ *
+ * So eight steps, not seven. The eighth earns its place: a front door and a
+ * page title are different jobs, and setting both at the same size made the
+ * landing page read as just another page. Everything else still comes from the
+ * seven.
  *
  * That last one changed. It was the wordmark only, and page titles were set in
  * the body face so the script stayed a signature used once. Then the wordmark
@@ -94,6 +100,8 @@
   --text-2xl--line-height: 1.2;
   --text-display: clamp(2.5rem, 8vw, 4rem);
   --text-display--line-height: 1.05;
+  --text-hero: clamp(3.25rem, 11vw, 5.75rem);
+  --text-hero--line-height: 1;
 }
 
 @theme inline {

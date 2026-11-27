@@ -25,16 +25,30 @@ export default async function Page() {
       <div className="scallop" aria-hidden />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-12">
-        <header className="max-w-3xl">
-          <h1 className="font-script text-display font-bold text-clay-deep">
-            The Perfect Batch
-          </h1>
-          <p className="mt-5 text-lg text-ink-soft">
+        {/* The name sits on texture, the sentence does not.
+ 
+            The surface rule allows the pattern where there is nothing to read
+            closely, and 92px of script in clay-deep is not close reading. The
+            proposition underneath is body text, so it stays on plain cream,
+            which is the same line the rule draws everywhere else. */}
+        <header>
+          <div className="sprinkled -mx-6 px-6 py-6">
+            <h1 className="font-script text-hero font-bold text-clay-deep">
+              The Perfect Batch
+            </h1>
+          </div>
+
+          <p className="mt-6 max-w-3xl text-lg text-ink-soft">
             Every cookie recipe is a little different, on purpose. This weighs{" "}
             {recipes.length} of them in grams so they can be compared at all,
             and picks the one you asked for.
           </p>
         </header>
+
+        {/* Four dots in four palette colours, repeating. It was defined back in
+            v1 and never used once, which is the cheapest possible decoration:
+            already drawn, already in the palette, already cohesive. */}
+        <div className="dotted-rule mt-10" aria-hidden />
 
         <FeatureCards recipes={recipes} />
 
