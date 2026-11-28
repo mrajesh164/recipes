@@ -110,6 +110,32 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
     setJumpTo(null);
   }, [jumpTo, visible]);
 
+  // Escape, and a click anywhere that is not the panel or a tile.
+  //
+  // The panel floats over the grid with no backdrop behind it, so there is
+  // nothing to click through to dismiss it -- without these the only way out
+  // is the × or the same tile again, which is a dead end for anyone who
+  // reaches for Escape first. Tiles are excluded so clicking a different one
+  // switches recipes rather than closing and reopening.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(null);
+    };
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest("[data-recipe-panel]") && !t?.closest("[aria-expanded]")) {
+        setOpen(null);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
+
   const page = shown.slice(0, visible);
   const openRecipe = page.find((r) => r.id === open) ?? null;
 
@@ -313,6 +339,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
             dropdown should. */}
         {open && openRecipe && anchor !== null && (
           <li
+            data-recipe-panel
             className="absolute z-30 drop-shadow-xl"
             style={{ top: anchor.top, left: anchor.left, width: anchor.width }}
           >
