@@ -29,7 +29,7 @@ export function FeatureCards({ recipes }: { recipes: ScoredRecipe[] }) {
     {
       href: "/find",
       title: "Find a recipe",
-      blurb: "Describe what you want \u2014 chewy, crispy, quick \u2014 and get a recipe.",
+      blurb: "Describe what you want (chewy, crispy, quick) and get a recipe.",
       photos: 3,
     },
     {
