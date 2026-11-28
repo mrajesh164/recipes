@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // packages/core emit a dist/ before the app can import it.
   transpilePackages: ["@recipes/core"],
   images: {
-    // Every host the 325-recipe corpus actually draws from, enumerated
+    // Every host the corpus actually draws from, enumerated
     // rather than wildcarded: a wildcard would let any URL that reached
     // the database become an outbound request from our server.
     remotePatterns: [
@@ -17,6 +17,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "cdn.apartmenttherapy.info" },
       { protocol: "https", hostname: "cdn.bakedbyrachel.com" },
       { protocol: "https", hostname: "cdn.loveandlemons.com" },
+      // Added by the baked-goods harvest. Without them Next refuses to
+      // optimise the url and the tile renders as a broken image: 73
+      // recipes from one and 24 from the other. Note the subdomain --
+      // images.immediate.co.uk was already here, but the newer pages
+      // serve from images.production.immediate.co.uk.
+      { protocol: "https", hostname: "handletheheat.com" },
+      { protocol: "https", hostname: "images.production.immediate.co.uk" },
       { protocol: "https", hostname: "images.immediate.co.uk" },
       { protocol: "https", hostname: "joythebaker.com" },
       { protocol: "https", hostname: "mojo.generalmills.com" },
