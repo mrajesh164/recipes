@@ -8,7 +8,16 @@
  * ranking prefers a small one.
  */
 
-import type { ParsedIngredient } from "./units.ts";
+/**
+ * Only the two fields the matching reads, rather than a whole
+ * ParsedIngredient. The database hands the app a snake_case row and the parser
+ * hands it a camelCase object; both have a raw line and a name or null, and
+ * demanding more than that would make one of them convert for no reason.
+ */
+export interface MatchableIngredient {
+  raw: string;
+  canonicalName: string | null;
+}
 
 export interface PantryFit {
   /** Ingredient lines that had to be matched, after the exclusions below. */
@@ -65,7 +74,7 @@ function escapeRe(s: string): string {
  * too -- 11% of lines have no canonical name, and that 11% is where the
  * bananas and the tahini live.
  */
-function covered(pantry: readonly string[], ing: ParsedIngredient): boolean {
+function covered(pantry: readonly string[], ing: MatchableIngredient): boolean {
   const name = ing.canonicalName?.toLowerCase();
   if (name) {
     // Exactly the name, and nothing looser.
@@ -90,7 +99,7 @@ function covered(pantry: readonly string[], ing: ParsedIngredient): boolean {
 
 export function pantryFit(
   pantry: readonly string[],
-  ingredients: readonly ParsedIngredient[],
+  ingredients: readonly MatchableIngredient[],
 ): PantryFit {
   const items = [...pantry, ...ASSUMED].map((p) => p.trim()).filter(Boolean);
   const missing: string[] = [];
