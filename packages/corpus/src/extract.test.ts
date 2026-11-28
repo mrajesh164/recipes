@@ -188,3 +188,28 @@ test("returns null when there is no structured data at all", () => {
   // Smitten Kitchen's 2009 post, for instance: 200 OK, no markup.
   assert.equal(extractRecipe("<html><body>Just prose.</body></html>", "https://x.com"), null);
 });
+
+// --- the bake time has to come from the baking step ------------------------
+
+test("takes the time from the sentence that says bake", () => {
+  assert.equal(bakeMinutes("Cream the butter 2 minutes. Bake for 11 minutes."), 11);
+  assert.equal(bakeMinutes("Beat 1 minute. Chill 30 minutes. Bake 9 to 12 minutes."), 12);
+});
+
+test("is not fooled by baking soda, powder or a baking sheet", () => {
+  // This was the bug: 146 recipes claimed a bake of four minutes or under,
+  // taken from lines like "whisk in the baking soda, about 1 minute".
+  assert.equal(bakeMinutes("Whisk in the baking soda and mix for 1 minute."), null);
+  assert.equal(bakeMinutes("Line a baking sheet. Beat 2 minutes."), null);
+  assert.equal(bakeMinutes("Add baking powder. Mix 3 minutes. Bake 20 minutes."), 20);
+});
+
+test("does not borrow a time from the next step", () => {
+  // The window stops at the sentence end, so a cooling time is not a bake.
+  assert.equal(bakeMinutes("Bake until golden. Cool 10 minutes."), null);
+  assert.equal(bakeMinutes("Bake until golden, about 14 minutes. Cool 10 minutes."), 14);
+});
+
+test("no bake sentence means no bake time", () => {
+  assert.equal(bakeMinutes("Mix everything and chill for 20 minutes."), null);
+});

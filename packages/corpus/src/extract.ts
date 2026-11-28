@@ -260,11 +260,34 @@ export function bakeTempF(text: string): number | null {
 }
 
 export function bakeMinutes(text: string): number | null {
-  // Prefer a range's upper bound: "bake 10 to 12 minutes" is 12 at the oven.
-  const range = text.match(/(\d+)\s*(?:to|-|–|—)\s*(\d+)\s*min/i);
-  if (range) return Number(range[2]);
-  const single = text.match(/(\d+)\s*min/i);
-  return single ? Number(single[1]) : null;
+  // The time has to belong to the baking step.
+  //
+  // This took the first "N min" anywhere in the instructions, and the first
+  // time in a recipe is almost never the bake: it is "cream the butter and
+  // sugar for 2 minutes", "beat in the egg for 1 minute", "chill for 30
+  // minutes". 146 of 1,385 recipes claimed a bake of four minutes or less,
+  // including cookies at one and two, and since a one-minute bake wins any
+  // comparison those were the recipes a request for something quick found
+  // first.
+  //
+  // Now it looks only inside the sentence that says bake, and stops at the
+  // sentence end so a time from the next step cannot be borrowed. "oven" is
+  // deliberately not a trigger: the oven is named in the preheat line, which
+  // is followed by the mixing steps and their times.
+  // "baking" is a trap: baking soda, baking powder and a baking sheet all
+  // appear in the mixing steps, and the minutes after them are a mixing time.
+  // That left 33 recipes claiming a one- to four-minute bake from lines like
+  // "whisk in the baking soda... about 1 minute".
+  const BAKE = /\bbak(?:e|es|ed)\b|\bbaking\b(?!\s+(?:soda|powder|sheets?|pans?|dish(?:es)?|trays?|paper|spray|cups?|time|rack))/gi;
+  for (const m of text.matchAll(BAKE)) {
+    const sentence = text.slice(m.index!, m.index! + 90).split(/[.;]/)[0] ?? "";
+    // Prefer a range's upper bound: "bake 10 to 12 minutes" is 12 at the oven.
+    const range = sentence.match(/(\d+)\s*(?:to|-|–|—)\s*(\d+)\s*min/i);
+    if (range) return Number(range[2]);
+    const single = sentence.match(/(\d+)\s*min/i);
+    if (single) return Number(single[1]);
+  }
+  return null;
 }
 
 export function chillsDough(text: string): boolean {
