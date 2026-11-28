@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  interpret, dominantTexture, matchScore, candidatesFor, type Rankable, confidentRating,
+  interpret, dominantTexture, matchScore, candidatesFor, type Rankable, confidentRating, reviewEvidence,
 } from "./interpret.ts";
 
 test("reads a plain texture word", () => {
@@ -89,7 +89,8 @@ const base: Rankable = {
   scores: { chewy: 0.8, cakey: 0.2, crispy: 0.3, confidence: "high" },
   method: "creamed", chills_dough: true, bake_minutes: 12,
   rating: 4.5,
-  ratingCount: 50, ingredientCount: 12,
+  ratingCount: 50,
+  reviews: null, ingredientCount: 12,
 };
 
 test("texture dominates preferences", () => {
@@ -277,7 +278,8 @@ test("a dish on its own ranks by rating rather than by nothing", () => {
     scores: { chewy: 0.5, cakey: 0.5, crispy: 0.5, confidence: "high" },
     method: "creamed", chills_dough: false, bake_minutes: 11,
     rating: 5,
-    ratingCount: 50, ingredientCount: 10,
+    ratingCount: 50,
+    reviews: null, ingredientCount: 10,
   };
   const worse: Rankable = { ...base, rating: 3 };
   const i = interpret("oatmeal");
@@ -313,4 +315,45 @@ test("shrinkage pulls toward the mean, never past the rating", () => {
   assert.ok(confidentRating(3, 1)! < 5);
   // Unrated stays unrated.
   assert.equal(confidentRating(null, 100), null);
+});
+
+// --- evidence from reviews ------------------------------------------------
+
+test("quotes a review that uses the word the query used", () => {
+  const m = reviewEvidence(["These came out so chewy and soft, perfect!"], interpret("chewy"));
+  assert.equal(m?.word, "chewy");
+});
+
+test("finds the inflections a reviewer actually types", () => {
+  assert.equal(reviewEvidence(["Even chewier than the bakery ones."], interpret("chewy"))?.word, "chewier");
+  assert.equal(reviewEvidence(["Nice and crisp, my kind of cookie!"], interpret("crispy"))?.word, "crisp");
+  assert.equal(reviewEvidence(["The chew is perfect."], interpret("chewy"))?.word, "chew");
+});
+
+test("a negated mention is not evidence", () => {
+  // The review contains the word and argues the opposite with it.
+  assert.equal(reviewEvidence(["Not chewy at all, very disappointing."], interpret("chewy")), null);
+  assert.equal(reviewEvidence(["These were not crispy."], interpret("crispy")), null);
+});
+
+test("does not answer one texture with a review about another", () => {
+  assert.equal(reviewEvidence(["The crisp edges were the best part."], interpret("chewy")), null);
+  assert.equal(reviewEvidence(["So soft and chewy."], interpret("crispy")), null);
+});
+
+test("a food noun is not a texture word", () => {
+  // Measured on the corpus: allowing bare "cake" to answer "cakey" matched 33
+  // more reviews, nearly all of them an ingredient or a typo.
+  assert.equal(reviewEvidence(["More cake than cookie, very sweet."], interpret("cakey")), null);
+  assert.equal(reviewEvidence(["1C chocolate cake chips is plenty."], interpret("cakey")), null);
+  // The real word still works.
+  assert.equal(reviewEvidence(["Lovely and cakey, like a muffin top."], interpret("cakey"))?.word, "cakey");
+});
+
+test("nothing to quote is not an error", () => {
+  assert.equal(reviewEvidence([], interpret("chewy")), null);
+  assert.equal(reviewEvidence(null, interpret("chewy")), null);
+  assert.equal(reviewEvidence(["Great recipe, made them twice."], interpret("chewy")), null);
+  // No query, nothing to match against.
+  assert.equal(reviewEvidence(["So chewy!"], interpret("")), null);
 });

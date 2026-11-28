@@ -665,6 +665,8 @@ export interface Rankable {
   rating: number | null;
   /** How many people that rating is from. One rating is not evidence. */
   ratingCount: number | null;
+  /** What people wrote. Null where the source published none. */
+  reviews: string[] | null;
   ingredientCount: number;
 }
 
@@ -737,9 +739,166 @@ export function matchScore(r: Rankable, i: Interpretation): number {
     if (rated !== null) score += (rated / 5) * 0.2;
   }
 
+  /**
+   * A reviewer saying the word the reader asked for.
+   *
+   * Everything above this line is inferred from an ingredient list and says
+   * what a recipe *should* do. This is somebody who baked it saying what it
+   * did, which is the only direct evidence the corpus has, so it is worth a
+   * nudge rather than nothing.
+   *
+   * A nudge and not more. 743 of 1,385 recipes publish no review text at all,
+   * and silence is not evidence against a recipe -- so this adds for
+   * corroboration and never subtracts for its absence. At 0.08 it can lift a
+   * recipe past a close rival but cannot carry one that does not match the
+   * texture in the first place.
+   *
+   * It is also what makes the quote worth having. Ranked on texture alone the
+   * top pick had a corroborating review for 0 of 10 test queries, because only
+   * 49 recipes mention "chewy" at all and the winner was never one of them.
+   */
+  if (reviewEvidence(r.reviews, i)) score += 0.08;
+
   // Same rule as rankFor: a recipe whose ingredients barely parsed should not
   // win on a margin that is really just missing data.
   if (r.scores.confidence === "low") score -= 0.1;
 
   return score;
+}
+
+// ------------------------------------------------- evidence from reviews ----
+
+/** Every phrase that names a texture, for telling evidence from decoration. */
+const TEXTURE_PHRASES = new Set(TEXTURE_WORDS.map(([w]) => w));
+
+/**
+ * Does this say anything about how the thing came out?
+ *
+ * Used by the corpus to decide which reviews are worth storing. Most of them
+ * are "delicious, will make again", which can never be quoted as evidence for
+ * anything, so keeping them costs payload and crowds out the ones that can.
+ */
+export function mentionsTexture(text: string): boolean {
+  for (const phrase of TEXTURE_PHRASES) {
+    if (reviewWordRegex(phrase).test(text)) return true;
+  }
+  return false;
+}
+
+export interface ReviewMatch {
+  /** The review, as written. */
+  text: string;
+  /** The word in it that answers the query, for highlighting. */
+  word: string;
+}
+
+/**
+ * Inflections of a word a reviewer might actually have typed.
+ *
+ * "chewy" has to find "chewier" and "chewiness", and a baker writing about a
+ * crisp edge writes "crisp" as often as "crispy". Built from the query word
+ * rather than listed, so a new texture word needs nothing added here.
+ */
+/**
+ * Stems whose bare form names a food rather than a texture.
+ *
+ * The suffix is optional, because "crispy" should find "nice and crisp" and
+ * "chewy" should find "the chew is perfect" -- measured on the corpus, that
+ * allowance adds 10 real crisp mentions and 1 real chew mention and no false
+ * ones. The same allowance on "cakey" adds 33, almost all of them junk:
+ * "chocolate cake chips" is an ingredient, "more cake than cookie" is a
+ * comparison, and "my cookies cake out puffy" is a typo for "came". The
+ * difference is that cake is a thing you bake and crisp is how it came out.
+ */
+const FOOD_STEMS = ["cake", "bread", "butter", "sugar", "oat", "cream", "chip"];
+
+function reviewWordRegex(phrase: string): RegExp {
+  const parts = phrase.trim().toLowerCase().split(/\s+/).map(escapeRe);
+  const last = parts.pop()!;
+  const stem = last.endsWith("y") ? last.slice(0, -1) : last;
+  const bareIsAFood = FOOD_STEMS.includes(stem);
+  const tail = last.endsWith("y")
+    ? `(?:y|ier|iest|iness)${bareIsAFood ? "" : "?"}`
+    : "(?:s|ed|y|ier|iest)?";
+  const body = [...parts, `${stem}${tail}`].join("[\\s-]+");
+  return new RegExp(`\\b${body}\\b`, "i");
+}
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * A review that backs up what was asked for.
+ *
+ * The ratios are inferred from an ingredient list; a review is the only place
+ * in the corpus where somebody says how the thing actually came out. So when a
+ * reviewer uses the word the query used, that is worth more than another plot.
+ *
+ * Only the words the reader actually typed count. Matching every texture would
+ * let a query for "chewy" be answered with a review praising the crisp edges,
+ * which is evidence for something nobody asked about.
+ *
+ * A negated mention is not evidence. "not chewy at all" contains "chewy" and
+ * argues the opposite, so the same negator list the query parser uses is
+ * checked immediately before the match.
+ */
+export function reviewEvidence(
+  reviews: readonly string[] | null | undefined,
+  i: Interpretation,
+): ReviewMatch | null {
+  return reviewQuotes(reviews, i, 1)[0] ?? null;
+}
+
+/**
+ * The same, but up to `max` of them, for showing rather than for scoring.
+ *
+ * Several reviewers independently saying "chewy" is a stronger argument than
+ * one saying it, and it reads as a chorus rather than a cherry-pick. Capped
+ * low: this sits above the ratios, and a wall of quotes would bury them.
+ */
+export function reviewQuotes(
+  reviews: readonly string[] | null | undefined,
+  i: Interpretation,
+  max = 3,
+): ReviewMatch[] {
+  if (!reviews?.length) return [];
+
+  /**
+   * Texture words only, longest first.
+   *
+   * "soft and chewy" is a better quote to have found than "soft", hence the
+   * order. The filter matters more: `understood` also holds the dish and the
+   * effort words, and matching those produced quotes like "These brownies were
+   * delicious!" as the reason a brownie was picked for "chewy brownie". The
+   * dish is already guaranteed -- the pool was filtered to it -- so a reviewer
+   * saying "brownies" confirms nothing, and "quick" in a review is about their
+   * evening rather than the bake.
+   */
+  const words = i.understood
+    .filter((w) => TEXTURE_PHRASES.has(w.toLowerCase()))
+    .sort((a, b) => b.length - a.length);
+  if (words.length === 0) return [];
+
+  const negated = new RegExp(
+    `(?:${NEGATORS.join("|")})(?:[\\s-]+(?:${NEGATION_FILLER.join("|")}))?[\\s-]+$`,
+    "i",
+  );
+
+  const out: ReviewMatch[] = [];
+  const used = new Set<string>();
+  for (const word of words) {
+    const re = reviewWordRegex(word);
+    for (const text of reviews) {
+      if (used.has(text)) continue;
+      const m = re.exec(text);
+      if (!m) continue;
+      // What comes immediately before the hit, which is where a negator sits.
+      if (negated.test(text.slice(Math.max(0, m.index - 24), m.index))) continue;
+      used.add(text);
+      out.push({ text, word: m[0] });
+      if (out.length === max) return out;
+    }
+  }
+  return out;
 }

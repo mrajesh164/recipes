@@ -21,7 +21,7 @@
  *   - Numbers arrive as strings about as often as numbers.
  */
 
-import { parseIngredient, methodHint, type ParsedIngredient } from "@recipes/core";
+import { parseIngredient, methodHint, mentionsTexture, type ParsedIngredient } from "@recipes/core";
 
 export type Method = "melted" | "creamed" | "other";
 
@@ -39,7 +39,49 @@ export interface ExtractedRecipe {
   imageUrl: string | null;
   ingredients: ParsedIngredient[];
   instructionsText: string;
+  /**
+   * What people wrote about it, trimmed.
+   *
+   * Kept because a review is the only direct evidence in the corpus of how a
+   * recipe actually turned out -- everything else is inferred from the
+   * ingredient list. Capped and truncated: these ship to the browser with the
+   * corpus, and the whole point of a quote is that it is short.
+   */
+  reviews: string[];
   rawJsonLd: unknown;
+}
+
+/**
+ * Review bodies from the schema.org node.
+ *
+ * `review` is either one object or an array of them, and plenty of sites emit
+ * an empty reviewBody or a rating with no words in it. Whitespace gets
+ * collapsed because these are written in a textarea and arrive with newlines
+ * and runs of spaces in them.
+ */
+const MAX_REVIEWS = 4;
+const MAX_REVIEW_CHARS = 180;
+
+export function reviewsFrom(node: Record<string, unknown>): string[] {
+  const raw = node.review;
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const out: string[] = [];
+  for (const r of list) {
+    if (!r || typeof r !== "object") continue;
+    const body = (r as Record<string, unknown>).reviewBody;
+    if (typeof body !== "string") continue;
+    const text = body.replace(/\s+/g, " ").trim();
+    // One-word reviews ("Great!") carry no information about the bake.
+    if (text.length < 12) continue;
+    // Nor does "delicious, will make again", which is most of them. Only a
+    // review that names a texture can ever be quoted as evidence, so the rest
+    // are payload that crowds out the ones that can -- taking the first four
+    // of everything threw away a "so chewy" sitting at position seven.
+    if (!mentionsTexture(text)) continue;
+    out.push(text.length > MAX_REVIEW_CHARS ? text.slice(0, MAX_REVIEW_CHARS - 1).trimEnd() + "\u2026" : text);
+    if (out.length === MAX_REVIEWS) break;
+  }
+  return out;
 }
 
 // ----------------------------------------------------------- finding it ----
@@ -378,6 +420,7 @@ export function extractRecipe(html: string, sourceUrl: string): ExtractedRecipe 
     imageUrl: imageUrlFrom(node.image),
     ingredients,
     instructionsText,
+    reviews: reviewsFrom(node),
     rawJsonLd: node,
   };
 }
