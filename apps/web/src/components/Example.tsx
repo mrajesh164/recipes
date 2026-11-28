@@ -1,5 +1,5 @@
 import { SignUpButton } from "@clerk/nextjs";
-import { interpret, matchScore } from "@recipes/core";
+import { interpret, matchScore, candidatesFor } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { ratioDistribution } from "@/lib/ratios";
 import { asRankable } from "@/lib/rankable";
@@ -16,7 +16,17 @@ import { Recommendation } from "./Recommendation";
  */
 export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
   const demo = interpret("chewy");
-  const best = [...recipes].sort(
+  /**
+   * Filtered before ranked, exactly as the real tool does it.
+   *
+   * This sorted the whole corpus and took the top row, skipping the dish
+   * filter that Picker applies first -- so a demo query naming a dish got an
+   * answer from the wrong one. "chewy oatmeal" returned Baklava Blondies here
+   * and Oatmeal Cookies in the tool. The comment above says the demo cannot
+   * drift from the thing it demonstrates; that was true of the rendering and
+   * not of the ranking.
+   */
+  const best = [...candidatesFor(recipes, demo)].sort(
     (a, b) => matchScore(asRankable(b), demo) - matchScore(asRankable(a), demo),
   )[0];
 
@@ -35,11 +45,11 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
     <div>
       <div className="rounded-3xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
         <h2 className="text-xl font-bold leading-snug tracking-tight">
-          Every cookie recipe is a little different. This helps you find yours.
+          Every recipe is a little different. This helps you find yours.
         </h2>
         <ol className="mt-4 space-y-2 text-sm text-ink-soft">
           <li>
-            <span className="font-semibold text-ink">Say how you want them.</span>{" "}
+            <span className="font-semibold text-ink">Say how you want it.</span>{" "}
             Chewy, cakey, crispy edges, quick, no mixer.
           </li>
         </ol>
