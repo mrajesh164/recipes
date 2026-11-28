@@ -61,6 +61,8 @@ export interface Interpretation {
   prefs: Preferences;
   /** Dishes named. Empty means "any dish", not "no dishes". */
   dishes: DishName[];
+  /** Dishes ruled out. "no peanuts" belongs here, not in `dishes`. */
+  excludedDishes: DishName[];
   /** Phrases recognised, in the user's own words, to show back to them. */
   understood: string[];
   /** Words that meant nothing here. Shown so the gap is visible. */
@@ -342,7 +344,18 @@ const BOOST = 1.3;
  * On this corpus "not cakey" removes 202 of 325, which is a lot, and is what
  * the phrase means.
  */
-const NEGATORS = ["not", "no", "non", "isnt", "aint", "never", "anti"];
+/**
+ * Words that cancel what follows them.
+ *
+ * "without" and "minus" were missing, which meant "without peanut butter"
+ * selected peanut butter -- the negator was not recognised, so only the dish
+ * word was, and the reader got the opposite of what they asked for. These are
+ * the words people actually use to rule something out.
+ */
+const NEGATORS = [
+  "not", "no", "non", "isnt", "aint", "never", "anti",
+  "without", "minus", "sans", "skip", "avoid", "hold",
+];
 
 /* ------------------------------------------------------------ near misses -- */
 
@@ -470,7 +483,12 @@ function phraseRegex(phrase: string): RegExp {
  * been lifted out by the time this runs, so "not very thin" arrives as
  * "not thin".
  */
-const NEGATION_FILLER = ["too", "that", "overly", "all", "quite", "massively"];
+const NEGATION_FILLER = [
+  "too", "that", "overly", "all", "quite", "massively",
+  // Articles and quantifiers, which sit between a negator and its target more
+  // often than the adverbs do: "minus the brownies", "no more scones".
+  "the", "any", "more", "a", "an",
+];
 
 function negatedRegex(phrase: string): RegExp {
   const filler = `(?:(?:${NEGATION_FILLER.join("|")})[\\s-]+)?`;
@@ -488,6 +506,10 @@ const COMPILED = {
   negated: TEXTURE_WORDS.map(([p, w]) => [negatedRegex(p), p, w] as const),
   prefs: PREF_WORDS.map(([p, k]) => [phraseRegex(p), p, k] as const),
   dishes: DISH_WORDS.map(([p, d]) => [phraseRegex(p), p, d] as const),
+  // And the same for dishes, which had none. "no peanuts" was read as a
+  // request for peanut butter: the negator was not matched, the dish word
+  // was, and the reader was handed 65 of the thing they had just ruled out.
+  negatedDishes: DISH_WORDS.map(([p, d]) => [negatedRegex(p), p, d] as const),
 };
 
 /**
@@ -520,6 +542,8 @@ export function interpret(input: string): Interpretation {
   const textures: Record<Texture, number> = { chewy: 0, cakey: 0, crispy: 0 };
   const prefs: Preferences = { quick: false, easy: false, popular: false };
   const dishes: DishName[] = [];
+  const excludedDishes: DishName[] = [];
+  const refusedDishes: string[] = [];
   const understood: string[] = [];
   const refused: string[] = [];
 
@@ -539,6 +563,13 @@ export function interpret(input: string): Interpretation {
   // would have credited it.
   for (const [re, phrase] of COMPILED.negated) {
     if (take(re)) refused.push(phrase);
+  }
+  for (const [re, phrase, dish] of COMPILED.negatedDishes) {
+    if (!take(re)) continue;
+    if (!excludedDishes.includes(dish)) {
+      excludedDishes.push(dish);
+      refusedDishes.push(phrase);
+    }
   }
 
   for (const [re, phrase, weights] of COMPILED.textures) {
@@ -576,7 +607,8 @@ export function interpret(input: string): Interpretation {
   // A negation on its own is understood. It says which cookies you do not
   // want, which is less than a texture but is not nothing, and the empty
   // state should not claim otherwise.
-  const empty = understood.length === 0 && refused.length === 0;
+  const empty =
+    understood.length === 0 && refused.length === 0 && refusedDishes.length === 0;
   const unique = [...new Set(unrecognised)];
 
   const excluded = [...new Set(refused.map((phrase) => {
@@ -591,7 +623,13 @@ export function interpret(input: string): Interpretation {
     .filter((s): s is { typed: string; meant: string } => s.meant !== null);
 
   return {
-    textures, prefs, dishes, understood, refused, excluded, suggestions,
+    textures, prefs, dishes, understood, excluded, suggestions,
+    excludedDishes,
+    // Textures only. A refused texture drops the ones that lean that way,
+    // which is a matter of degree; a refused dish is gone entirely. The page
+    // says each in its own words, so merging them here would have made it say
+    // "the ones that are mainly peanut butter" about a whole category.
+    refused,
     unrecognised: unique,
     empty,
   };
@@ -622,6 +660,24 @@ export function candidatesFor<
   },
 >(recipes: T[], i: Interpretation): T[] {
   let kept = recipes;
+
+  /**
+   * A ruled-out dish is removed, not demoted.
+   *
+   * Asking for "no peanuts" is not a preference about peanuts, it is a
+   * statement that peanut butter cookies are not an answer -- so unlike the
+   * texture exclusions below, which drop the top third because a texture is a
+   * matter of degree, this takes the whole dish out. A dish is a kind of
+   * thing: you either asked for one or you ruled it out.
+   *
+   * Still guarded against emptying the pool. Ruling out every dish in a corpus
+   * of one kind would otherwise answer a reasonable request with nothing.
+   */
+  if (i.excludedDishes.length > 0) {
+    const ruled = new Set<string>(i.excludedDishes);
+    const remaining = kept.filter((r) => r.dish_type === null || !ruled.has(r.dish_type));
+    if (remaining.length > 0) kept = remaining;
+  }
 
   if (i.dishes.length > 0) {
     const wanted = new Set<string>(i.dishes);

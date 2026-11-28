@@ -359,3 +359,48 @@ test("nothing to quote is not an error", () => {
   // No query, nothing to match against.
   assert.equal(reviewEvidence(["So chewy!"], interpret("")), null);
 });
+
+// --- ruling a dish out ----------------------------------------------------
+
+test("a negated dish is ruled out, not asked for", () => {
+  // The bug as reported: "no peanuts" showed 65 peanut butter recipes. The
+  // negator was not matched, the dish word was, and the reader was handed the
+  // opposite of what they asked for.
+  assert.deepEqual(interpret("no peanuts").dishes, []);
+  assert.deepEqual(interpret("no peanuts").excludedDishes, ["peanut butter"]);
+  assert.deepEqual(interpret("no brownies").excludedDishes, ["brownie"]);
+});
+
+test("the words people use to rule something out", () => {
+  // "without" and "minus" were not negators, so "without peanut butter"
+  // selected peanut butter.
+  for (const q of [
+    "without peanut butter",
+    "minus the peanut butter",
+    "skip peanut butter",
+    "avoid peanut butter",
+  ]) {
+    assert.deepEqual(interpret(q).excludedDishes, ["peanut butter"], q);
+    assert.deepEqual(interpret(q).dishes, [], q);
+  }
+});
+
+test("an article between the negator and its target", () => {
+  // "minus the brownies" and "no more scones" both slipped through, because
+  // the filler list held adverbs but no articles.
+  assert.deepEqual(interpret("minus the brownies").excludedDishes, ["brownie"]);
+  assert.deepEqual(interpret("no more scones").excludedDishes, ["scone"]);
+  assert.deepEqual(interpret("without any peanut butter").excludedDishes, ["peanut butter"]);
+});
+
+test("ruling a dish out is understood, not an empty query", () => {
+  // It says less than a texture does and it is not nothing, so the page must
+  // not answer it with the empty state.
+  assert.equal(interpret("no peanuts").empty, false);
+});
+
+test("asking for a dish still asks for it", () => {
+  assert.deepEqual(interpret("peanut butter").dishes, ["peanut butter"]);
+  assert.deepEqual(interpret("peanut butter").excludedDishes, []);
+  assert.deepEqual(interpret("chewy brownie").dishes, ["brownie"]);
+});

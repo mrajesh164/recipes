@@ -551,6 +551,22 @@ function Reading({
         </p>
       )}
 
+      {/* A dish is removed, not demoted, so it does not get the texture
+          wording. "The ones that are mainly peanut butter" is a sentence about
+          a texture; a peanut butter cookie either is one or is not. */}
+      {i.excludedDishes.length > 0 && (
+        <p className="mt-1 text-ink-soft">
+          Leaving out{" "}
+          {i.excludedDishes.map((d, n) => (
+            <span key={d}>
+              {n > 0 && (n === i.excludedDishes.length - 1 ? " and " : ", ")}
+              <span className="font-semibold text-ink">{d}</span>
+            </span>
+          ))}
+          {" "}altogether.
+        </p>
+      )}
+
       {i.unrecognised.length > 0 && (
         <p className="mt-1 text-ink-faint">
           I don&apos;t know what{" "}
