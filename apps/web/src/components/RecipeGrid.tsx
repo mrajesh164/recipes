@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeDetail } from "./RecipeDetail";
@@ -50,6 +50,22 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   const [filter, setFilter] = useState("");
   const [sort, setSort] = useState<SortKey>("title");
 
+  /**
+   * How many tiles are rendered at once.
+   *
+   * The grid rendered every match, which at 1,385 recipes meant 1,385 tiles
+   * and 1,385 requests to the image optimiser the moment the page opened. In
+   * dev that burst is enough for some to time out, and a browser caches a
+   * failed image, so tiles stayed broken until a hard reload even though every
+   * url behind them was fine.
+   *
+   * 120 is five full rows at the widest breakpoint, so the grid still reads as
+   * "lots" without fetching all of it.
+   */
+  const PAGE = 120;
+  const [visible, setVisible] = useState(PAGE);
+  const [jumpTo, setJumpTo] = useState<string | null>(null);
+
   const q = filter.trim().toLowerCase();
   const matched = q
     ? recipes.filter(
@@ -76,6 +92,22 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   // Insertion order is the sorted order, so this is also the order the
   // headers appear in down the page.
   const kinds = [...counts.keys()];
+
+  // A new filter or a new order is a new list, so start from the top rather
+  // than keeping however far the last one had been expanded.
+  useEffect(() => setVisible(PAGE), [q, sort]);
+
+  // A jump can be to a kind the window has not reached, so the click widens
+  // the window and the scroll waits for the render that follows it.
+  useEffect(() => {
+    if (!jumpTo) return;
+    const el = document.getElementById(`kind-${jumpTo.replace(/\s+/g, "-")}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setJumpTo(null);
+  }, [jumpTo, visible]);
+
+  const page = shown.slice(0, visible);
   const openRecipe = shown.find((r) => r.id === open) ?? null;
 
   return (
@@ -141,6 +173,15 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
             <a
               key={k}
               href={`#kind-${k.replace(/\s+/g, "-")}`}
+              onClick={(e) => {
+                // Still a real link -- middle-click and copy-link behave -- but
+                // the target may not be rendered yet, so this widens the window
+                // and scrolls once React has caught up.
+                e.preventDefault();
+                const at = shown.findIndex((r) => (r.dish_type ?? "other") === k);
+                if (at >= 0) setVisible((v) => Math.max(v, at + PAGE));
+                setJumpTo(k);
+              }}
               className="rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-semibold
                          capitalize text-ink transition-colors hover:border-clay-deep
                          hover:text-clay-deep"
@@ -153,7 +194,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
       )}
 
       <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {shown.map((r, i) => (
+        {page.map((r, i) => (
           <Fragment key={r.id}>
             {/* Sorting by kind put the groups in order and then gave no sign
                 of where one ended, so five categories read as one long run of
@@ -161,7 +202,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                 full width of the grid, with how many are in it. Only for this
                 sort: under A to Z or Best rated there are no groups to name. */}
             {sort === "dish" &&
-              (i === 0 || (shown[i - 1]?.dish_type ?? "") !== (r.dish_type ?? "")) && (
+              (i === 0 || (page[i - 1]?.dish_type ?? "") !== (r.dish_type ?? "")) && (
                 <li
                   id={`kind-${(r.dish_type ?? "other").replace(/\s+/g, "-")}`}
                   className="col-span-full mt-6 scroll-mt-4 first:mt-0"
@@ -213,6 +254,19 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           </Fragment>
         ))}
       </ul>
+
+      {visible < shown.length && (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisible((v) => v + PAGE)}
+            className="rounded-full border-2 border-line bg-paper px-6 py-3 text-sm font-semibold
+                       text-ink transition-colors hover:border-clay-deep hover:text-clay-deep"
+          >
+            Show more ({shown.length - visible} left)
+          </button>
+        </div>
+      )}
 
       {/* Under the grid rather than over it. A modal covered the very list
           you were comparing against. */}
