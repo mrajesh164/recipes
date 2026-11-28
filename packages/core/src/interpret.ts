@@ -337,15 +337,44 @@ const STOP = new Set([
  * rather than needing "extra crispy", "super crispy" and "really crispy" as
  * three more entries.
  */
-const INTENSIFIERS = new Set([
-  "extra", "super", "ultra", "very", "really", "so", "mega", "max",
-  "maximum", "seriously", "insanely", "crazy", "deeply", "properly",
-  "well", "more", "most", "hella", "wicked", "truly", "genuinely",
-  "incredibly", "ridiculously", "absurdly", "proper",
+/**
+ * Words that change the strength of whatever follows them.
+ *
+ * A scale rather than a flag, and signed. Above 1 strengthens, below 1 weakens,
+ * and a negative number means rank *away* -- "less chewy" is asking for less
+ * than the default, which is the same request as "not too chewy" rather than a
+ * weaker version of "chewy".
+ *
+ * This is the part of the vocabulary that is right to write down. Ingredients
+ * are an open class -- the corpus keeps finding new ones, so it measures them
+ * itself -- but English has about two dozen of these and is not making more.
+ * Listing them is how composition works: two dozen modifiers against every
+ * texture word covers every combination, where listing "less chewy" as a
+ * phrase would cover one.
+ */
+const MODIFIERS = new Map<string, number>([
+  // Stronger.
+  ...(["extra", "super", "ultra", "very", "really", "so", "mega", "max",
+    "maximum", "seriously", "insanely", "crazy", "deeply", "properly",
+    "well", "more", "most", "hella", "wicked", "truly", "genuinely",
+    "incredibly", "ridiculously", "absurdly", "proper"] as const)
+    .map((w) => [w, 1.3] as const),
+  // Weaker, but still wanted: "a bit chewy" is a request for some chew.
+  ...(["slightly", "mildly", "lightly", "faintly", "somewhat", "vaguely",
+    "gently", "subtly"] as const).map((w) => [w, 0.45] as const),
+  ...(["barely", "hardly", "scarcely"] as const).map((w) => [w, 0.3] as const),
+  // The noun forms people reach for: "a bit chewy", "a touch crisp", "a hint
+  // of chew". The article in front is skipped as filler.
+  ...(["bit", "touch", "hint", "smidge", "shade", "tad"] as const)
+    .map((w) => [w, 0.45] as const),
+  // Away. A comparative reduction is a request for less than the default, not
+  // for a milder version of it.
+  ...(["less", "fewer", "lighter", "reduce", "reduced"] as const)
+    .map((w) => [w, -1] as const),
 ]);
 
-/** How much an intensifier lifts a weight. Capped at 1 by the caller. */
-const BOOST = 1.3;
+/** Kept as a set because the unread filter only asks whether a word is one. */
+const INTENSIFIERS = new Set(MODIFIERS.keys());
 
 /**
  * Negation, handled as an exclusion over the candidates.
@@ -630,20 +659,31 @@ const COMPILED = {
  * just "crispy", which is the difference between being understood and being
  * approximately understood.
  */
-function liftIntensifiers(padded: string): { text: string; boosted: Map<string, string> } {
-  const boosted = new Map<string, string>();
+function liftModifiers(padded: string): {
+  text: string;
+  /** The modified word, to the modifier and the scale it carries. */
+  modified: Map<string, { word: string; scale: number }>;
+} {
+  const modified = new Map<string, { word: string; scale: number }>();
   const words = padded.trim().split(/[\s-]+/).filter(Boolean);
   const kept: string[] = [];
   for (let n = 0; n < words.length; n++) {
     const w = words[n]!;
-    const next = words[n + 1];
-    if (INTENSIFIERS.has(w) && next !== undefined && !INTENSIFIERS.has(next)) {
-      boosted.set(next, w);
-      continue; // dropped: the boost it carries is recorded above
+    const scale = MODIFIERS.get(w);
+    // Skip over filler so "way less chewy" and "a bit more chewy" still find
+    // the word they modify -- including the prepositions people put between a
+    // modifier and its target: "lighter on the chew", "a hint of crunch".
+    const SKIPPABLE = [...NEGATION_FILLER, "on", "of", "in", "with"];
+    let at = n + 1;
+    while (at < words.length && SKIPPABLE.includes(words[at]!)) at++;
+    const target = words[at];
+    if (scale !== undefined && target !== undefined && !MODIFIERS.has(target)) {
+      modified.set(target, { word: w, scale });
+      continue; // dropped: the change it carries is recorded above
     }
     kept.push(w);
   }
-  return { text: ` ${kept.join(" ")} `, boosted };
+  return { text: ` ${kept.join(" ")} `, modified };
 }
 
 export function interpret(input: string): Interpretation {
@@ -657,7 +697,7 @@ export function interpret(input: string): Interpretation {
   const understood: string[] = [];
   const refused: string[] = [];
 
-  const lifted = liftIntensifiers(` ${text} `);
+  const lifted = liftModifiers(` ${text} `);
 
   // Matched phrases are consumed, so a word is never counted twice and
   // whatever is left over is genuinely unrecognised.
@@ -685,12 +725,21 @@ export function interpret(input: string): Interpretation {
   for (const [re, phrase, weights] of COMPILED.textures) {
     if (!take(re)) continue;
     const head = phrase.split(/[\s-]/)[0]!;
-    const intensifier = lifted.boosted.get(head);
-    const scale = intensifier ? BOOST : 1;
+    const mod = lifted.modified.get(head);
+    const scale = mod?.scale ?? 1;
+
+    // A negative scale is a request to rank away from the texture, which is
+    // what the refusal path already does -- so "less chewy" takes the same
+    // road as "not too chewy" rather than crediting a weaker chewy.
+    if (scale < 0) {
+      refused.push(phrase);
+      understood.push(`${mod!.word} ${phrase}`);
+      continue;
+    }
     for (const [k, v] of Object.entries(weights)) {
       textures[k as Texture] = Math.max(textures[k as Texture], Math.min(1, v * scale));
     }
-    understood.push(intensifier ? `${intensifier} ${phrase}` : phrase);
+    understood.push(mod ? `${mod.word} ${phrase}` : phrase);
   }
 
   for (const [re, phrase, key] of COMPILED.prefs) {

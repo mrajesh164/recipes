@@ -501,3 +501,43 @@ test("what it read differently is reported back", () => {
   assert.deepEqual(i.excludedIngredients, ["coconut"]);
   assert.deepEqual(i.readIngredientsAs, [{ typed: "cocnut", meant: "coconut" }]);
 });
+
+// --- modifiers compose with any texture word ------------------------------
+
+test("a comparative reduction ranks away, it does not weaken", () => {
+  // The bug as reported: "less chewy" was read as chewy at full strength,
+  // because "less" sat in the stop list and was thrown away -- the same
+  // failure as "not cakey" and "no peanuts" in a third place.
+  assert.deepEqual(interpret("less chewy").excluded, ["chewy"]);
+  assert.equal(interpret("less chewy").textures.chewy, 0);
+  assert.deepEqual(interpret("way less cakey").excluded, ["cakey"]);
+  assert.deepEqual(interpret("lighter on the chew").excluded, ["chewy"]);
+});
+
+test("a dampener weakens without cancelling", () => {
+  // "a bit chewy" is a request for some chew, which is a different thing from
+  // asking for less of it than usual.
+  assert.ok(interpret("a bit chewy").textures.chewy > 0);
+  assert.ok(interpret("a bit chewy").textures.chewy < interpret("chewy").textures.chewy);
+  assert.ok(interpret("barely crispy").textures.crispy < interpret("slightly crispy").textures.crispy);
+});
+
+test("the noun forms count as dampeners", () => {
+  // "a touch crisp", "a hint of chew" -- the article and the preposition are
+  // skipped so the modifier finds what it modifies.
+  assert.ok(interpret("a touch crisp").textures.crispy > 0);
+  assert.ok(interpret("a touch crisp").textures.crispy < 1);
+  assert.ok(interpret("a hint of chew").textures.chewy > 0);
+  assert.ok(interpret("a hint of chew").textures.chewy < 1);
+});
+
+test("an intensifier still strengthens", () => {
+  assert.equal(interpret("super chewy").textures.chewy, 1);
+  assert.ok(interpret("extra crispy").textures.crispy >= interpret("crispy").textures.crispy);
+});
+
+test("the modifier is shown back with what it modified", () => {
+  // So a wrong read is visible: "less chewy", not "chewy".
+  assert.deepEqual(interpret("less chewy").understood, ["less chewy"]);
+  assert.deepEqual(interpret("barely crispy").understood, ["barely crispy"]);
+});
