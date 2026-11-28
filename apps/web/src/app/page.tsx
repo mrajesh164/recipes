@@ -50,7 +50,7 @@ export default async function Page() {
               the letterforms. Same paper and border-2 as the cards below, so
               it reads as part of the system rather than a patch. */}
           <p className="mt-6 inline-block max-w-3xl rounded-2xl border-2 border-line bg-paper px-6 py-5 text-lg text-ink-soft">
-            Find a recipe you&rsquo;ll love. Say how you want it to turn out,
+            Find a recipe you&rsquo;ll love! Say how you want it to turn out,
             see why it fits, and save the ones worth baking again.
           </p>
         </div>
