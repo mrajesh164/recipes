@@ -61,6 +61,9 @@ for (const r of recipes) {
         bake_minutes: r.bakeMinutes,
         chills_dough: r.chillsDough,
         image_url: r.imageUrl,
+        // Null rather than [] where the page published none: an empty array
+        // would say we looked and found nothing, which is a different claim.
+        reviews: r.reviews.length ? r.reviews : null,
         hand_entered: false,
         raw_jsonld: r.rawJsonLd,
       },
