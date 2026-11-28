@@ -129,6 +129,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           columns 325 recipes was a very long scroll, and each tile was far
           bigger than the decision it supports. Two columns even on a phone,
           because a cookie photograph reads fine small. */}
+
       <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {shown.map((r, i) => (
           <Fragment key={r.id}>
