@@ -541,3 +541,31 @@ test("the modifier is shown back with what it modified", () => {
   assert.deepEqual(interpret("less chewy").understood, ["less chewy"]);
   assert.deepEqual(interpret("barely crispy").understood, ["barely crispy"]);
 });
+
+test("a taste word is not answered with an ingredient", () => {
+  // "very bitter" came back "preferring the ones with bittersweet", then as
+  // butter -- bitter is a proper prefix of one and one edit from the other.
+  // The app has three textures and no flavour axis, so the honest answer is
+  // that it does not know, not a confident substitution.
+  for (const w of ["bitter", "sweet", "salty", "savory", "rich", "mild", "tasty"]) {
+    assert.equal(resolveIngredient(w), null, w);
+  }
+  assert.deepEqual(interpret("very bitter").wantedIngredients, []);
+  assert.ok(interpret("very bitter").unrecognised.includes("bitter"));
+});
+
+test("the ingredients that contain a taste word still resolve", () => {
+  // "sweet" is in the vocabulary from sweetened condensed milk and semi-sweet
+  // chocolate, which is why the taste check runs before the exact lookup and
+  // not after -- but the compounds themselves are real ingredients.
+  assert.equal(resolveIngredient("sweetened"), "sweetened");
+  assert.equal(resolveIngredient("semi-sweet"), "semi-sweet");
+});
+
+test("an abbreviation is short; a word is not", () => {
+  // Four or five letters is a truncation somebody typed to save time. Six is
+  // usually the word they meant.
+  assert.equal(resolveIngredient("choc"), "chocolate");
+  assert.equal(resolveIngredient("blueb"), "blueberries");
+  assert.equal(resolveIngredient("bitter"), null);
+});

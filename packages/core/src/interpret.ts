@@ -569,9 +569,35 @@ function negatedRegex(phrase: string): RegExp {
  */
 const INGREDIENT_LIST = Object.keys(INGREDIENT_WORDS);
 
+/**
+ * Taste is a thing this app does not model, and will not guess at.
+ *
+ * It scores three textures and has no flavour axis, so a word about taste has
+ * no honest home here. Left to the other passes they land somewhere absurd:
+ * "bitter" is a proper prefix of bittersweet and one edit from butter, so
+ * "very bitter" came back first as "preferring the ones with bittersweet" and
+ * then as butter -- a taste question answered with an ingredient, twice.
+ *
+ * Checked before the exact lookup, not after. "sweet" really is in the
+ * vocabulary, from sweetened condensed milk and semi-sweet chocolate, so an
+ * exact match finds it and "preferring the ones with sweet" is the result --
+ * true of the string and useless as an answer.
+ *
+ * A closed list is right here for the same reason it is right for modifiers:
+ * these are describing words rather than things, and English is not making
+ * more of them. "No recipe here uses bitter" is true, and more use than a
+ * confident wrong substitution.
+ */
+const TASTE_WORDS = new Set([
+  "bitter", "sweet", "salty", "savory", "savoury", "sour", "tangy", "bland",
+  "rich", "mild", "spicy", "sharp", "plain", "strong", "subtle", "balanced",
+  "flavourful", "flavorful", "tasty", "delicious",
+]);
+
 export function resolveIngredient(typed: string): string | null {
   const w = typed.trim().toLowerCase();
   if (!w) return null;
+  if (TASTE_WORDS.has(w)) return null;
   if (recipesUsing(w) > 0) return w;
 
   // Inflections, in both directions.
@@ -585,10 +611,25 @@ export function resolveIngredient(typed: string): string | null {
   ].filter((v): v is string => v !== null);
   for (const v of variants) if (recipesUsing(v) > 0) return v;
 
-  // An abbreviation is a prefix of the real thing: "choc" for chocolate. Four
-  // letters is the floor -- below that a prefix matches too much to mean
-  // anything ("ch" is chocolate, cheese, cherries and cheddar).
-  if (w.length >= 4) {
+  /**
+   * An abbreviation is a prefix of the real thing: "choc" for chocolate.
+   *
+   * Four letters is the floor -- below that a prefix matches too much to mean
+   * anything ("ch" is chocolate, cheese, cherries and cheddar). Five is the
+   * ceiling, which is the part that took a second try: "bitter" is a proper
+   * prefix of "bittersweet" and resolved to it, so "very bitter" came back
+   * "preferring the ones with bittersweet" -- a taste answered with a
+   * chocolate.
+   *
+   * The difference is that an abbreviation is a truncation and "bitter" is a
+   * word. Nothing here can look that up, but length stands in for it well
+   * enough: people type four or five letters to save typing, and a six-letter
+   * word is usually the word they meant. "bitter" then falls through to the
+   * edit-distance pass, which is five edits from bittersweet and rightly finds
+   * nothing -- so the page says no recipe here uses bitter, which is true. The
+   * app has no notion of bitter and should say so rather than substitute one.
+   */
+  if (w.length >= 4 && w.length <= 5) {
     const prefix = INGREDIENT_LIST.filter((c) => c.startsWith(w));
     const heads = new Set(prefix.map((c) => c.split(" ")[0]!));
     // One head, and the typed word has to be *shorter* than it.
