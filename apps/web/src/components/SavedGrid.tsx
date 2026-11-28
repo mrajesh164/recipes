@@ -42,7 +42,10 @@ export function SavedGrid({
           primary thing and it belongs on the card, in the same place on every
           card. Two across at most, because a tile narrow enough to fit four
           cannot hold a button as well. */}
-      <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* items-start, because grid rows stretch by default: expanding one
+          card made its neighbour match the new height and sit there as a
+          tall empty box. Opening one row should change one row. */}
+      <ul className="mt-8 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         {items.map((item) => (
           <li
             key={item.id}
