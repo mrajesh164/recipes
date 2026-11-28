@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { refusesOptimiser } from "@/lib/image-hosts";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeDetail } from "./RecipeDetail";
 import { RecipeActions } from "./RecipeActions";
@@ -61,6 +62,7 @@ export function SavedGrid({
                 >
                   <Image
                     src={item.recipe.image_url}
+                    unoptimized={refusesOptimiser(item.recipe.image_url)}
                     alt=""
                     fill
                     sizes="96px"

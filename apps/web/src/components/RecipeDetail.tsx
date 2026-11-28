@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { refusesOptimiser } from "@/lib/image-hosts";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
@@ -81,6 +82,7 @@ export function RecipeDetail({
           <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl sm:h-24 sm:w-24">
             <Image
               src={recipe.image_url}
+              unoptimized={refusesOptimiser(recipe.image_url)}
               alt=""
               fill
               sizes="96px"

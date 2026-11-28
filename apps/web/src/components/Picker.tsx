@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { refusesOptimiser } from "@/lib/image-hosts";
 import { Recommendation } from "./Recommendation";
 import { asRankable } from "@/lib/rankable";
 import {
@@ -266,7 +267,14 @@ function CloseMatches({
               >
                 {r.image_url && (
                   <span className="relative block h-14 w-14 flex-none overflow-hidden rounded-xl">
-                    <Image src={r.image_url} alt="" fill sizes="56px" className="object-cover" />
+                    <Image
+                      src={r.image_url}
+                      unoptimized={refusesOptimiser(r.image_url)}
+                      alt=""
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
                   </span>
                 )}
                 <span className="min-w-0 flex-1">

@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
+import { refusesOptimiser } from "@/lib/image-hosts";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeDetail } from "./RecipeDetail";
 import { BackToTop } from "./BackToTop";
@@ -288,6 +289,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                 <div className="relative aspect-[4/3]">
                   <Image
                     src={r.image_url}
+                    unoptimized={refusesOptimiser(r.image_url)}
                     alt=""
                     fill
                     // Has to track the column count above, or the browser

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { refusesOptimiser } from "@/lib/image-hosts";
 import Link from "next/link";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { BookmarkIcon } from "./icons";
@@ -63,6 +64,7 @@ export function FeatureCards({ recipes }: { recipes: ScoredRecipe[] }) {
                   <div key={r.id} className="relative aspect-square">
                     <Image
                       src={r.image_url!}
+                      unoptimized={refusesOptimiser(r.image_url!)}
                       alt=""
                       fill
                       sizes="(max-width: 640px) 33vw, 120px"

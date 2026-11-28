@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { refusesOptimiser } from "@/lib/image-hosts";
 import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import type { RatioDistribution } from "@/lib/ratios";
@@ -58,6 +59,7 @@ export function Recommendation({
           >
             <Image
               src={recipe.image_url}
+              unoptimized={refusesOptimiser(recipe.image_url)}
               alt=""
               fill
               // Must match what it actually renders at, or Next picks a file
