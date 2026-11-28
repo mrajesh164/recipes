@@ -39,10 +39,44 @@ async function List() {
   // the cached corpus, which every other page already has in memory -- and it
   // carries the ingredients and scores the comparison needs, which the old
   // embedded select did not.
-  const { data, error } = await db
-    .from("saved_recipes")
-    .select("id, saved_for, created_at, recipe_id")
-    .order("created_at", { ascending: false });
+  /**
+   * Read in pages, like the corpus read does.
+   *
+   * PostgREST caps a response at 1,000 rows whatever is asked for, and does it
+   * silently: the request succeeds, error is null, and the rows past the cap
+   * are simply absent. That cap bit the app's read of the corpus and the seed's
+   * cleanup on the same afternoon, both as wrong answers rather than errors.
+   *
+   * Nobody has a thousand saves, so this one has never been wrong. That is
+   * exactly what the other two had going for them until the corpus grew -- the
+   * failure is invisible until the table outgrows the cap, and then it is a
+   * reader quietly missing their oldest saves.
+   */
+  const PAGE = 1000;
+  type Row = { id: string; saved_for: string | null; created_at: string; recipe_id: string };
+  const data: Row[] = [];
+  let error: { message: string } | null = null;
+
+  for (let from = 0; ; from += PAGE) {
+    const res = await db
+      .from("saved_recipes")
+      .select("id, saved_for, created_at, recipe_id")
+      .order("created_at", { ascending: false })
+      // Ordered by id as well, because created_at is not unique -- two saves in
+      // the same second could straddle a page boundary, and an unstable order
+      // there returns one row twice and drops another.
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (res.error) {
+      error = res.error;
+      break;
+    }
+    const page = (res.data ?? []) as Row[];
+    data.push(...page);
+    // A short page is the last page: asking past the cap does not raise, so the
+    // length of what came back is the only signal there is.
+    if (page.length < PAGE) break;
+  }
 
   if (error) {
     return (
@@ -52,7 +86,7 @@ async function List() {
     );
   }
 
-  if (!data || data.length === 0) {
+  if (data.length === 0) {
     return (
       <div className="mt-8 rounded-2xl border-2 border-dashed border-line bg-paper px-6 py-10 text-center">
         <p className="font-semibold">Nothing saved yet.</p>
