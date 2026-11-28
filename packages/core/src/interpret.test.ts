@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  interpret, dominantTexture, matchScore, candidatesFor, type Rankable, confidentRating, reviewEvidence,
+  interpret, dominantTexture, matchScore, candidatesFor, type Rankable, confidentRating, reviewEvidence, resolveIngredient,
 } from "./interpret.ts";
 
 test("reads a plain texture word", () => {
@@ -448,4 +448,56 @@ test("filler around a request is not reported as unread", () => {
   const i = interpret("banana nothing else");
   assert.deepEqual(i.wantedIngredients, ["banana"]);
   assert.deepEqual(i.unrecognised, []);
+});
+
+// --- reading a word the corpus nearly uses --------------------------------
+
+test("singular finds plural and plural finds singular", () => {
+  // The vocabulary holds whatever the recipes happened to write, and a reader
+  // has no way to know which form was chosen.
+  assert.equal(resolveIngredient("raisin"), "raisins");
+  assert.equal(resolveIngredient("blueberry"), "blueberries");
+  assert.equal(resolveIngredient("walnuts"), "walnuts");
+});
+
+test("a typo reads as the word it nearly is", () => {
+  assert.equal(resolveIngredient("cocnut"), "coconut");
+  assert.equal(resolveIngredient("cinamon"), "cinnamon");
+  assert.equal(resolveIngredient("chocolat"), "chocolate");
+});
+
+test("an abbreviation reads as what it abbreviates", () => {
+  assert.equal(resolveIngredient("choc"), "chocolate");
+  assert.equal(resolveIngredient("pump"), "pumpkin");
+  // Too short to mean one thing: ch is chocolate, cheese, cherries, cheddar.
+  assert.equal(resolveIngredient("ch"), null);
+  // Ambiguous even at four: butter, buttermilk and butterscotch disagree.
+  assert.equal(resolveIngredient("butt"), null);
+});
+
+test("scaffolding is not abbreviated into an ingredient", () => {
+  // "baking" is the head of baking powder and baking soda, which are different
+  // things. Reading it as either would rule out 772 recipes on a word nobody
+  // means alone.
+  assert.equal(resolveIngredient("baking"), null);
+  assert.equal(resolveIngredient("measuring"), null);
+});
+
+test("a flavour adjective is not an ingredient request", () => {
+  // One edit from butter and a different thing: a reader asking for buttery
+  // cookies is describing taste, not asking for what 1,194 recipes contain.
+  assert.equal(resolveIngredient("buttery"), null);
+  assert.equal(resolveIngredient("sugary"), null);
+  assert.equal(resolveIngredient("nutty"), null);
+});
+
+test("a word the corpus has nothing like stays unread", () => {
+  assert.equal(resolveIngredient("quinoa"), null);
+  assert.equal(resolveIngredient("asdfgh"), null);
+});
+
+test("what it read differently is reported back", () => {
+  const i = interpret("no cocnut");
+  assert.deepEqual(i.excludedIngredients, ["coconut"]);
+  assert.deepEqual(i.readIngredientsAs, [{ typed: "cocnut", meant: "coconut" }]);
 });

@@ -614,6 +614,22 @@ function Reading({
         </p>
       )}
 
+      {/* A substitution is shown, not made quietly. Reading "cocnut" as
+          coconut is helpful; doing it without saying so is the page deciding
+          what you meant. */}
+      {i.readIngredientsAs.length > 0 && (
+        <p className="mt-1 text-ink-faint">
+          {i.readIngredientsAs.map((r, n) => (
+            <span key={r.typed}>
+              {n > 0 && ", "}
+              Read <span className="italic">{r.typed}</span> as{" "}
+              <span className="font-semibold text-ink-soft">{r.meant}</span>
+            </span>
+          ))}
+          .
+        </p>
+      )}
+
       {i.excludedIngredients.length > 0 && !couldNotRuleOut && (
         <p className="mt-1 text-ink-soft">
           Without{" "}

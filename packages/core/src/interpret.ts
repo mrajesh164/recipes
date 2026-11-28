@@ -54,7 +54,7 @@ export interface Preferences {
 }
 
 import { DISH_EFFORT, OVERALL_EFFORT, type Effort } from "./windows.ts";
-import { recipesUsing } from "./ingredients.ts";
+import { INGREDIENT_WORDS, recipesUsing } from "./ingredients.ts";
 
 export interface Interpretation {
   /** Weight per texture, 0-1. All zero when no texture word was found. */
@@ -75,6 +75,8 @@ export interface Interpretation {
    */
   wantedIngredients: string[];
   excludedIngredients: string[];
+  /** Ingredient words read as something the corpus uses, shown back. */
+  readIngredientsAs: { typed: string; meant: string }[];
   /** Phrases recognised, in the user's own words, to show back to them. */
   understood: string[];
   /** Words that meant nothing here. Shown so the gap is visible. */
@@ -515,6 +517,97 @@ function negatedRegex(phrase: string): RegExp {
   );
 }
 
+/**
+ * The word a reader typed, resolved to one the corpus actually uses.
+ *
+ * An exact lookup was too brittle to be useful. The vocabulary holds whatever
+ * the recipes happened to write, so "raisins" is in it and "raisin" is not,
+ * "blueberries" is and "blueberry" is not -- and a reader has no way to know
+ * which form a recipe chose. Nor should a typo or an abbreviation get nothing:
+ * "cocnut" and "choc" are plainly about coconut and chocolate.
+ *
+ * Three passes, cheapest first:
+ *
+ *   1. the word as typed.
+ *   2. the obvious inflections of it, both directions, so singular finds plural
+ *      and plural finds singular.
+ *   3. the nearest word in the vocabulary, within an edit or two, and only for
+ *      words long enough that one edit is not most of the word -- "oat" and
+ *      "oil" are one edit apart and are not the same request.
+ *
+ * Returns what the corpus calls it, so the page can show the reader what it
+ * read rather than silently substituting.
+ */
+const INGREDIENT_LIST = Object.keys(INGREDIENT_WORDS);
+
+export function resolveIngredient(typed: string): string | null {
+  const w = typed.trim().toLowerCase();
+  if (!w) return null;
+  if (recipesUsing(w) > 0) return w;
+
+  // Inflections, in both directions.
+  const variants = [
+    `${w}s`,
+    `${w}es`,
+    w.endsWith("s") ? w.slice(0, -1) : null,
+    w.endsWith("es") ? w.slice(0, -2) : null,
+    w.endsWith("y") ? `${w.slice(0, -1)}ies` : null,
+    w.endsWith("ies") ? `${w.slice(0, -3)}y` : null,
+  ].filter((v): v is string => v !== null);
+  for (const v of variants) if (recipesUsing(v) > 0) return v;
+
+  // An abbreviation is a prefix of the real thing: "choc" for chocolate. Four
+  // letters is the floor -- below that a prefix matches too much to mean
+  // anything ("ch" is chocolate, cheese, cherries and cheddar).
+  if (w.length >= 4) {
+    const prefix = INGREDIENT_LIST.filter((c) => c.startsWith(w));
+    const heads = new Set(prefix.map((c) => c.split(" ")[0]!));
+    // One head, and the typed word has to be *shorter* than it.
+    //
+    // The first version only asked that the matches share a head, which let
+    // "baking" resolve to "baking powder" -- baking powder and baking soda
+    // share a head and are not the same thing, and "no baking" would then have
+    // ruled out 772 recipes. A word that *is* the head is not an abbreviation
+    // of it; it is scaffolding, and the generator already decided that.
+    if (heads.size === 1) {
+      const head = [...heads][0]!;
+      if (w.length < head.length) {
+        return prefix.sort((a, b) => (INGREDIENT_WORDS[b] ?? 0) - (INGREDIENT_WORDS[a] ?? 0))[0]!;
+      }
+    }
+  }
+
+  /**
+   * An -y adjective is a claim about taste, not a request for an ingredient.
+   *
+   * "buttery" is one edit from butter and means something else entirely: a
+   * reader asking for buttery cookies is describing a flavour, not asking for
+   * the ingredient that 1,194 of 1,385 recipes already contain. Reading it as
+   * butter would have the page answer "preferring the ones with butter" about
+   * almost the whole corpus, which is noise wearing the clothes of an
+   * explanation. Same for sugary, nutty, chocolatey.
+   *
+   * Left unread instead, which is the honest answer: the app has no notion of
+   * buttery, and saying so is more use than pretending.
+   */
+  if (w.endsWith("y") && recipesUsing(w.slice(0, -1)) > 0) return null;
+
+  // A near miss, but only where the word is long enough to carry one.
+  if (w.length < 5) return null;
+  const allowed = w.length >= 8 ? 2 : 1;
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const cand of INGREDIENT_LIST) {
+    if (Math.abs(cand.length - w.length) > allowed) continue;
+    const d = editDistance(w, cand, allowed);
+    if (d <= allowed && d < bestD) {
+      bestD = d;
+      best = cand;
+    }
+  }
+  return best;
+}
+
 /** Built once: compiling ~200 regexes per keystroke would be wasteful. */
 const COMPILED = {
   textures: TEXTURE_WORDS.map(([p, w]) => [phraseRegex(p), p, w] as const),
@@ -640,13 +733,16 @@ export function interpret(input: string): Interpretation {
   // genuinely unread.
   const wantedIngredients: string[] = [];
   const excludedIngredients: string[] = [];
+  const readAs = new Map<string, string>();
   for (const w of [...new Set(leftover)]) {
-    if (recipesUsing(w) === 0) continue;
+    const resolved = resolveIngredient(w);
+    if (!resolved) continue;
+    if (resolved !== w) readAs.set(w, resolved);
     const bucket = spokenAgainst.has(w) ? excludedIngredients : wantedIngredients;
-    if (!bucket.includes(w)) bucket.push(w);
+    if (!bucket.includes(resolved)) bucket.push(resolved);
   }
 
-  const unrecognised = leftover.filter((w) => recipesUsing(w) === 0);
+  const unrecognised = leftover.filter((w) => resolveIngredient(w) === null);
 
   // A negation on its own is understood. It says which cookies you do not
   // want, which is less than a texture but is not nothing, and the empty
@@ -670,11 +766,17 @@ export function interpret(input: string): Interpretation {
     .map((typed) => ({ typed, meant: nearestWord(typed) }))
     .filter((s): s is { typed: string; meant: string } => s.meant !== null);
 
+  // An ingredient read as something else is shown back, not substituted in
+  // silence. "cocnut" becoming coconut is helpful; becoming coconut without
+  // saying so is the page deciding what you meant.
+  const readIngredientsAs = [...readAs.entries()].map(([typed, meant]) => ({ typed, meant }));
+
   return {
     textures, prefs, dishes, understood, excluded, suggestions,
     excludedDishes,
     wantedIngredients,
     excludedIngredients,
+    readIngredientsAs,
     // Textures only. A refused texture drops the ones that lean that way,
     // which is a matter of degree; a refused dish is gone entirely. The page
     // says each in its own words, so merging them here would have made it say
