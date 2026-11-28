@@ -66,8 +66,8 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   const PAGE = 120;
   const [visible, setVisible] = useState(PAGE);
   const [jumpTo, setJumpTo] = useState<string | null>(null);
-  /** Pixels from the top of the grid to hang the open panel at. */
-  const [anchor, setAnchor] = useState<number | null>(null);
+  /** Where to hang the open panel, measured from the grid's own box. */
+  const [anchor, setAnchor] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const q = filter.trim().toLowerCase();
   const matched = q
@@ -235,7 +235,22 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                 // changes with the breakpoint and the row height with the
                 // longest title in it.
                 const li = (e.currentTarget as HTMLElement).closest("li");
-                setAnchor(li ? li.offsetTop + li.offsetHeight + 12 : null);
+                const grid = li?.offsetParent as HTMLElement | null;
+                if (li && grid) {
+                  // Half the grid, but never narrower than a column's worth of
+                  // reading -- at two columns on a phone, half of the grid is
+                  // too thin for a plot with labelled ends.
+                  const width = Math.min(grid.clientWidth, Math.max(380, grid.clientWidth / 2));
+                  setAnchor({
+                    top: li.offsetTop + li.offsetHeight + 12,
+                    // Hangs from the tile that was clicked, pulled back inside
+                    // the grid when that would push it off the right edge.
+                    left: Math.max(0, Math.min(li.offsetLeft, grid.clientWidth - width)),
+                    width,
+                  });
+                } else {
+                  setAnchor(null);
+                }
                 setOpen(open === r.id ? null : r.id);
               }}
               aria-expanded={open === r.id}
@@ -298,8 +313,8 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
             dropdown should. */}
         {open && openRecipe && anchor !== null && (
           <li
-            className="absolute inset-x-0 z-30 drop-shadow-xl"
-            style={{ top: anchor }}
+            className="absolute z-30 drop-shadow-xl"
+            style={{ top: anchor.top, left: anchor.left, width: anchor.width }}
           >
             <RecipeDetail
               recipe={openRecipe}
