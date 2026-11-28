@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  interpret, dominantTexture, matchScore, candidatesFor, type Rankable,
+  interpret, dominantTexture, matchScore, candidatesFor, type Rankable, confidentRating,
 } from "./interpret.ts";
 
 test("reads a plain texture word", () => {
@@ -88,7 +88,8 @@ test("preferences alone are not empty", () => {
 const base: Rankable = {
   scores: { chewy: 0.8, cakey: 0.2, crispy: 0.3, confidence: "high" },
   method: "creamed", chills_dough: true, bake_minutes: 12,
-  rating: 4.5, ingredientCount: 12,
+  rating: 4.5,
+  ratingCount: 50, ingredientCount: 12,
 };
 
 test("texture dominates preferences", () => {
@@ -275,9 +276,41 @@ test("a dish on its own ranks by rating rather than by nothing", () => {
   const base: Rankable = {
     scores: { chewy: 0.5, cakey: 0.5, crispy: 0.5, confidence: "high" },
     method: "creamed", chills_dough: false, bake_minutes: 11,
-    rating: 5, ingredientCount: 10,
+    rating: 5,
+    ratingCount: 50, ingredientCount: 10,
   };
   const worse: Rankable = { ...base, rating: 3 };
   const i = interpret("oatmeal");
   assert.ok(matchScore(base, i) > matchScore(worse, i));
+});
+
+// --- a rating is worth what its count makes it worth ----------------------
+
+test("more people saying five stars beats fewer people saying five stars", () => {
+  // The bug as reported: "best snickerdoodle" put 5 stars from one person
+  // above 5 stars from two, and the two were in fact tied -- the order came
+  // from wherever the array happened to put them.
+  const one = confidentRating(5, 1)!;
+  const two = confidentRating(5, 2)!;
+  const many = confidentRating(5, 500)!;
+  assert.ok(two > one, "two ratings should outrank one");
+  assert.ok(many > two, "five hundred should outrank two");
+});
+
+test("a well-reviewed near-perfect score beats a lone perfect one", () => {
+  // 118 of the 276 perfect 5.0s in the corpus have two ratings or fewer, so
+  // taking them at face value hands every popularity query to whichever
+  // recipe nobody has reviewed yet.
+  assert.ok(confidentRating(4.9, 400)! > confidentRating(5, 1)!);
+  assert.ok(confidentRating(4.98, 90)! > confidentRating(5, 2)!);
+});
+
+test("shrinkage pulls toward the mean, never past the rating", () => {
+  // A rating with no count behind it becomes the prior, not a zero.
+  assert.equal(confidentRating(5, 0), confidentRating(1, 0));
+  // And a rating below the mean is pulled up, not down.
+  assert.ok(confidentRating(3, 1)! > 3);
+  assert.ok(confidentRating(3, 1)! < 5);
+  // Unrated stays unrated.
+  assert.equal(confidentRating(null, 100), null);
 });

@@ -18,6 +18,7 @@ export function asRankable(r: ScoredRecipe): Rankable {
     chills_dough: r.chills_dough,
     bake_minutes: r.bake_minutes,
     rating: r.rating,
+    ratingCount: r.rating_count,
     ingredientCount: r.ingredients.length,
   };
 }

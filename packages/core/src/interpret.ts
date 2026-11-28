@@ -663,6 +663,8 @@ export interface Rankable {
   chills_dough: boolean;
   bake_minutes: number | null;
   rating: number | null;
+  /** How many people that rating is from. One rating is not evidence. */
+  ratingCount: number | null;
   ingredientCount: number;
 }
 
@@ -677,6 +679,34 @@ export interface Rankable {
  * The dish is not scored here at all. It has already decided which recipes
  * reached this function; see candidatesFor.
  */
+/**
+ * A rating pulled toward the corpus mean by how little is behind it.
+ *
+ * The ranking used the rating as published, so five stars from one person
+ * scored exactly as well as five stars from five hundred -- and better than
+ * 4.9 from four hundred. "Best snickerdoodle" put a 5-from-1 above a 5-from-2
+ * and there was no sense to be made of it, because the two were in fact tied
+ * and the order came from somewhere else.
+ *
+ * Measured on the corpus this is not an edge case: 916 recipes carry a rating,
+ * the mean is 4.73, and of the 276 that are a perfect 5.0, 118 have two
+ * ratings or fewer. Taking those at face value hands the top of every
+ * popularity query to whichever recipe nobody has reviewed yet.
+ *
+ * Same shrinkage as the dish windows: weight = n / (n + K), the rest of the
+ * weight going to the prior. K is 15, the median number of ratings in the
+ * corpus, so a recipe with a typical amount of evidence is halfway trusted.
+ */
+const RATING_PRIOR = 4.73;
+const RATING_TRUST = 15;
+
+export function confidentRating(rating: number | null, count: number | null): number | null {
+  if (rating === null) return null;
+  const n = count ?? 0;
+  const w = n / (n + RATING_TRUST);
+  return w * rating + (1 - w) * RATING_PRIOR;
+}
+
 export function matchScore(r: Rankable, i: Interpretation): number {
   let score =
     i.textures.chewy * r.scores.chewy +
@@ -691,8 +721,9 @@ export function matchScore(r: Rankable, i: Interpretation): number {
     if (r.method === "melted") score += 0.12; // no mixer needed
     if (r.ingredientCount <= 9) score += 0.05;
   }
-  if (i.prefs.popular && r.rating !== null) {
-    score += (r.rating / 5) * 0.15;
+  if (i.prefs.popular) {
+    const rated = confidentRating(r.rating, r.ratingCount);
+    if (rated !== null) score += (rated / 5) * 0.15;
   }
 
   // "oatmeal" on its own is a real query, and it says nothing about texture or
@@ -701,8 +732,9 @@ export function matchScore(r: Rankable, i: Interpretation): number {
   // the only honest tiebreak left.
   const askedTexture = i.textures.chewy + i.textures.cakey + i.textures.crispy > 0;
   const askedEffort = i.prefs.quick || i.prefs.easy || i.prefs.popular;
-  if (!askedTexture && !askedEffort && r.rating !== null) {
-    score += (r.rating / 5) * 0.2;
+  if (!askedTexture && !askedEffort) {
+    const rated = confidentRating(r.rating, r.ratingCount);
+    if (rated !== null) score += (rated / 5) * 0.2;
   }
 
   // Same rule as rankFor: a recipe whose ingredients barely parsed should not
