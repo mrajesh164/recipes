@@ -120,7 +120,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         type="search"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        placeholder="Filter by name, site, or kind…"
+        placeholder="Filter by name or keyword…"
         aria-label="Filter recipes by name or source"
         className="w-full max-w-md rounded-2xl border-2 border-line bg-paper px-4 py-3
                    placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
