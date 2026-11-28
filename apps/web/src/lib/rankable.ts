@@ -20,6 +20,7 @@ export function asRankable(r: ScoredRecipe): Rankable {
     rating: r.rating,
     ratingCount: r.rating_count,
     reviews: r.reviews,
+    dishType: r.dish_type,
     ingredientCount: r.ingredients.length,
   };
 }

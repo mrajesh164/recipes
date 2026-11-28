@@ -53,6 +53,8 @@ export interface Preferences {
   popular: boolean;
 }
 
+import { DISH_EFFORT, OVERALL_EFFORT, type Effort } from "./windows.ts";
+
 export interface Interpretation {
   /** Weight per texture, 0-1. All zero when no texture word was found. */
   textures: Record<Texture, number>;
@@ -667,6 +669,8 @@ export interface Rankable {
   ratingCount: number | null;
   /** What people wrote. Null where the source published none. */
   reviews: string[] | null;
+  /** Which dish, so effort is judged against its own kind. */
+  dishType: string | null;
   ingredientCount: number;
 }
 
@@ -709,19 +713,49 @@ export function confidentRating(rating: number | null, count: number | null): nu
   return w * rating + (1 - w) * RATING_PRIOR;
 }
 
+/**
+ * What counts as quick and as simple, for this kind of thing.
+ *
+ * The bars were fixed at 11 minutes and 9 ingredients, set when the corpus was
+ * cookies. Measured per dish they are nothing like each other: a chocolate
+ * chip cookie bakes in 12 minutes and a banana bread in 50. So a fixed bar did
+ * not mean "quick", it meant "is a cookie" -- asking for a quick muffin could
+ * never earn the bake credit however fast the muffin was.
+ *
+ * Shrunk toward the overall medians by the same rule as the ratio windows,
+ * because the same thinness problem applies: pumpkin bread has two recipes and
+ * its median is two recipes' worth of evidence.
+ */
+function effortFor(dishType: string | null | undefined): Effort {
+  const own = dishType ? DISH_EFFORT[dishType] : undefined;
+  if (!own) return OVERALL_EFFORT;
+  const w = own.n / (own.n + TRUST_EFFORT);
+  return {
+    n: own.n,
+    ingredients: w * own.ingredients + (1 - w) * OVERALL_EFFORT.ingredients,
+    bakeMinutes: w * own.bakeMinutes + (1 - w) * OVERALL_EFFORT.bakeMinutes,
+  };
+}
+
+const TRUST_EFFORT = 30;
+
 export function matchScore(r: Rankable, i: Interpretation): number {
   let score =
     i.textures.chewy * r.scores.chewy +
     i.textures.cakey * r.scores.cakey +
     i.textures.crispy * r.scores.crispy;
 
+  // Judged against its own kind. See effortFor: a fixed bar here meant "is a
+  // cookie" rather than "is quick".
+  const typical = effortFor(r.dishType);
+
   if (i.prefs.quick) {
     if (!r.chills_dough) score += 0.12;
-    if (r.bake_minutes !== null && r.bake_minutes <= 11) score += 0.05;
+    if (r.bake_minutes !== null && r.bake_minutes <= typical.bakeMinutes) score += 0.05;
   }
   if (i.prefs.easy) {
     if (r.method === "melted") score += 0.12; // no mixer needed
-    if (r.ingredientCount <= 9) score += 0.05;
+    if (r.ingredientCount <= typical.ingredients) score += 0.05;
   }
   if (i.prefs.popular) {
     const rated = confidentRating(r.rating, r.ratingCount);

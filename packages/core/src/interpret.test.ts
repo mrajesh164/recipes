@@ -90,7 +90,8 @@ const base: Rankable = {
   method: "creamed", chills_dough: true, bake_minutes: 12,
   rating: 4.5,
   ratingCount: 50,
-  reviews: null, ingredientCount: 12,
+  reviews: null,
+  dishType: null, ingredientCount: 12,
 };
 
 test("texture dominates preferences", () => {
@@ -279,7 +280,8 @@ test("a dish on its own ranks by rating rather than by nothing", () => {
     method: "creamed", chills_dough: false, bake_minutes: 11,
     rating: 5,
     ratingCount: 50,
-    reviews: null, ingredientCount: 10,
+    reviews: null,
+    dishType: null, ingredientCount: 10,
   };
   const worse: Rankable = { ...base, rating: 3 };
   const i = interpret("oatmeal");

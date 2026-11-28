@@ -140,3 +140,75 @@ export const DISH_WINDOWS: Readonly<Record<string, Window>> = {
     ]
   }
 };
+
+/**
+ * What is typical for a kind, so the effort preferences can compare a recipe
+ * against its own sort rather than against a cookie.
+ */
+export interface Effort {
+  n: number;
+  /** Median ingredient count. */
+  ingredients: number;
+  /** Median bake, in minutes. */
+  bakeMinutes: number;
+}
+
+export const OVERALL_EFFORT: Effort = {"n":1329,"ingredients":12,"bakeMinutes":18};
+
+export const DISH_EFFORT: Readonly<Record<string, Effort>> = {
+  "muffin": {
+    "n": 365,
+    "ingredients": 13,
+    "bakeMinutes": 20
+  },
+  "brownie": {
+    "n": 251,
+    "ingredients": 11,
+    "bakeMinutes": 26
+  },
+  "chocolate chip": {
+    "n": 183,
+    "ingredients": 11,
+    "bakeMinutes": 12
+  },
+  "scone": {
+    "n": 153,
+    "ingredients": 12,
+    "bakeMinutes": 20
+  },
+  "banana bread": {
+    "n": 110,
+    "ingredients": 13,
+    "bakeMinutes": 50
+  },
+  "blondie": {
+    "n": 85,
+    "ingredients": 10,
+    "bakeMinutes": 27
+  },
+  "oatmeal": {
+    "n": 77,
+    "ingredients": 12,
+    "bakeMinutes": 12
+  },
+  "peanut butter": {
+    "n": 55,
+    "ingredients": 11,
+    "bakeMinutes": 10
+  },
+  "sugar": {
+    "n": 38,
+    "ingredients": 10,
+    "bakeMinutes": 12
+  },
+  "snickerdoodle": {
+    "n": 10,
+    "ingredients": 12,
+    "bakeMinutes": 12
+  },
+  "pumpkin bread": {
+    "n": 2,
+    "ingredients": 14,
+    "bakeMinutes": 36
+  }
+};

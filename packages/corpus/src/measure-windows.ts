@@ -19,11 +19,19 @@ const ROOT = join(HERE, "..", "..", "..");
 
 const recipes = JSON.parse(
   readFileSync(join(ROOT, "packages/corpus/out/recipes.json"), "utf8"),
-) as { dishType: string; ingredients: never[]; method: never; chillsDough: boolean }[];
+) as {
+  dishType: string;
+  ingredients: never[];
+  method: never;
+  chillsDough: boolean;
+  bakeMinutes: number | null;
+}[];
 
 const rows = recipes
   .map((r) => ({
     dish: r.dishType,
+    ingredientCount: r.ingredients.length,
+    bakeMinutes: r.bakeMinutes,
     scores: scoreTexture({
       ingredients: r.ingredients,
       method: r.method,
@@ -57,6 +65,42 @@ const overall = {
   sugar: window(rows.map((r) => r.scores.ratios!.sugarPerFlour)).map(round) as [number, number],
 };
 
+/**
+ * What is typical for this kind of thing, so "quick" can mean quick for a
+ * muffin rather than quick for a cookie.
+ *
+ * The ranking used fixed bars -- 11 minutes and 9 ingredients -- set when the
+ * corpus was cookies. Nothing that is not a cookie bakes in 11 minutes, so
+ * asking for a quick muffin could never earn the bake credit at all, however
+ * fast the muffin was.
+ */
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  if (sorted.length === 0) return 0;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+const effortOverall = {
+  n: rows.length,
+  ingredients: Math.round(median(rows.map((r) => r.ingredientCount))),
+  bakeMinutes: Math.round(
+    median(rows.filter((r) => r.bakeMinutes !== null).map((r) => r.bakeMinutes!)),
+  ),
+};
+
+const effortByDish: Record<string, { n: number; ingredients: number; bakeMinutes: number }> = {};
+for (const [dish, list] of [...byDish].sort((a, b) => b[1].length - a[1].length)) {
+  const baked = list.filter((r) => r.bakeMinutes !== null).map((r) => r.bakeMinutes!);
+  effortByDish[dish] = {
+    n: list.length,
+    ingredients: Math.round(median(list.map((r) => r.ingredientCount))),
+    // Falls back to the overall median where a dish has no bake times at all,
+    // rather than claiming a 0-minute bake.
+    bakeMinutes: baked.length ? Math.round(median(baked)) : effortOverall.bakeMinutes,
+  };
+}
+
 const dishes: Record<string, { n: number; fat: [number, number]; sugar: [number, number] }> = {};
 for (const [dish, list] of [...byDish].sort((a, b) => b[1].length - a[1].length)) {
   dishes[dish] = {
@@ -86,6 +130,22 @@ export interface Window {
 export const OVERALL_WINDOW: Window = ${JSON.stringify(overall)};
 
 export const DISH_WINDOWS: Readonly<Record<string, Window>> = ${JSON.stringify(dishes, null, 2)};
+
+/**
+ * What is typical for a kind, so the effort preferences can compare a recipe
+ * against its own sort rather than against a cookie.
+ */
+export interface Effort {
+  n: number;
+  /** Median ingredient count. */
+  ingredients: number;
+  /** Median bake, in minutes. */
+  bakeMinutes: number;
+}
+
+export const OVERALL_EFFORT: Effort = ${JSON.stringify(effortOverall)};
+
+export const DISH_EFFORT: Readonly<Record<string, Effort>> = ${JSON.stringify(effortByDish, null, 2)};
 `;
 
 const path = join(ROOT, "packages/core/src/windows.ts");
