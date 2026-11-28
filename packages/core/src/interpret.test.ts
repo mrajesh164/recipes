@@ -404,3 +404,48 @@ test("asking for a dish still asks for it", () => {
   assert.deepEqual(interpret("peanut butter").excludedDishes, []);
   assert.deepEqual(interpret("chewy brownie").dishes, ["brownie"]);
 });
+
+// --- ingredients, read from the corpus rather than a list ----------------
+
+test("an ingredient the corpus uses is understood", () => {
+  // None of these is a texture, a dish or a preference. They work because the
+  // recipes say them, not because anybody listed them here.
+  assert.deepEqual(interpret("no coconut").excludedIngredients, ["coconut"]);
+  assert.deepEqual(interpret("no raisins").excludedIngredients, ["raisins"]);
+  assert.deepEqual(interpret("with pecans").wantedIngredients, ["pecans"]);
+});
+
+test("an ingredient the corpus never uses is not understood", () => {
+  // And that is a different answer from not knowing the word: nothing here
+  // uses quinoa, which is worth saying plainly.
+  assert.deepEqual(interpret("no quinoa").excludedIngredients, []);
+  assert.deepEqual(interpret("no quinoa").wantedIngredients, []);
+  assert.ok(interpret("no quinoa").unrecognised.includes("quinoa"));
+});
+
+test("a negated ingredient is ruled out, not asked for", () => {
+  const i = interpret("chewy no nuts");
+  assert.deepEqual(i.excludedIngredients, ["nuts"]);
+  assert.deepEqual(i.wantedIngredients, []);
+  // And the texture still reads.
+  assert.equal(i.textures.chewy, 1);
+});
+
+test("naming an ingredient is not an empty query", () => {
+  assert.equal(interpret("no coconut").empty, false);
+  assert.equal(interpret("tahini").empty, false);
+});
+
+test("scaffolding in an ingredient line is not an ingredient", () => {
+  // "baking" is in 1,157 recipes and is never what somebody means alone --
+  // ruling it out would empty the corpus.
+  assert.equal(interpret("no baking").excludedIngredients.length, 0);
+  assert.equal(interpret("no measuring").excludedIngredients.length, 0);
+});
+
+test("filler around a request is not reported as unread", () => {
+  // "banana, nothing else" should not answer with "I don't know what nothing is".
+  const i = interpret("banana nothing else");
+  assert.deepEqual(i.wantedIngredients, ["banana"]);
+  assert.deepEqual(i.unrecognised, []);
+});

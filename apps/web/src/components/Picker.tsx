@@ -6,7 +6,7 @@ import { refusesOptimiser } from "@/lib/image-hosts";
 import { Recommendation } from "./Recommendation";
 import { asRankable } from "@/lib/rankable";
 import {
-  interpret, matchScore, dominantTexture, candidatesFor, pantryFit, type PantryFit,
+  interpret, matchScore, dominantTexture, candidatesFor, pantryFit, mentions, type PantryFit,
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
@@ -100,7 +100,46 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   // comparison below is made against. Asking for oatmeal and then being shown
   // where the pick sits among 325 cookies of five different kinds would be
   // answering a wider question than the one asked.
-  const pool = candidatesFor(recipes, interpretation);
+  const named = candidatesFor(recipes, interpretation);
+
+  /**
+   * An ingredient ruled out is removed; one asked for is preferred.
+   *
+   * Asymmetric on purpose. "no nuts" is the one request on this page where
+   * being approximately right is worse than being unhelpful -- a reader
+   * avoiding an ingredient wants it gone, not ranked lower. Asking *for*
+   * something is the ordinary kind of preference, so it nudges like the rest.
+   *
+   * Still guarded against emptying the pool, and the page says when the guard
+   * fired rather than quietly serving what was ruled out.
+   */
+  const ruledOut = interpretation.excludedIngredients;
+  const withoutRuledOut =
+    ruledOut.length > 0
+      ? named.filter(
+          (r) =>
+            !ruledOut.some((w) =>
+              mentions(
+                r.ingredients.map((i) => ({ raw: i.raw_text, canonicalName: i.canonical_name })),
+                w,
+              ),
+            ),
+        )
+      : named;
+  const couldNotRuleOut = ruledOut.length > 0 && withoutRuledOut.length === 0;
+  const pool = couldNotRuleOut ? named : withoutRuledOut;
+
+  const wants = interpretation.wantedIngredients;
+  const ingredientNudge = (r: ScoredRecipe) => {
+    if (wants.length === 0) return 0;
+    const has = wants.filter((w) =>
+      mentions(
+        r.ingredients.map((i) => ({ raw: i.raw_text, canonicalName: i.canonical_name })),
+        w,
+      ),
+    ).length;
+    return (has / wants.length) * 0.2;
+  };
 
   // Once per render, not once per row. Every WhyThisOne below plots against
   // the same pool, so deriving the arrays inside each of them repeated the
@@ -145,8 +184,8 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   const ranked = asked
     ? [...pool].sort(
         (a, b) =>
-          matchScore(asRankable(b), interpretation) + pantryNudge(b) -
-          (matchScore(asRankable(a), interpretation) + pantryNudge(a)),
+          matchScore(asRankable(b), interpretation) + pantryNudge(b) + ingredientNudge(b) -
+          (matchScore(asRankable(a), interpretation) + pantryNudge(a) + ingredientNudge(a)),
       )
     : pantryOn
       ? [...pool]
@@ -232,6 +271,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         interpretation={interpretation}
         count={recipes.length}
         poolCount={pool.length}
+        couldNotRuleOut={couldNotRuleOut}
         inferences={inferences}
         guesses={guesses}
         reading={reading}
@@ -409,6 +449,7 @@ function Reading({
   interpretation: i,
   count,
   poolCount,
+  couldNotRuleOut,
   inferences,
   guesses,
   reading,
@@ -420,6 +461,12 @@ function Reading({
   count: number;
   /** How many recipes survived the dish filter. */
   poolCount: number;
+  /**
+   * Set when every recipe uses something the reader ruled out, so the filter
+   * could not be honoured. Said out loud rather than passed over: a reader who
+   * asked for no nuts and is shown nuts needs to know the page failed to do it.
+   */
+  couldNotRuleOut: boolean;
   /** Words read as something else, shown so a wrong read is correctable. */
   inferences: Inference[];
   /** Words too uncertain to read, offered as a question instead. */
@@ -567,9 +614,54 @@ function Reading({
         </p>
       )}
 
+      {i.excludedIngredients.length > 0 && !couldNotRuleOut && (
+        <p className="mt-1 text-ink-soft">
+          Without{" "}
+          {i.excludedIngredients.map((w, n) => (
+            <span key={w}>
+              {n > 0 && (n === i.excludedIngredients.length - 1 ? " or " : ", ")}
+              <span className="font-semibold text-ink">{w}</span>
+            </span>
+          ))}
+          .
+        </p>
+      )}
+
+      {/* Said out loud rather than silently ignored. A reader who asked for no
+          nuts and is shown nuts needs to know the filter could not be honoured,
+          because the alternative is trusting a page that quietly failed. */}
+      {couldNotRuleOut && (
+        <p className="mt-1 text-pink-deep">
+          Every recipe here uses{" "}
+          <span className="font-semibold">{i.excludedIngredients.join(" or ")}</span>, so
+          these are not filtered.
+        </p>
+      )}
+
+      {i.wantedIngredients.length > 0 && (
+        <p className="mt-1 text-ink-soft">
+          Preferring the ones with{" "}
+          {i.wantedIngredients.map((w, n) => (
+            <span key={w}>
+              {n > 0 && (n === i.wantedIngredients.length - 1 ? " and " : ", ")}
+              <span className="font-semibold text-ink">{w}</span>
+            </span>
+          ))}
+          .
+        </p>
+      )}
+
+      {/* "No recipe here uses X" rather than "I don't know what X means".
+ 
+          The second was the old wording and it claimed too much: an
+          unrecognised word now means the corpus's own ingredient lines do not
+          contain it, which is a fact about this collection of recipes and not
+          about the word. A reader who asks for quinoa has not been
+          misunderstood; they have been told, correctly, that there is nothing
+          here with quinoa in it. */}
       {i.unrecognised.length > 0 && (
         <p className="mt-1 text-ink-faint">
-          I don&apos;t know what{" "}
+          No recipe here uses{" "}
           {i.unrecognised.map((w, n) => (
             <span key={w}>
               {/* Oxford-less list: "a", "a and b", "a, b and c". */}
@@ -577,8 +669,7 @@ function Reading({
               <span className="italic">{w}</span>
             </span>
           ))}{" "}
-          {i.unrecognised.length === 1 ? "means" : "mean"} here, so{" "}
-          {i.unrecognised.length === 1 ? "it was" : "they were"} ignored.
+          {i.unrecognised.length === 1 ? ", so it was" : ", so they were"} ignored.
         </p>
       )}
     </div>

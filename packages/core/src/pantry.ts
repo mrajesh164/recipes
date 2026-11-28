@@ -143,3 +143,26 @@ function shortLabel(raw: string): string {
 export function shortfall(fit: PantryFit): number {
   return fit.missing.length;
 }
+
+/**
+ * Does this recipe mention this ingredient at all?
+ *
+ * The same word matching the pantry uses, exposed because ruling an
+ * ingredient out is the same question asked the other way round: "no coconut"
+ * needs to know which recipes mention coconut, and that is exactly what
+ * covering a pantry item does.
+ *
+ * Raw text rather than the canonical name, deliberately. The pantry asks
+ * whether you *have* the thing the recipe calls for, which the parser's name
+ * settles; this asks whether the thing appears anywhere, and a reader avoiding
+ * coconut cares about the coconut in "1/2 cup toasted coconut flakes" whether
+ * or not the parser named that line.
+ */
+export function mentions(
+  ingredients: readonly MatchableIngredient[],
+  word: string,
+): boolean {
+  return ingredients.some(
+    (i) => hasWord(i.raw, word) || (i.canonicalName ? hasWord(i.canonicalName, word) : false),
+  );
+}

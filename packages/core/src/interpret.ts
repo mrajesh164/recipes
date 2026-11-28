@@ -54,6 +54,7 @@ export interface Preferences {
 }
 
 import { DISH_EFFORT, OVERALL_EFFORT, type Effort } from "./windows.ts";
+import { recipesUsing } from "./ingredients.ts";
 
 export interface Interpretation {
   /** Weight per texture, 0-1. All zero when no texture word was found. */
@@ -63,6 +64,17 @@ export interface Interpretation {
   dishes: DishName[];
   /** Dishes ruled out. "no peanuts" belongs here, not in `dishes`. */
   excludedDishes: DishName[];
+  /**
+   * Ingredients named, and ingredients ruled out.
+   *
+   * Not from a list written by hand. A word the interpreter does not otherwise
+   * recognise is looked up in what the corpus's ingredient lines actually say,
+   * so "no coconut" works because 99 recipes mention coconut -- and "no
+   * quinoa" does not, because none do, which is a different answer from not
+   * understanding the word.
+   */
+  wantedIngredients: string[];
+  excludedIngredients: string[];
   /** Phrases recognised, in the user's own words, to show back to them. */
   understood: string[];
   /** Words that meant nothing here. Shown so the gap is visible. */
@@ -307,6 +319,11 @@ const STOP = new Set([
   "edge", "edges", "outside", "inside", "out", "bottom", "bottoms",
   "top", "tops", "rim", "rims", "exterior", "interior", "throughout",
   "through", "way", "all", "around", "corner", "corners", "side", "sides",
+  // Filler people write around a request: "banana, nothing else", "something
+  // chewy please". Saying "I don't know what nothing is" to those is correct
+  // and useless.
+  "nothing", "else", "something", "anything", "please", "want", "make",
+  "would", "really", "just", "maybe", "kind", "sort", "thing", "things",
 ]);
 
 /**
@@ -599,16 +616,47 @@ export function interpret(input: string): Interpretation {
     }
   }
 
-  const unrecognised = remaining
+  const leftover = remaining
     .split(/[\s-]+/)
     .map((w) => w.trim())
     .filter((w) => w.length > 2 && !STOP.has(w) && !INTENSIFIERS.has(w));
+
+  /**
+   * Which leftover words were spoken against.
+   *
+   * The negated regexes only exist for phrases the interpreter already knows,
+   * so a word it is about to look up in the corpus needs its own check. Read
+   * off the original text rather than what is left of it, because the negator
+   * itself may have been consumed by an earlier pass.
+   */
+  const spokenAgainst = new Set<string>();
+  const negatedWord = new RegExp(
+    `\\b(?:${NEGATORS.join("|")})(?:[\\s-]+(?:${NEGATION_FILLER.join("|")}))*[\\s-]+([a-z][a-z-]*)`,
+    "g",
+  );
+  for (const m of text.matchAll(negatedWord)) spokenAgainst.add(m[1]!);
+
+  // A leftover word the corpus uses is an ingredient; one it does not is
+  // genuinely unread.
+  const wantedIngredients: string[] = [];
+  const excludedIngredients: string[] = [];
+  for (const w of [...new Set(leftover)]) {
+    if (recipesUsing(w) === 0) continue;
+    const bucket = spokenAgainst.has(w) ? excludedIngredients : wantedIngredients;
+    if (!bucket.includes(w)) bucket.push(w);
+  }
+
+  const unrecognised = leftover.filter((w) => recipesUsing(w) === 0);
 
   // A negation on its own is understood. It says which cookies you do not
   // want, which is less than a texture but is not nothing, and the empty
   // state should not claim otherwise.
   const empty =
-    understood.length === 0 && refused.length === 0 && refusedDishes.length === 0;
+    understood.length === 0 &&
+    refused.length === 0 &&
+    refusedDishes.length === 0 &&
+    wantedIngredients.length === 0 &&
+    excludedIngredients.length === 0;
   const unique = [...new Set(unrecognised)];
 
   const excluded = [...new Set(refused.map((phrase) => {
@@ -625,6 +673,8 @@ export function interpret(input: string): Interpretation {
   return {
     textures, prefs, dishes, understood, excluded, suggestions,
     excludedDishes,
+    wantedIngredients,
+    excludedIngredients,
     // Textures only. A refused texture drops the ones that lean that way,
     // which is a matter of degree; a refused dish is gone entirely. The page
     // says each in its own words, so merging them here would have made it say
