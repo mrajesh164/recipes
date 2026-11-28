@@ -54,11 +54,7 @@ export function RecipeDetail({
 
   const ratios = (
     <>
-      <p className="text-sm text-ink-soft">
-        Where it sits among the {peers.length}{" "}
-        {recipe.dish_type ?? "cookie"} recipes:
-      </p>
-      <div className="mt-1">
+      <div>
         <WhyThisOne
           recipe={recipe}
           distribution={ratioDistribution(peers)}
