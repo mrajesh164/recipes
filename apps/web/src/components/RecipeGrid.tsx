@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeDetail } from "./RecipeDetail";
@@ -59,6 +59,15 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
       )
     : recipes;
   const shown = [...matched].sort(SORTS[sort].compare);
+
+  // Counted over what is shown, not the corpus: with a filter applied a header
+  // reading "Brownie 269" above three tiles would be answering a question
+  // nobody asked.
+  const counts = new Map<string, number>();
+  for (const r of shown) {
+    const k = r.dish_type ?? "other";
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
   const openRecipe = shown.find((r) => r.id === open) ?? null;
 
   return (
@@ -116,8 +125,26 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           bigger than the decision it supports. Two columns even on a phone,
           because a cookie photograph reads fine small. */}
       <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {shown.map((r) => (
-          <li key={r.id}>
+        {shown.map((r, i) => (
+          <Fragment key={r.id}>
+            {/* Sorting by kind put the groups in order and then gave no sign
+                of where one ended, so five categories read as one long run of
+                tiles that happened to rhyme. A header per group, spanning the
+                full width of the grid, with how many are in it. Only for this
+                sort: under A to Z or Best rated there are no groups to name. */}
+            {sort === "dish" &&
+              (i === 0 || (shown[i - 1]?.dish_type ?? "") !== (r.dish_type ?? "")) && (
+                <li className="col-span-full mt-6 first:mt-0">
+                  <h2 className="flex items-baseline gap-2 border-b border-line-soft pb-2
+                                 text-sm font-bold tracking-tight">
+                    <span className="capitalize">{r.dish_type ?? "other"}</span>
+                    <span className="text-xs font-medium text-ink-faint">
+                      {counts.get(r.dish_type ?? "other")}
+                    </span>
+                  </h2>
+                </li>
+              )}
+          <li>
             <button
               type="button"
               onClick={() => setOpen(open === r.id ? null : r.id)}
@@ -152,6 +179,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
               </div>
             </button>
           </li>
+          </Fragment>
         ))}
       </ul>
 
