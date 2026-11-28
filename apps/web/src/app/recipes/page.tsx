@@ -12,8 +12,8 @@ export default async function Page() {
         All recipes
       </h1>
       <p className="mt-3 max-w-prose text-sm text-ink-soft">
-        Every one is a real published recipe. Open any to see where it sits
-        against the others.
+        Every one is a real published recipe. Browse them, or open one to
+        see how it compares.
       </p>
 
       <div className="mt-8">

@@ -29,22 +29,20 @@ export function FeatureCards({ recipes }: { recipes: ScoredRecipe[] }) {
     {
       href: "/find",
       title: "Find a recipe",
-      blurb:
-        "Say how you want them. Chewy, cakey, crispy edges, quick, no mixer. You get one recipe back, and the reasons it was picked.",
+      blurb: "Describe what you want \u2014 chewy, crispy, quick \u2014 and get a recipe.",
       photos: 3,
     },
     {
       href: "/recipes",
       title: "All recipes",
-      blurb: `Scroll all ${recipes.length}, sort them, or filter by name.`,
+      blurb: "Scroll all recipes, sort them, and filter.",
       photos: 3,
     },
     {
       href: "/saved",
       title: "Saved",
-      blurb:
-        "The ones you kept, with what you typed when you saved them, and where each sits against its own kind.",
-      photos: 0,
+      blurb: "Recipes you kept.",
+      photos: 3,
     },
   ];
 
