@@ -120,7 +120,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         type="search"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        placeholder="Filter by name or keyword…"
+        placeholder="Filter by name, site, or kind…"
         aria-label="Filter recipes by name or source"
         className="w-full max-w-md rounded-2xl border-2 border-line bg-paper px-4 py-3
                    placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
@@ -134,11 +134,18 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         </p>
 
         <div className="flex flex-wrap gap-2">
-          {(Object.keys(SORTS) as SortKey[]).map((k) => (
+          {/* No button for A to Z. It is the order the list is in when nothing
+              has been asked for, not one of three choices -- with a button it
+              read as a third option competing with the two that actually
+              change something. The other two toggle, so pressing the one that
+              is on is how you get back to alphabetical. */}
+          {(Object.keys(SORTS) as SortKey[])
+            .filter((k) => k !== "title")
+            .map((k) => (
             <button
               key={k}
               type="button"
-              onClick={() => setSort(k)}
+              onClick={() => setSort((cur) => (cur === k ? "title" : k))}
               aria-pressed={sort === k}
               className={[
                 "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
