@@ -77,6 +77,12 @@ export interface Interpretation {
   excludedIngredients: string[];
   /** Ingredient words read as something the corpus uses, shown back. */
   readIngredientsAs: { typed: string; meant: string }[];
+  /**
+   * Words about taste, which this app does not score. Kept apart from
+   * `unrecognised` because "no recipe here uses salty" would be false -- salt
+   * is in 1,281 of them -- where "this reads texture, not taste" is true.
+   */
+  tasteWords: string[];
   /** Phrases recognised, in the user's own words, to show back to them. */
   understood: string[];
   /** Words that meant nothing here. Shown so the gap is visible. */
@@ -588,7 +594,7 @@ const INGREDIENT_LIST = Object.keys(INGREDIENT_WORDS);
  * more of them. "No recipe here uses bitter" is true, and more use than a
  * confident wrong substitution.
  */
-const TASTE_WORDS = new Set([
+export const TASTE_WORDS = new Set([
   "bitter", "sweet", "salty", "savory", "savoury", "sour", "tangy", "bland",
   "rich", "mild", "spicy", "sharp", "plain", "strong", "subtle", "balanced",
   "flavourful", "flavorful", "tasty", "delicious",
@@ -832,7 +838,18 @@ export function interpret(input: string): Interpretation {
     if (!bucket.includes(resolved)) bucket.push(resolved);
   }
 
-  const unrecognised = leftover.filter((w) => resolveIngredient(w) === null);
+  /**
+   * Taste words are their own answer, not an unread word.
+   *
+   * Reporting "salty" as unread led the page to say no recipe here uses it,
+   * which is false -- salt is in 1,281 of them. The true statement is that this
+   * app scores texture and not taste, and that is worth saying in its own
+   * words rather than hiding inside a list of things it could not read.
+   */
+  const tasteWords = [...new Set(leftover.filter((w) => TASTE_WORDS.has(w)))];
+  const unrecognised = leftover.filter(
+    (w) => !TASTE_WORDS.has(w) && resolveIngredient(w) === null,
+  );
 
   // A negation on its own is understood. It says which cookies you do not
   // want, which is less than a texture but is not nothing, and the empty
@@ -867,6 +884,7 @@ export function interpret(input: string): Interpretation {
     wantedIngredients,
     excludedIngredients,
     readIngredientsAs,
+    tasteWords,
     // Textures only. A refused texture drops the ones that lean that way,
     // which is a matter of degree; a refused dish is gone entirely. The page
     // says each in its own words, so merging them here would have made it say

@@ -551,7 +551,10 @@ test("a taste word is not answered with an ingredient", () => {
     assert.equal(resolveIngredient(w), null, w);
   }
   assert.deepEqual(interpret("very bitter").wantedIngredients, []);
-  assert.ok(interpret("very bitter").unrecognised.includes("bitter"));
+  // Reported as a taste rather than as unread: "no recipe here uses bitter"
+  // would be the wrong sentence, and for "salty" it would be false outright.
+  assert.deepEqual(interpret("very bitter").tasteWords, ["bitter"]);
+  assert.deepEqual(interpret("very bitter").unrecognised, []);
 });
 
 test("the ingredients that contain a taste word still resolve", () => {
@@ -568,4 +571,15 @@ test("an abbreviation is short; a word is not", () => {
   assert.equal(resolveIngredient("choc"), "chocolate");
   assert.equal(resolveIngredient("blueb"), "blueberries");
   assert.equal(resolveIngredient("bitter"), null);
+});
+
+test("a taste word is set aside, not called unread", () => {
+  // "No recipe here uses salty" is false -- salt is in 1,281 of them. The true
+  // statement is that this scores texture and not taste.
+  assert.deepEqual(interpret("not salty").tasteWords, ["salty"]);
+  assert.deepEqual(interpret("not salty").unrecognised, []);
+  // And a taste word alongside a texture does not cost the texture.
+  assert.equal(interpret("salty chewy").textures.chewy, 1);
+  // The ingredient is still an ingredient.
+  assert.deepEqual(interpret("no salt").excludedIngredients, ["salt"]);
 });

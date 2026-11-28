@@ -1,3 +1,4 @@
+import { TASTE_WORDS } from "@recipes/core";
 /**
  * The third tier of recognition: a word the vocabulary has never seen.
  *
@@ -123,6 +124,11 @@ export async function readUnknownWords(words: string[]): Promise<Reading> {
   const guesses: Guess[] = [];
 
   for (const word of words) {
+    // Taste is not on the three axes this scores, so guessing a texture for it
+    // produces nonsense with a straight face -- "salty" was being offered
+    // "moist". The interpreter already keeps these apart; the guesser has to
+    // as well.
+    if (TASTE_WORDS.has(word)) continue;
     const v = await embed(word);
     const ranked = known
       .map(([phrase, pv]) => ({ phrase, sim: cosine(v, pv) }))

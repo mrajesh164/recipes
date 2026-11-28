@@ -667,6 +667,24 @@ function Reading({
         </p>
       )}
 
+      {/* Taste gets its own sentence, because the other two would both lie.
+          "No recipe here uses salty" is false -- salt is in 1,281 of them --
+          and "I don't know what salty means" claims too little. What is true
+          is that this scores three textures and has no flavour axis, so it
+          cannot act on the word however well it understands it. */}
+      {i.tasteWords.length > 0 && (
+        <p className="mt-1 text-ink-faint">
+          This reads texture rather than taste, so{" "}
+          {i.tasteWords.map((w, n) => (
+            <span key={w}>
+              {n > 0 && (n === i.tasteWords.length - 1 ? " and " : ", ")}
+              <span className="italic">{w}</span>
+            </span>
+          ))}{" "}
+          {i.tasteWords.length === 1 ? "was" : "were"} set aside.
+        </p>
+      )}
+
       {/* "No recipe here uses X" rather than "I don't know what X means".
  
           The second was the old wording and it claimed too much: an
