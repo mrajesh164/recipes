@@ -1,6 +1,6 @@
 "use client";
 
-import type { Interpretation, Texture } from "@recipes/core";
+import { reviewQuotes, type Interpretation, type Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import type { RatioDistribution } from "@/lib/ratios";
 import { RangePlot, positionOf } from "./RangePlot";
@@ -44,6 +44,10 @@ export function WhyThisOne({
   const showRatios = askedTexture || !askedEffort;
 
   const mine = recipe.scores.ratios;
+
+  // Empty in the detail panel, where nothing was asked, so there is no word to
+  // look for and nothing to quote.
+  const quotes = interpretation ? reviewQuotes(recipe.reviews, interpretation, 3) : [];
   const grams = (n: number) => `${Math.round(n * 100)} g`;
 
   /**
@@ -108,6 +112,45 @@ export function WhyThisOne({
         <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
           Why this one
         </h3>
+      )}
+
+      {/* A reviewer using the reader's own word, where one did.
+ 
+          This leads, above the ratios, because it is the only evidence here
+          that is not inferred. Everything else on this card is read off an
+          ingredient list -- butter per flour, brown sugar share, creamed or
+          melted -- and says what the recipe should do. A review says what it
+          did, in the words of somebody who baked it.
+ 
+          Only words the reader actually typed are matched, and a negated
+          mention is skipped, so this cannot answer "chewy" with a review
+          praising the crisp edges or one complaining there was no chew. */}
+      {quotes.length > 0 && (
+        <figure className="mb-3 rounded-xl bg-cream-deep px-4 py-3">
+          {quotes.map((q) => {
+            // Highlight the word that made this a reason, in the reviewer's
+            // own sentence, so the match is visible rather than asserted.
+            const at = q.text.toLowerCase().indexOf(q.word.toLowerCase());
+            return (
+              <blockquote
+                key={q.text}
+                className="text-sm leading-snug text-ink [&+&]:mt-2 [&+&]:border-t
+                           [&+&]:border-line-soft [&+&]:pt-2"
+              >
+                &ldquo;{at >= 0 ? q.text.slice(0, at) : q.text}
+                {at >= 0 && (
+                  <strong className="font-bold text-clay-deep">
+                    {q.text.slice(at, at + q.word.length)}
+                  </strong>
+                )}
+                {at >= 0 ? q.text.slice(at + q.word.length) : ""}&rdquo;
+              </blockquote>
+            );
+          })}
+          <figcaption className="mt-1.5 text-xs text-ink-faint">
+            {quotes.length === 1 ? "from a review of this recipe" : `from ${quotes.length} reviews of this recipe`}
+          </figcaption>
+        </figure>
       )}
 
       {askedEffort && prefs && <EffortReasons recipe={recipe} prefs={prefs} />}

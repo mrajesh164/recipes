@@ -28,6 +28,8 @@ export interface Recipe {
   image_url: string | null;
   /** Which drop cookie. Null for rows that predate the widening. */
   dish_type: string | null;
+  /** Review bodies from the source page. Null where it published none. */
+  reviews: string[] | null;
   ingredients: Ingredient[];
 }
 
@@ -97,7 +99,7 @@ function fetchPage(from: number, to: number) {
     // One string literal, not concatenation: supabase-js parses this at the
     // type level and cannot read a built-up string.
     .select(
-      "id, source_url, source_name, title, yield_count, rating, rating_count, method, bake_temp_f, bake_minutes, chills_dough, hand_entered, image_url, dish_type, ingredients(position, raw_text, canonical_name, grams, grams_source, display_qty, display_unit)",
+      "id, source_url, source_name, title, yield_count, rating, rating_count, method, bake_temp_f, bake_minutes, chills_dough, hand_entered, image_url, dish_type, reviews, ingredients(position, raw_text, canonical_name, grams, grams_source, display_qty, display_unit)",
     )
     .order("title")
     .order("id")
