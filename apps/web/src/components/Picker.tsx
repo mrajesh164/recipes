@@ -6,12 +6,14 @@ import { refusesOptimiser } from "@/lib/image-hosts";
 import { Recommendation } from "./Recommendation";
 import { asRankable } from "@/lib/rankable";
 import {
-  interpret, matchScore, dominantTexture, candidatesFor,
+  interpret, matchScore, dominantTexture, candidatesFor, pantryFit, type PantryFit,
   type Texture, type Interpretation, type Rankable,
 } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeActions } from "./RecipeActions";
 import { WhyThisOne } from "./WhyThisOne";
+import { PantryBox } from "./PantryBox";
+import { usePantry } from "@/lib/pantry-store";
 import { ratioDistribution, type RatioDistribution } from "@/lib/ratios";
 import { readUnknownWords, type Guess, type Inference } from "@/lib/semantic";
 
@@ -90,6 +92,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
     query,
   );
   const interpretation = interpret(resolved);
+  const { items: pantryItems, add, remove, ready } = usePantry();
   const asked = query.trim().length > 0 && !interpretation.empty;
 
   // Naming a dish removes candidates rather than reordering them, so the
@@ -108,13 +111,49 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
   // it would recompute every time anyway and only look like it cached.
   const distribution = ratioDistribution(pool);
 
+  /**
+   * The pantry orders the answer when it is the question, and nudges it when
+   * it is not.
+   *
+   * Typing "chewy brownie" asks about texture, so texture decides and the
+   * pantry only breaks ties -- a nudge in the same range as quick and easy,
+   * which are also preferences rather than filters. Typing nothing while
+   * holding a pantry asks a different question entirely: not "what should I
+   * make" but "what can I make", and there the shortfall *is* the ranking.
+   *
+   * Never a filter. Filtering to what you can make exactly leaves ten recipes
+   * out of 1,385, and combined with a dish it would often leave none -- a dead
+   * end rather than an answer. candidatesFor stays the only hard filter.
+   */
+  const pantryOn = (pantryItems?.length ?? 0) > 0;
+  const fitOf = (r: ScoredRecipe) =>
+    pantryFit(
+      pantryItems ?? [],
+      r.ingredients.map((i) => ({ raw: i.raw_text, canonicalName: i.canonical_name })),
+    );
+  const shortfallOf = (r: ScoredRecipe) =>
+    pantryOn ? fitOf(r).missing.length : 0;
+
+  // 0 short is worth about what melted butter is worth to "easy": enough to
+  // win a close call, not enough to beat a texture the reader asked for.
+  const pantryNudge = (r: ScoredRecipe) => {
+    if (!pantryOn) return 0;
+    const n = shortfallOf(r);
+    return n === 0 ? 0.15 : n === 1 ? 0.08 : n === 2 ? 0.03 : 0;
+  };
+
   const ranked = asked
     ? [...pool].sort(
         (a, b) =>
-          matchScore(asRankable(b), interpretation) -
-          matchScore(asRankable(a), interpretation),
+          matchScore(asRankable(b), interpretation) + pantryNudge(b) -
+          (matchScore(asRankable(a), interpretation) + pantryNudge(a)),
       )
-    : [];
+    : pantryOn
+      ? [...pool]
+          .map((r) => ({ r, short: shortfallOf(r) }))
+          .sort((a, b) => a.short - b.short || (b.r.rating ?? 0) - (a.r.rating ?? 0))
+          .map((x) => x.r)
+      : [];
 
   const best = ranked[0];
   const want = dominantTexture(interpretation);
@@ -191,20 +230,24 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         }}
       />
 
+      <PantryBox items={pantryItems} ready={ready} onAdd={add} onRemove={remove} />
+
       {best && (
         <Recommendation
           recipe={best}
           want={want}
           distribution={distribution}
+          fit={pantryOn ? fitOf(best) : undefined}
           query={query}
           interpretation={interpretation}
         />
       )}
 
-      {asked && ranked.length > 1 && (
+      {(asked || pantryOn) && ranked.length > 1 && (
         <CloseMatches
           matches={ranked.slice(1, 5)}
           distribution={distribution}
+          fitOf={(r) => (pantryOn ? fitOf(r) : undefined)}
           interpretation={interpretation}
           want={want}
         />
@@ -232,12 +275,15 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 function CloseMatches({
   matches,
   distribution,
+  fitOf,
   interpretation,
   want,
 }: {
   matches: ScoredRecipe[];
   /** Computed once by the caller, not per row -- see lib/ratios.ts. */
   distribution: RatioDistribution;
+  /** Pantry coverage for a row, or undefined where no pantry is in play. */
+  fitOf: (r: ScoredRecipe) => PantryFit | undefined;
   /** The same query the pick was judged on, so a runner-up answers it too. */
   interpretation: Interpretation;
   want: Texture | null;

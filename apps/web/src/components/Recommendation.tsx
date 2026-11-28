@@ -3,6 +3,7 @@ import { refusesOptimiser } from "@/lib/image-hosts";
 import type { Interpretation, Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import type { RatioDistribution } from "@/lib/ratios";
+import type { PantryFit } from "@recipes/core";
 import { WhyThisOne } from "./WhyThisOne";
 import { RecipeActions } from "./RecipeActions";
 
@@ -20,6 +21,7 @@ export function Recommendation({
   recipe,
   want,
   distribution,
+  fit,
   query,
   interpretation,
   compact = false,
@@ -28,6 +30,8 @@ export function Recommendation({
   /** Null when the query was only about effort, e.g. "quick". */
   want: Texture | null;
   distribution: RatioDistribution;
+  /** Pantry coverage, where a pantry is in play. */
+  fit?: PantryFit;
   /** Stored with the save: a better reminder than the title alone. */
   query: string;
   /** Drives which evidence is shown. Null in the signed-out example. */
@@ -130,6 +134,7 @@ export function Recommendation({
             <WhyThisOne
               recipe={recipe}
               distribution={distribution}
+              fit={fit}
               interpretation={interpretation}
               want={want}
             />

@@ -1,6 +1,6 @@
 "use client";
 
-import { reviewQuotes, effortFor, type Interpretation, type Texture } from "@recipes/core";
+import { reviewQuotes, effortFor, type Interpretation, type PantryFit, type Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import type { RatioDistribution } from "@/lib/ratios";
 import { RangePlot, positionOf } from "./RangePlot";
@@ -21,6 +21,7 @@ import { RangePlot, positionOf } from "./RangePlot";
 export function WhyThisOne({
   recipe,
   distribution,
+  fit,
   interpretation,
   want,
   heading = true,
@@ -32,6 +33,8 @@ export function WhyThisOne({
    * than the ratios, and the corpus is 1,385 rows of everything else.
    */
   distribution: RatioDistribution;
+  /** How the reader's pantry covers it. Absent where no pantry is in play. */
+  fit?: PantryFit;
   /** Null in the dialog, where nothing was asked -- then ratios are the default. */
   interpretation: Interpretation | null;
   want: Texture | null;
@@ -153,6 +156,22 @@ export function WhyThisOne({
         </figure>
       )}
 
+      {/* What the cupboard says, in the same shape as the effort reasons --
+          it is the same kind of statement, and giving it its own treatment
+          would make a reader weigh two things that answer one question. */}
+      {fit && fit.required > 0 && (
+        <ul className="mt-3 space-y-2">
+          <Reason
+            good={fit.missing.length === 0}
+            label={
+              fit.missing.length === 0
+                ? `You have all ${fit.required} ingredients`
+                : `You have ${fit.have} of ${fit.required} — missing ${listed(fit.missing)}`
+            }
+          />
+        </ul>
+      )}
+
       {askedEffort && prefs && <EffortReasons recipe={recipe} prefs={prefs} />}
 
       {showRatios && lead && (
@@ -188,6 +207,45 @@ export function WhyThisOne({
  * match overall, and hiding the one drawback is how a recommendation stops
  * being trustworthy.
  */
+/**
+ * One reason, ticked or flagged.
+ *
+ * Shared because the pantry and the effort preferences are the same kind of
+ * statement -- something about this recipe that answers what was asked -- and
+ * two copies of the row would drift the moment one of them changed.
+ */
+function Reason({ good, label }: { good: boolean; label: string }) {
+  return (
+    <li className="flex items-start gap-2.5 text-sm">
+      <span
+        aria-hidden
+        className={[
+          "mt-[3px] grid h-4 w-4 flex-none place-items-center rounded-full text-xs font-bold",
+          // ink-soft, not ink-faint: faint on cream-deep is 4.11, under AA.
+          good ? "bg-sage-deep text-paper" : "bg-cream-deep text-ink-soft",
+        ].join(" ")}
+      >
+        {good ? "\u2713" : "!"}
+      </span>
+      <span className={good ? "" : "text-ink-soft"}>{label}</span>
+    </li>
+  );
+}
+
+/**
+ * A shopping list in a sentence.
+ *
+ * Two read better joined than listed, and past three the names stop being the
+ * point -- at that distance the useful fact is that it is a trip to the shop,
+ * not which four items.
+ */
+function listed(items: string[]): string {
+  if (items.length === 1) return items[0]!;
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  if (items.length === 3) return `${items[0]}, ${items[1]} and ${items[2]}`;
+  return `${items[0]}, ${items[1]} and ${items.length - 2} more`;
+}
+
 function EffortReasons({
   recipe,
   prefs,
@@ -254,19 +312,7 @@ function EffortReasons({
   return (
     <ul className="mt-3 space-y-2">
       {reasons.map((r) => (
-        <li key={r.label} className="flex items-start gap-2.5 text-sm">
-          <span
-            aria-hidden
-            className={[
-              "mt-[3px] grid h-4 w-4 flex-none place-items-center rounded-full text-xs font-bold",
-              // ink-soft, not ink-faint: faint on cream-deep is 4.11, under AA.
-              r.good ? "bg-sage-deep text-paper" : "bg-cream-deep text-ink-soft",
-            ].join(" ")}
-          >
-            {r.good ? "✓" : "!"}
-          </span>
-          <span className={r.good ? "" : "text-ink-soft"}>{r.label}</span>
-        </li>
+        <Reason key={r.label} good={r.good} label={r.label} />
       ))}
     </ul>
   );
