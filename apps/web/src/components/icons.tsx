@@ -56,3 +56,13 @@ export function BookmarkIcon({ className = "h-5 w-5" }: { className?: string }) 
     </Glyph>
   );
 }
+
+/** An arrow pointing up: back to the top of a long list. */
+export function ArrowUpIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <Glyph className={className}>
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </Glyph>
+  );
+}

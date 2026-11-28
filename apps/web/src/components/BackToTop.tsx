@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowUpIcon } from "./icons";
 
 /**
  * A way back up from the bottom of a long list.
@@ -38,9 +39,7 @@ export function BackToTop({ showAfter = 700 }: { showAfter?: number }) {
                  shadow-sm transition-colors hover:bg-cream-deep
                  motion-safe:animate-none"
     >
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-        <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <ArrowUpIcon />
       Top
     </button>
   );
