@@ -21,7 +21,6 @@ export default async function Page() {
 
   return (
     <>
-      <div className="scallop" aria-hidden />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-10">
         <Picker recipes={recipes} />

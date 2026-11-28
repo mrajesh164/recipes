@@ -97,6 +97,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </header>
           </div>
 
+          {/* The underside of the header band, so every page has it. It used
+              to be rendered by each page, which meant / and /find had it and
+              /recipes and /saved did not. */}
+          <div className="scallop" aria-hidden />
+
           {children}
         </ClerkProvider>
       </body>

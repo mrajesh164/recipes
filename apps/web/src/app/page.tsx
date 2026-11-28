@@ -22,7 +22,6 @@ export default async function Page() {
 
   return (
     <>
-      <div className="scallop" aria-hidden />
 
       {/* The textured band is its own full-bleed element, outside <main>.
  
