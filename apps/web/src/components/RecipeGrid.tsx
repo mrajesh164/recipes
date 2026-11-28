@@ -99,7 +99,10 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
             ? `${recipes.length} recipes`
             : `${shown.length} of ${recipes.length}`}
           , sorted{" "}
-          <span className="font-semibold text-ink">{SORTS[sort].label.toLowerCase()}</span>
+          {/* Spelled as the button spells it. Lower-casing it made "best rated"
+                sit beside a button reading "Best rated" and read as two
+                different things rather than one described twice. */}
+            <span className="font-semibold text-ink">{SORTS[sort].label}</span>
         </p>
 
         <div className="flex flex-wrap gap-2">
