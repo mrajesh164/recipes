@@ -153,7 +153,7 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
           type="submit"
           disabled={draft.trim() === ""}
           className="flex-none rounded-2xl bg-clay-deep px-6 font-semibold text-paper
-                     hover:bg-clay disabled:opacity-40"
+                     transition hover:brightness-90 disabled:opacity-40"
         >
           Find
         </button>
