@@ -151,6 +151,32 @@ body {
 }
 
 /**
+ * The corner scale: three radii, chosen by what the thing is.
+ *
+ *   rounded-full   pills and circles -- buttons, chips, badges, thin bars
+ *   rounded-2xl    a card or panel: the thing that holds content
+ *   rounded-xl     anything nested inside one -- thumbnails, inset boxes,
+ *                  the hit area of a disclosure
+ *
+ * There were six. Not by decision: each component picked a radius in the
+ * moment, so the recommendation card was 3xl and the recipe detail 2xl while
+ * being the same kind of object, and lg and the bare rounded survived only on
+ * loading skeletons. Nothing looked broken, which is the problem -- it looked
+ * undecided, and a reader cannot tell a deliberate difference from an
+ * accidental one.
+ *
+ * Collapsing them is a rule about meaning rather than taste: if two things get
+ * different corners, it should be because they are different kinds of thing.
+ *
+ * The spacing steps have the same disease in a milder form -- ten of them,
+ * mt-1 through mt-14. They are left alone for now because changing vertical
+ * rhythm across every page is a visual regression risk out of proportion to
+ * what it buys, and because the steps at least rise monotonically with how
+ * separate two things are. The rule to converge on, when it is worth doing:
+ * 2 inside a block, 6 between blocks, 10 between sections.
+ */
+
+/**
  * The texture. Apply deliberately; see the surface rule above.
  *
  * The tile is 300x100, not 300x300. The band it sits in is about 100px tall,

@@ -254,7 +254,7 @@ function CloseMatches({
       {/* On paper, like everything else that carries detail. These rows used
           to sit straight on the sprinkles, with thumbnails and small grey
           type competing against a field of coloured dots. */}
-      <ul className="mt-3 divide-y divide-line-soft overflow-hidden rounded-3xl border-2 border-line bg-paper">
+      <ul className="mt-3 divide-y divide-line-soft overflow-hidden rounded-2xl border-2 border-line bg-paper">
         {matches.map((r) => (
           <li key={r.id}>
             {/* Native <details> rather than a dialog: several can be open at

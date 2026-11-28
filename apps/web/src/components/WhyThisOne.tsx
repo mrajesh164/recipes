@@ -161,7 +161,7 @@ export function WhyThisOne({
 
           <details className="group mt-1 border-t border-line-soft">
             <summary
-              className="-mx-2 cursor-pointer list-none rounded-lg px-2 py-2.5 text-xs
+              className="-mx-2 cursor-pointer list-none rounded-xl px-2 py-2.5 text-xs
                          font-semibold text-clay-deep hover:bg-cream-deep
                          [&::-webkit-details-marker]:hidden"
             >

@@ -79,8 +79,8 @@ export default async function Page() {
 function ExampleSkeleton() {
   return (
     <div className="mt-14 animate-pulse">
-      <div className="h-7 w-72 rounded-lg bg-cream-deep" />
-      <div className="mt-6 h-56 w-full rounded-3xl bg-cream-deep" />
+      <div className="h-7 w-72 rounded-xl bg-cream-deep" />
+      <div className="mt-6 h-56 w-full rounded-2xl bg-cream-deep" />
     </div>
   );
 }

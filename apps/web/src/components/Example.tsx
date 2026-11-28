@@ -43,7 +43,7 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
 
   return (
     <div>
-      <div className="rounded-3xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
+      <div className="rounded-2xl border-2 border-clay-deep bg-paper px-6 py-5 md:px-8">
         <h2 className="text-xl font-bold leading-snug tracking-tight">
           Every recipe is a little different. This helps you find yours.
         </h2>

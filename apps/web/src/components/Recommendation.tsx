@@ -41,7 +41,7 @@ export function Recommendation({
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 
   return (
-    <article className="mt-8 overflow-hidden rounded-3xl border-2 border-clay-deep bg-paper">
+    <article className="mt-8 overflow-hidden rounded-2xl border-2 border-clay-deep bg-paper">
       <div
         className={
           compact
@@ -147,7 +147,7 @@ export function Recommendation({
             {/* py-3 gets this to a 44px tap target. The proposal's own words:
                 "That rules out small tap targets" -- and a 20px summary in a
                 kitchen is exactly that. */}
-            <summary className="-mx-2 cursor-pointer rounded-lg px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">
+            <summary className="-mx-2 cursor-pointer rounded-xl px-2 py-3 text-sm font-medium text-clay-deep hover:bg-cream-deep">
               Ingredients
             </summary>
             {/* Bounded, with its own scroll. Twenty ingredient rows used to

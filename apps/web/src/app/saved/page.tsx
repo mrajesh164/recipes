@@ -135,8 +135,8 @@ function SavedSkeleton() {
           <div className="flex items-start gap-4 p-4">
             <div className="h-24 w-24 flex-none rounded-xl bg-cream-deep" />
             <div className="min-w-0 flex-1">
-              <div className="h-4 w-3/4 rounded bg-cream-deep" />
-              <div className="mt-2 h-3 w-1/2 rounded bg-cream-deep" />
+              <div className="h-4 w-3/4 rounded-full bg-cream-deep" />
+              <div className="mt-2 h-3 w-1/2 rounded-full bg-cream-deep" />
               <div className="mt-3 h-5 w-32 rounded-full bg-cream-deep" />
             </div>
           </div>
