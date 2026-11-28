@@ -341,6 +341,16 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
             dropdown should. */}
         {open && openRecipe && anchor !== null && (
           <li
+            /* Keyed on the recipe, so switching from one tile to another
+               mounts a fresh panel.
+ 
+               The "show the other two ratios" disclosure is a plain <details>,
+               which keeps its own open state in the DOM. Without a key React
+               reuses the same node for the next recipe and the disclosure stays
+               open -- so clicking a second recipe showed all three ratios
+               expanded, having never been asked to. Closing and reopening the
+               same one already resets it, because the node unmounts. */
+            key={openRecipe.id}
             data-recipe-panel
             className="absolute z-30 drop-shadow-xl"
             style={{ top: anchor.top, left: anchor.left, width: anchor.width }}
