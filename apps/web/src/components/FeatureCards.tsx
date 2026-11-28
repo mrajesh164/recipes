@@ -35,7 +35,7 @@ export function FeatureCards({ recipes }: { recipes: ScoredRecipe[] }) {
     {
       href: "/recipes",
       title: "All recipes",
-      blurb: "Scroll all recipes, sort them, and filter.",
+      blurb: "Browse all recipes.",
       photos: 3,
     },
     {
