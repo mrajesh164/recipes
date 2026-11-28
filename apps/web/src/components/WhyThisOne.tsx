@@ -188,6 +188,23 @@ export function WhyThisOne({
  * match overall, and hiding the one drawback is how a recommendation stops
  * being trustworthy.
  */
+/**
+ * What counts as quick, and as a short list.
+ *
+ * These were 12 minutes and 10 ingredients, set when the corpus was cookies.
+ * The corpus is now muffins, quick breads and scones as well, which bake for
+ * half an hour and carry more in them, and the bars never moved -- so a
+ * perfectly ordinary recipe was being marked with a warning. Measured over the
+ * 1,385 recipes: the median ingredient count is 12 and the median bake is 18
+ * minutes, where the old bars passed only 33% and 32% of recipes.
+ *
+ * Set at the median on purpose. It is what makes "more than most" and "longer
+ * than most" literally true rather than a judgement the reader has to take on
+ * faith -- half the corpus is on each side of it by construction.
+ */
+const TYPICAL_INGREDIENTS = 12;
+const TYPICAL_BAKE_MINUTES = 18;
+
 function EffortReasons({
   recipe,
   prefs,
@@ -204,9 +221,12 @@ function EffortReasons({
         : { good: true, label: "No chilling, straight in the oven" },
     );
     if (recipe.bake_minutes !== null) {
+      const quick = recipe.bake_minutes <= TYPICAL_BAKE_MINUTES;
       reasons.push({
-        good: recipe.bake_minutes <= 12,
-        label: `${recipe.bake_minutes} minutes to bake`,
+        good: quick,
+        label: quick
+          ? `${recipe.bake_minutes} minutes to bake, on the quick side`
+          : `${recipe.bake_minutes} minutes to bake, longer than most`,
       });
     }
   }
@@ -217,9 +237,13 @@ function EffortReasons({
     } else if (recipe.method === "creamed") {
       reasons.push({ good: false, label: "Creamed butter, you'll want a mixer" });
     }
+    const n = recipe.ingredients.length;
+    const short = n <= TYPICAL_INGREDIENTS;
     reasons.push({
-      good: recipe.ingredients.length <= 10,
-      label: `${recipe.ingredients.length} ingredients`,
+      good: short,
+      label: short
+        ? `${n} ingredients, a short list`
+        : `${n} ingredients, more than most`,
     });
   }
 
