@@ -109,7 +109,6 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   }, [jumpTo, visible]);
 
   const page = shown.slice(0, visible);
-  const openRecipe = shown.find((r) => r.id === open) ?? null;
 
   return (
     <div>
@@ -259,6 +258,24 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
               </div>
             </button>
           </li>
+
+          {/* Opened next to the tile, not under the grid.
+ 
+              This used to render after the whole list. With thirteen recipes
+              that was merely a short scroll; at 120 tiles a click on the first
+              row opened a panel far below the fold, so the tile took the focus
+              ring and nothing appeared to happen -- it read as "these don't
+              open". col-span-full puts it on its own row directly beneath the
+              one that was clicked. */}
+          {open === r.id && (
+            <li className="col-span-full">
+              <RecipeDetail
+                recipe={r}
+                all={recipes}
+                onClose={() => setOpen(null)}
+              />
+            </li>
+          )}
           </Fragment>
         ))}
       </ul>
@@ -278,13 +295,6 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
 
       <BackToTop />
 
-      {/* Under the grid rather than over it. A modal covered the very list
-          you were comparing against. */}
-      {openRecipe && (
-        <div className="mt-5">
-          <RecipeDetail recipe={openRecipe} all={recipes} onClose={() => setOpen(null)} />
-        </div>
-      )}
     </div>
   );
 }
