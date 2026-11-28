@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import type { ScoredRecipe } from "@/lib/recipes";
 import { RecipeDetail } from "./RecipeDetail";
+import { BackToTop } from "./BackToTop";
 
 /**
  * Every recipe, for the people who want to browse.
@@ -267,6 +268,8 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           </button>
         </div>
       )}
+
+      <BackToTop />
 
       {/* Under the grid rather than over it. A modal covered the very list
           you were comparing against. */}
