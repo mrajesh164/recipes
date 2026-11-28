@@ -95,7 +95,7 @@ async function List() {
         </p>
         <Link
           href="/"
-          className="mt-5 inline-block rounded-full bg-clay-deep px-5 py-3 text-sm font-semibold text-paper hover:bg-clay"
+          className="mt-5 inline-block rounded-full bg-clay-deep px-5 py-3 text-sm font-semibold text-paper transition hover:brightness-90"
         >
           Find a recipe
         </Link>

@@ -82,10 +82,19 @@ export function SaveButton({
         disabled={saved === null}
         className={[
           compact ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm",
-          "rounded-full border-2 font-semibold transition-colors disabled:opacity-50",
+          // transition, not transition-colors: the hover darkens with a filter,
+          // which transition-colors does not animate.
+          "rounded-full border-2 font-semibold transition disabled:opacity-50",
           saved
-            ? "border-sage-deep bg-sage-deep text-paper"
-            : "border-line bg-paper hover:border-clay-deep",
+            // Darkened rather than lightened. paper on sage is 2.39 and fails
+            // AA outright, so the obvious "lighten on hover" would have made
+            // the label unreadable; brightness-90 takes sage-deep from 4.55 to
+            // 5.45 instead, so the cue improves the contrast rather than
+            // spending it.
+            ? "border-sage-deep bg-sage-deep text-paper hover:brightness-90"
+            // The outline state had a hover on its border only, which is easy
+            // to miss on a 2px edge. The fill moves too now.
+            : "border-line bg-paper hover:border-clay-deep hover:bg-cream-deep",
         ].join(" ")}
       >
         {saved === null ? "…" : label}

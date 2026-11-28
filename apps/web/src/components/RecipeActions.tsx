@@ -37,8 +37,8 @@ export function RecipeActions({
         // by 4px however the padding is set, because only one of them has a
         // border contributing to its height.
         className="inline-flex items-center gap-1.5 rounded-full border-2 border-clay-deep
-                   bg-clay-deep px-4 py-3 text-sm font-semibold text-paper transition-colors
-                   hover:border-clay hover:bg-clay"
+                   bg-clay-deep px-4 py-3 text-sm font-semibold text-paper transition
+                   hover:brightness-90"
       >
         Open the recipe
         <ExternalLinkIcon />

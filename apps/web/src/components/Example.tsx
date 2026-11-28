@@ -56,7 +56,7 @@ export function Example({ recipes }: { recipes: ScoredRecipe[] }) {
         <SignUpButton mode="modal">
           <button
             type="button"
-            className="mt-4 rounded-full bg-clay-deep px-6 py-3 font-semibold text-paper hover:bg-clay"
+            className="mt-4 rounded-full bg-clay-deep px-6 py-3 font-semibold text-paper transition hover:brightness-90"
           >
             Sign up to try it
           </button>
