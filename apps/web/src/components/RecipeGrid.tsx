@@ -73,6 +73,9 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
     const k = r.dish_type ?? "other";
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }
+  // Insertion order is the sorted order, so this is also the order the
+  // headers appear in down the page.
+  const kinds = [...counts.keys()];
   const openRecipe = shown.find((r) => r.id === open) ?? null;
 
   return (
@@ -129,6 +132,27 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           columns 325 recipes was a very long scroll, and each tile was far
           bigger than the decision it supports. Two columns even on a phone,
           because a cookie photograph reads fine small. */}
+      {/* Somewhere to jump from. Eleven kinds down a page of 1,385 tiles is a
+          lot of scrolling to reach the scones, and the headers alone only help
+          once you have already arrived at one. Anchors rather than state: the
+          browser does the scrolling, back works, and a link to a kind can be
+          sent to somebody. */}
+      {sort === "dish" && kinds.length > 1 && (
+        <nav aria-label="Jump to a kind" className="mt-6 flex flex-wrap gap-2">
+          {kinds.map((k) => (
+            <a
+              key={k}
+              href={`#kind-${k.replace(/\s+/g, "-")}`}
+              className="rounded-full border border-line bg-paper px-3 py-1.5 text-xs font-semibold
+                         capitalize text-ink transition-colors hover:border-clay-deep
+                         hover:text-clay-deep"
+            >
+              {k}{" "}
+              <span className="font-medium text-ink-faint">{counts.get(k)}</span>
+            </a>
+          ))}
+        </nav>
+      )}
 
       <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {shown.map((r, i) => (
@@ -140,7 +164,10 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
                 sort: under A to Z or Best rated there are no groups to name. */}
             {sort === "dish" &&
               (i === 0 || (shown[i - 1]?.dish_type ?? "") !== (r.dish_type ?? "")) && (
-                <li className="col-span-full mt-6 first:mt-0">
+                <li
+                  id={`kind-${(r.dish_type ?? "other").replace(/\s+/g, "-")}`}
+                  className="col-span-full mt-6 scroll-mt-4 first:mt-0"
+                >
                   <h2 className="flex items-baseline gap-2 border-b border-line-soft pb-2
                                  text-sm font-bold tracking-tight">
                     <span className="capitalize">{r.dish_type ?? "other"}</span>
