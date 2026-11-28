@@ -160,18 +160,29 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
 
   return (
     <div>
-      {/* The page's h1, not a field label. This page is the search, so the
-          question it asks is the heading, and labelling the box separately
-          would say it twice. */}
+      {/* The h1 asks the question; the two sections under it are the two ways
+          to answer it.
+ 
+          It used to be the field label as well, on the reasoning that this
+          page *is* the search so labelling the box twice was redundant. That
+          held while there was one way in. There are two now, and leaving the
+          pantry as a line of small print under the box said it was an
+          afterthought rather than the other half -- so each way gets a heading
+          and they carry the same weight. */}
       <h1 className="font-script text-display font-bold text-clay-deep">
-        <label htmlFor="q">What are you after?</label>
+        What are you after?
       </h1>
+
+      <section className="mt-6">
+        <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-ink-faint">
+          <label htmlFor="q">Describe what you want</label>
+        </h2>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           setQuery(draft);
         }}
-        className="mt-6 flex gap-2"
+        className="mt-3 flex gap-2"
       >
         <input
           id="q"
@@ -230,7 +241,18 @@ export function Picker({ recipes }: { recipes: ScoredRecipe[] }) {
         }}
       />
 
-      <PantryBox items={pantryItems} ready={ready} onAdd={add} onRemove={remove} />
+      </section>
+
+      {/* Not a disclosure any more. The dotted rule is the same device the
+          home page uses to say "a different thing starts here". */}
+      <div className="dotted-rule mt-10" aria-hidden />
+
+      <section className="mt-6">
+        <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-ink-faint">
+          Cooking from what you have
+        </h2>
+        <PantryBox items={pantryItems} ready={ready} onAdd={add} onRemove={remove} />
+      </section>
 
       {best && (
         <Recommendation
