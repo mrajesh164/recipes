@@ -45,16 +45,32 @@ export function usePantry() {
     };
   }, [supabase, userId]);
 
+  /**
+   * Splits on commas, because the box asks for a list.
+   *
+   * The placeholder reads "flour, oats, chocolate chips…" and the first
+   * version stored that whole string as one row: typing three things gave one
+   * chip reading "flour, butter, oats" and a count of 1. The affordance was
+   * promising a list and the code was taking a value, which is the kind of lie
+   * a reader has no way to see until it has already happened.
+   */
   const add = useCallback(
     async (raw: string) => {
-      const item = raw.trim().toLowerCase();
-      if (!item || !supabase || !userId) return;
-      if (items?.includes(item)) return;
-      setItems((cur) => [...(cur ?? []), item].sort());
-      const { error } = await supabase.from("pantry_items").insert({ user_id: userId, item });
+      const wanted = raw
+        .split(",")
+        .map((p) => p.trim().toLowerCase())
+        .filter(Boolean)
+        .filter((p, n, all) => all.indexOf(p) === n)
+        .filter((p) => !items?.includes(p));
+      if (wanted.length === 0 || !supabase || !userId) return;
+
+      setItems((cur) => [...(cur ?? []), ...wanted].sort());
+      const { error } = await supabase
+        .from("pantry_items")
+        .insert(wanted.map((item) => ({ user_id: userId, item })));
       if (error) {
         setError(error.message);
-        setItems((cur) => (cur ?? []).filter((i) => i !== item));
+        setItems((cur) => (cur ?? []).filter((i) => !wanted.includes(i)));
       }
     },
     [supabase, userId, items],
