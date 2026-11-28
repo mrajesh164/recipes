@@ -1,6 +1,6 @@
 "use client";
 
-import { reviewQuotes, type Interpretation, type Texture } from "@recipes/core";
+import { reviewQuotes, effortFor, type Interpretation, type Texture } from "@recipes/core";
 import type { ScoredRecipe } from "@/lib/recipes";
 import type { RatioDistribution } from "@/lib/ratios";
 import { RangePlot, positionOf } from "./RangePlot";
@@ -188,23 +188,6 @@ export function WhyThisOne({
  * match overall, and hiding the one drawback is how a recommendation stops
  * being trustworthy.
  */
-/**
- * What counts as quick, and as a short list.
- *
- * These were 12 minutes and 10 ingredients, set when the corpus was cookies.
- * The corpus is now muffins, quick breads and scones as well, which bake for
- * half an hour and carry more in them, and the bars never moved -- so a
- * perfectly ordinary recipe was being marked with a warning. Measured over the
- * 1,385 recipes: the median ingredient count is 12 and the median bake is 18
- * minutes, where the old bars passed only 33% and 32% of recipes.
- *
- * Set at the median on purpose. It is what makes "more than most" and "longer
- * than most" literally true rather than a judgement the reader has to take on
- * faith -- half the corpus is on each side of it by construction.
- */
-const TYPICAL_INGREDIENTS = 12;
-const TYPICAL_BAKE_MINUTES = 18;
-
 function EffortReasons({
   recipe,
   prefs,
@@ -214,6 +197,18 @@ function EffortReasons({
 }) {
   const reasons: { good: boolean; label: string }[] = [];
 
+  /**
+   * Typical for this kind of thing, the same figures the ranking uses.
+   *
+   * These were two constants here, 12 ingredients and 18 minutes, measured
+   * over the whole corpus. That was already better than the cookie-era bars
+   * they replaced, but it still told a banana bread it took longer than most
+   * when most banana breads take 55 minutes. The label and the ranking now
+   * read the same per-dish medians, so they cannot disagree about what counts
+   * as quick.
+   */
+  const typical = effortFor(recipe.dish_type);
+
   if (prefs.quick) {
     reasons.push(
       recipe.chills_dough
@@ -221,7 +216,7 @@ function EffortReasons({
         : { good: true, label: "No chilling, straight in the oven" },
     );
     if (recipe.bake_minutes !== null) {
-      const quick = recipe.bake_minutes <= TYPICAL_BAKE_MINUTES;
+      const quick = recipe.bake_minutes <= typical.bakeMinutes;
       reasons.push({
         good: quick,
         label: quick
@@ -238,7 +233,7 @@ function EffortReasons({
       reasons.push({ good: false, label: "Creamed butter, you'll want a mixer" });
     }
     const n = recipe.ingredients.length;
-    const short = n <= TYPICAL_INGREDIENTS;
+    const short = n <= typical.ingredients;
     reasons.push({
       good: short,
       label: short

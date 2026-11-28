@@ -153,7 +153,7 @@ export interface Effort {
   bakeMinutes: number;
 }
 
-export const OVERALL_EFFORT: Effort = {"n":1329,"ingredients":12,"bakeMinutes":18};
+export const OVERALL_EFFORT: Effort = {"n":1329,"ingredients":12,"bakeMinutes":20};
 
 export const DISH_EFFORT: Readonly<Record<string, Effort>> = {
   "muffin": {
@@ -164,12 +164,12 @@ export const DISH_EFFORT: Readonly<Record<string, Effort>> = {
   "brownie": {
     "n": 251,
     "ingredients": 11,
-    "bakeMinutes": 26
+    "bakeMinutes": 30
   },
   "chocolate chip": {
     "n": 183,
     "ingredients": 11,
-    "bakeMinutes": 12
+    "bakeMinutes": 13
   },
   "scone": {
     "n": 153,
@@ -179,22 +179,22 @@ export const DISH_EFFORT: Readonly<Record<string, Effort>> = {
   "banana bread": {
     "n": 110,
     "ingredients": 13,
-    "bakeMinutes": 50
+    "bakeMinutes": 55
   },
   "blondie": {
     "n": 85,
     "ingredients": 10,
-    "bakeMinutes": 27
+    "bakeMinutes": 30
   },
   "oatmeal": {
     "n": 77,
     "ingredients": 12,
-    "bakeMinutes": 12
+    "bakeMinutes": 13
   },
   "peanut butter": {
     "n": 55,
     "ingredients": 11,
-    "bakeMinutes": 10
+    "bakeMinutes": 12
   },
   "sugar": {
     "n": 38,
@@ -209,6 +209,6 @@ export const DISH_EFFORT: Readonly<Record<string, Effort>> = {
   "pumpkin bread": {
     "n": 2,
     "ingredients": 14,
-    "bakeMinutes": 36
+    "bakeMinutes": 38
   }
 };

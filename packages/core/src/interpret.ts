@@ -726,7 +726,7 @@ export function confidentRating(rating: number | null, count: number | null): nu
  * because the same thinness problem applies: pumpkin bread has two recipes and
  * its median is two recipes' worth of evidence.
  */
-function effortFor(dishType: string | null | undefined): Effort {
+export function effortFor(dishType: string | null | undefined): Effort {
   const own = dishType ? DISH_EFFORT[dishType] : undefined;
   if (!own) return OVERALL_EFFORT;
   const w = own.n / (own.n + TRUST_EFFORT);
