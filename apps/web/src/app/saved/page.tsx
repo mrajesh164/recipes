@@ -17,7 +17,12 @@ export default function Page() {
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24 pt-6">
       <h1 className="font-script text-display font-bold text-clay-deep">Saved</h1>
-      <Suspense fallback={<p className="mt-6 text-sm text-ink-soft">Looking…</p>}>
+      {/* A shape, not a word. The saved list is per-user, so it cannot be
+          prerendered and something has to stand in for it -- but "Looking…"
+          announced a wait for data the reader thinks of as already theirs.
+          Cards of the right size and position say the same thing without
+          saying anything. */}
+      <Suspense fallback={<SavedSkeleton />}>
         <List />
       </Suspense>
     </main>
@@ -86,4 +91,27 @@ async function List() {
   }
 
   return <SavedGrid items={items} all={recipes} />;
+}
+
+function SavedSkeleton() {
+  return (
+    <ul className="mt-8 grid grid-cols-1 items-start gap-4 lg:grid-cols-2" aria-hidden>
+      {[0, 1].map((n) => (
+        <li key={n} className="animate-pulse rounded-2xl border-2 border-line bg-paper">
+          <div className="flex items-start gap-4 p-4">
+            <div className="h-24 w-24 flex-none rounded-xl bg-cream-deep" />
+            <div className="min-w-0 flex-1">
+              <div className="h-4 w-3/4 rounded bg-cream-deep" />
+              <div className="mt-2 h-3 w-1/2 rounded bg-cream-deep" />
+              <div className="mt-3 h-5 w-32 rounded-full bg-cream-deep" />
+            </div>
+          </div>
+          <div className="flex gap-3 border-t border-line-soft px-4 py-3">
+            <div className="h-10 w-36 rounded-full bg-cream-deep" />
+            <div className="h-10 w-24 rounded-full bg-cream-deep" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
 }
