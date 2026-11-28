@@ -55,7 +55,12 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
     ? recipes.filter(
         (r) =>
           r.title.toLowerCase().includes(q) ||
-          r.source_name.toLowerCase().includes(q),
+          r.source_name.toLowerCase().includes(q) ||
+          // The kind too, so "brownie" or "scone" filters. The box used to
+          // say "name or source" and match only those; saying "keyword" and
+          // then ignoring the most obvious keyword in the corpus would be
+          // the label promising more than the filter does.
+          (r.dish_type?.toLowerCase().includes(q) ?? false),
       )
     : recipes;
   const shown = [...matched].sort(SORTS[sort].compare);
@@ -79,7 +84,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         type="search"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        placeholder="Filter by name or source…"
+        placeholder="Filter by name or keyword…"
         aria-label="Filter recipes by name or source"
         className="w-full max-w-md rounded-2xl border-2 border-line bg-paper px-4 py-3
                    placeholder:text-ink-faint focus:border-clay-deep focus:outline-none"
