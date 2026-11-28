@@ -66,6 +66,8 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   const PAGE = 120;
   const [visible, setVisible] = useState(PAGE);
   const [jumpTo, setJumpTo] = useState<string | null>(null);
+  /** Pixels from the top of the grid to hang the open panel at. */
+  const [anchor, setAnchor] = useState<number | null>(null);
 
   const q = filter.trim().toLowerCase();
   const matched = q
@@ -109,6 +111,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
   }, [jumpTo, visible]);
 
   const page = shown.slice(0, visible);
+  const openRecipe = page.find((r) => r.id === open) ?? null;
 
   return (
     <div>
@@ -200,7 +203,7 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
         </nav>
       )}
 
-      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <ul className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {page.map((r, i) => (
           <Fragment key={r.id}>
             {/* Sorting by kind put the groups in order and then gave no sign
@@ -226,7 +229,15 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
           <li>
             <button
               type="button"
-              onClick={() => setOpen(open === r.id ? null : r.id)}
+              onClick={(e) => {
+                // Where to hang the panel: the bottom of this tile's row,
+                // measured rather than inferred, because the column count
+                // changes with the breakpoint and the row height with the
+                // longest title in it.
+                const li = (e.currentTarget as HTMLElement).closest("li");
+                setAnchor(li ? li.offsetTop + li.offsetHeight + 12 : null);
+                setOpen(open === r.id ? null : r.id);
+              }}
               aria-expanded={open === r.id}
               className="group block h-full w-full overflow-hidden rounded-2xl border border-line
                          bg-paper text-left transition-colors hover:border-pink-deep
@@ -267,17 +278,36 @@ export function RecipeGrid({ recipes }: { recipes: ScoredRecipe[] }) {
               ring and nothing appeared to happen -- it read as "these don't
               open". col-span-full puts it on its own row directly beneath the
               one that was clicked. */}
-          {open === r.id && (
-            <li className="col-span-full">
-              <RecipeDetail
-                recipe={r}
-                all={recipes}
-                onClose={() => setOpen(null)}
-              />
-            </li>
-          )}
           </Fragment>
         ))}
+
+        {/* The open recipe, hanging over the grid rather than inside it.
+ 
+            Two earlier tries were wrong. Rendering it after the list put it
+            120 tiles below the fold, so clicking a tile looked like nothing
+            happened. Rendering it as a full-width row inside the grid fixed
+            that but pushed every tile below it down the page -- and a
+            zero-height row with a negative margin did not help, because a
+            margin cannot cancel a grid gap: measured, a tile twenty places
+            down still moved 10px.
+ 
+            So it is out of the grid's flow altogether: absolutely positioned
+            against the <ul>, at a top measured from the clicked tile's own row
+            when it was clicked. No row is created, no gap is added, nothing
+            below it moves, and it covers the tiles underneath the way a
+            dropdown should. */}
+        {open && openRecipe && anchor !== null && (
+          <li
+            className="absolute inset-x-0 z-30 drop-shadow-xl"
+            style={{ top: anchor }}
+          >
+            <RecipeDetail
+              recipe={openRecipe}
+              all={recipes}
+              onClose={() => setOpen(null)}
+            />
+          </li>
+        )}
       </ul>
 
       {visible < shown.length && (
